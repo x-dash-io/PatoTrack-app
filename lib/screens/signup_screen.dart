@@ -1,8 +1,9 @@
-// lib/screens/signup_screen.dart
-
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'login_screen.dart';
+import '../widgets/loading_widgets.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -12,16 +13,58 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  // --- NEW: Controller for the name field ---
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _auth = FirebaseAuth.instance;
+  final _formKey = GlobalKey<FormState>();
 
   bool _isPasswordVisible = false;
   bool _isLoading = false;
 
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   Future<void> _signUp() async {
+    // Basic validation
+    if (_nameController.text.trim().isEmpty) {
+      Fluttertoast.showToast(
+        msg: 'Please enter your name',
+        backgroundColor: CupertinoColors.systemRed,
+        textColor: CupertinoColors.white,
+      );
+      return;
+    }
+    if (_emailController.text.trim().isEmpty ||
+        !_emailController.text.trim().contains('@')) {
+      Fluttertoast.showToast(
+        msg: 'Please enter a valid email',
+        backgroundColor: CupertinoColors.systemRed,
+        textColor: CupertinoColors.white,
+      );
+      return;
+    }
+    if (_passwordController.text.isEmpty || _passwordController.text.length < 6) {
+      Fluttertoast.showToast(
+        msg: 'Password must be at least 6 characters',
+        backgroundColor: CupertinoColors.systemRed,
+        textColor: CupertinoColors.white,
+      );
+      return;
+    }
+
+    // Android form validation
+    if (Theme.of(context).platform != TargetPlatform.iOS) {
+      if (!_formKey.currentState!.validate()) {
+        return;
+      }
+    }
+
     setState(() {
       _isLoading = true;
     });
@@ -33,20 +76,28 @@ class _SignUpScreenState extends State<SignUpScreen> {
         password: _passwordController.text.trim(),
       );
 
-      // --- NEW: Update the user's display name ---
+      // Update the user's display name
       await userCredential.user?.updateDisplayName(_nameController.text.trim());
-      
-      Fluttertoast.showToast(msg: "Account Created Successfully!");
-      
-      if (mounted) Navigator.pop(context);
+
+      if (mounted) {
+        Fluttertoast.showToast(
+          msg: "Account Created Successfully!",
+          backgroundColor: CupertinoColors.systemGreen,
+          textColor: CupertinoColors.white,
+        );
+        Navigator.pop(context);
+      }
     } on FirebaseAuthException catch (e) {
-      Fluttertoast.showToast(
+      if (mounted) {
+        Fluttertoast.showToast(
           msg: e.message ?? 'Sign up failed',
           toastLength: Toast.LENGTH_LONG,
           gravity: ToastGravity.BOTTOM,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-          fontSize: 16.0);
+          backgroundColor: CupertinoColors.systemRed,
+          textColor: CupertinoColors.white,
+          fontSize: 16.0,
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -58,82 +109,256 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Sign Up')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // --- NEW: Name field ---
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Full Name',
-                prefixIcon: Icon(Icons.person_outline),
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.name,
-            ),
-            const SizedBox(height: 16),
-            
-            TextFormField(
-              controller: _emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                prefixIcon: Icon(Icons.email_outlined),
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            const SizedBox(height: 16),
-            
-            TextFormField(
-              controller: _passwordController,
-              decoration: InputDecoration(
-                labelText: 'Password',
-                prefixIcon: const Icon(Icons.lock_outline),
-                border: const OutlineInputBorder(),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return CupertinoPageScaffold(
+      backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.white,
+      navigationBar: CupertinoNavigationBar(
+        middle: const Text('Create Account'),
+        backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.white,
+        border: null,
+      ),
+      child: SafeArea(
+        child: LoadingOverlay(
+          isLoading: _isLoading,
+          message: 'Creating account...',
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Form(
+              key: _formKey,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 40),
+
+                  // App logo/icon
+                  Center(
+                    child: Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: CupertinoColors.activeBlue.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        CupertinoIcons.person_add,
+                        size: 50,
+                        color: CupertinoColors.activeBlue,
+                      ),
+                    ),
                   ),
-                  onPressed: () {
-                    setState(() {
-                      _isPasswordVisible = !_isPasswordVisible;
-                    });
-                  },
-                ),
-              ),
-              obscureText: !_isPasswordVisible,
-            ),
-            const SizedBox(height: 24),
-            
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
+
+                  const SizedBox(height: 48),
+
+                  // Title
+                  Text(
+                    'Get Started',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: isDark
+                          ? CupertinoColors.white
+                          : CupertinoColors.black,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  Text(
+                    'Create your account to start tracking',
+                    style: TextStyle(
+                      fontSize: 17,
+                      color: isDark
+                          ? CupertinoColors.secondaryLabel
+                          : CupertinoColors.secondaryLabel.darkColor,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: 40),
+
+                  // Name field
+                  _buildTextField(
+                    controller: _nameController,
+                    placeholder: 'Full Name',
+                    keyboardType: TextInputType.name,
+                    prefix: const Icon(CupertinoIcons.person, size: 20),
+                    validator: Theme.of(context).platform != TargetPlatform.iOS
+                        ? (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your name';
+                            }
+                            return null;
+                          }
+                        : null,
+                  ),
+
+                  // Email field
+                  _buildTextField(
+                    controller: _emailController,
+                    placeholder: 'Email',
+                    keyboardType: TextInputType.emailAddress,
+                    prefix: const Icon(CupertinoIcons.mail, size: 20),
+                    validator: Theme.of(context).platform != TargetPlatform.iOS
+                        ? (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your email';
+                            }
+                            if (!value.contains('@')) {
+                              return 'Please enter a valid email';
+                            }
+                            return null;
+                          }
+                        : null,
+                  ),
+
+                  // Password field
+                  _buildTextField(
+                    controller: _passwordController,
+                    placeholder: 'Password',
+                    obscureText: !_isPasswordVisible,
+                    prefix: const Icon(CupertinoIcons.lock, size: 20),
+                    suffix: CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      minSize: 0,
+                      onPressed: () {
+                        setState(() {
+                          _isPasswordVisible = !_isPasswordVisible;
+                        });
+                      },
+                      child: Icon(
+                        _isPasswordVisible
+                            ? CupertinoIcons.eye_slash
+                            : CupertinoIcons.eye,
+                        size: 20,
+                        color: CupertinoColors.secondaryLabel,
+                      ),
+                    ),
+                    validator: Theme.of(context).platform != TargetPlatform.iOS
+                        ? (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter a password';
+                            }
+                            if (value.length < 6) {
+                              return 'Password must be at least 6 characters';
+                            }
+                            return null;
+                          }
+                        : null,
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Sign up button
+                  CupertinoButton.filled(
+                    onPressed: _isLoading ? null : _signUp,
                     borderRadius: BorderRadius.circular(12),
+                    disabledColor: CupertinoColors.systemGrey,
+                    child: const Text(
+                      'Create Account',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                ),
-                onPressed: _isLoading ? null : _signUp,
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 3,
+
+                  const SizedBox(height: 24),
+
+                  // Sign in link
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Already have an account? ',
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: isDark
+                              ? CupertinoColors.secondaryLabel
+                              : CupertinoColors.secondaryLabel.darkColor,
                         ),
-                      )
-                    : const Text('Sign Up', style: TextStyle(fontSize: 16)),
+                      ),
+                      CupertinoButton(
+                        padding: EdgeInsets.zero,
+                        minSize: 0,
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            CupertinoPageRoute(
+                              builder: (context) => const LoginScreen(),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          'Sign In',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String placeholder,
+    TextInputType? keyboardType,
+    bool obscureText = false,
+    Widget? prefix,
+    Widget? suffix,
+    String? Function(String?)? validator,
+  }) {
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+
+    if (isIOS) {
+      return Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: CupertinoColors.systemGrey6,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: CupertinoTextField(
+          controller: controller,
+          placeholder: placeholder,
+          keyboardType: keyboardType,
+          obscureText: obscureText,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          prefix: prefix != null
+              ? Padding(
+                  padding: const EdgeInsets.only(left: 12),
+                  child: prefix,
+                )
+              : null,
+          suffix: suffix,
+          decoration: null,
+        ),
+      );
+    } else {
+      // Android fallback with validation
+      return TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        obscureText: obscureText,
+        decoration: InputDecoration(
+          labelText: placeholder,
+          prefixIcon: prefix,
+          suffixIcon: suffix,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        validator: validator,
+      );
+    }
   }
 }

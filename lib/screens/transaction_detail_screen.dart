@@ -1,9 +1,12 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../helpers/database_helper.dart';
 import '../models/category.dart';
 import '../models/transaction.dart' as model;
+import '../widgets/dialog_helpers.dart';
+import '../widgets/modern_date_picker.dart';
 import 'manage_categories_screen.dart';
 
 class TransactionDetailScreen extends StatefulWidget {
@@ -86,16 +89,13 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   Future<void> _deleteTransaction() async {
     if (_currentUser == null) return;
 
-    final bool? confirm = await showDialog(
+    final bool? confirm = await showModernConfirmDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirm Deletion'),
-        content: const Text('Are you sure you want to permanently delete this transaction?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
-        ],
-      ),
+      title: 'Confirm Deletion',
+      message: 'Are you sure you want to permanently delete this transaction?',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      isDestructive: true,
     );
 
     if (confirm == true && mounted) {
@@ -106,11 +106,13 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   }
 
   Future<void> _pickDate() async {
-    final DateTime? picked = await showDatePicker(
+    final DateTime? picked = await showModernDatePicker(
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
+      title: 'Select Date',
+      showPresets: true,
     );
     if (picked != null && picked != _selectedDate) {
       setState(() {

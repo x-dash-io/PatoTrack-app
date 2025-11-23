@@ -91,7 +91,9 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(child: _widgetOptions.elementAt(_selectedIndex)),
+      body: SafeArea(
+        child: _widgetOptions.elementAt(_selectedIndex),
+      ),
 
       // UPDATED: Replaced BottomNavigationBar with the modern NavigationBar
       bottomNavigationBar: NavigationBar(
@@ -103,6 +105,7 @@ class _MainScreenState extends State<MainScreen> {
         indicatorColor: Theme.of(context).colorScheme.primaryContainer,
         backgroundColor: Theme.of(context).colorScheme.surface,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        elevation: 0,
         // --------------------------
 
         destinations: const <NavigationDestination>[

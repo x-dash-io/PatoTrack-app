@@ -1,7 +1,10 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../helpers/database_helper.dart';
 import '../models/category.dart';
+import '../widgets/dialog_helpers.dart';
+import '../widgets/loading_widgets.dart';
 
 class ManageCategoriesScreen extends StatefulWidget {
   const ManageCategoriesScreen({super.key});
@@ -148,7 +151,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> with Si
 
   Widget _buildCategoryList(List<Category> categories, String type) {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: ModernLoadingIndicator());
     }
     if (categories.isEmpty) {
       return Center(
@@ -182,16 +185,13 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> with Si
                   icon: const Icon(Icons.delete_outline, color: Colors.red),
                   onPressed: () async {
                     if (currentUser == null) return;
-                    final bool? confirm = await showDialog(
+                    final bool? confirm = await showModernConfirmDialog(
                       context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Confirm Deletion'),
-                        content: Text('Are you sure you want to delete the "${category.name}" category?'),
-                        actions: [
-                          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-                          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
-                        ],
-                      ),
+                      title: 'Confirm Deletion',
+                      message: 'Are you sure you want to delete the "${category.name}" category?',
+                      confirmText: 'Delete',
+                      cancelText: 'Cancel',
+                      isDestructive: true,
                     );
                     if (confirm == true) {
                       await dbHelper.deleteCategory(category.id!, currentUser!.uid);

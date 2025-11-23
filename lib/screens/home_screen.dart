@@ -7,6 +7,8 @@ import '../helpers/database_helper.dart';
 import '../helpers/sms_service.dart';
 import '../models/bill.dart';
 import '../models/transaction.dart' as model;
+import '../widgets/dialog_helpers.dart';
+import '../widgets/loading_widgets.dart';
 import 'add_transaction_screen.dart';
 import 'all_transactions_screen.dart';
 import 'add_bill_screen.dart';
@@ -185,7 +187,45 @@ class _HomeScreenState extends State<HomeScreen> {
         return Scaffold(
           body: SafeArea(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? Column(
+                    children: [
+                      // Header shimmer
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              height: 20,
+                              width: 150,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[300],
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              height: 32,
+                              width: 200,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[300],
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Summary cards shimmer
+                      const Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: SummaryCardShimmerList(),
+                      ),
+                      // Transactions shimmer
+                      const Expanded(
+                        child: TransactionShimmerList(itemCount: 5),
+                      ),
+                    ],
+                  )
                 : RefreshIndicator(
                   onRefresh: _refreshData,
                   child: Column(
@@ -310,9 +350,33 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         _bills.isEmpty
-            ? const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
-                child: Center(child: Text('No upcoming bills.')),
+            ? Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.event_note_outlined,
+                        size: 48,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'No upcoming bills',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Add a bill to track payments',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
               )
             : SizedBox(
                 height: 165,
@@ -400,7 +464,36 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildTransactionList(User? currentUser) {
     if (_transactions.isEmpty) {
-      return const Center(heightFactor: 5, child: Text('No transactions yet. Add one!'));
+      return Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.receipt_long_outlined,
+                size: 64,
+                color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'No transactions yet',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Tap the button below to add your first transaction',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      );
     }
     
     final currencyFormatter = NumberFormat.currency(locale: 'en_US', symbol: '');
@@ -431,17 +524,13 @@ class _HomeScreenState extends State<HomeScreen> {
               }
               return false; // Do not dismiss the item after swiping right
             } else { // Swipe left for delete
-              return await showDialog(
+              return await showModernConfirmDialog(
                 context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: const Text('Confirm Deletion'), content: const Text('Are you sure you want to delete this transaction?'),
-                    actions: <Widget>[
-                      TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-                      TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
-                    ],
-                  );
-                },
+                title: 'Confirm Deletion',
+                message: 'Are you sure you want to delete this transaction?',
+                confirmText: 'Delete',
+                cancelText: 'Cancel',
+                isDestructive: true,
               );
             }
           },

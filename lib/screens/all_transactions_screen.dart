@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../helpers/database_helper.dart';
 import '../models/category.dart';
 import '../models/transaction.dart' as model;
+import '../widgets/loading_widgets.dart';
+import '../widgets/modern_date_picker.dart';
 import 'transaction_detail_screen.dart';
 
 class AllTransactionsScreen extends StatefulWidget {
@@ -132,14 +134,15 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                   // Filter by Date Range
                   ListTile(
                     title: Text(_filterDateRange == null 
-                        ? 'Filter by Date' 
+                        ? 'Filter by Date Range' 
                         : '${DateFormat.yMd().format(_filterDateRange!.start)} - ${DateFormat.yMd().format(_filterDateRange!.end)}'),
                     trailing: const Icon(Icons.calendar_today),
                     onTap: () async {
-                      final picked = await showDateRangePicker(
+                      final picked = await showModernDateRangePicker(
                         context: context,
                         firstDate: DateTime(2020),
                         lastDate: DateTime.now().add(const Duration(days: 365)),
+                        title: 'Select Date Range',
                       );
                       if (picked != null) {
                         setModalState(() => _filterDateRange = picked);
@@ -209,7 +212,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const TransactionShimmerList(itemCount: 8)
           : Column(
               children: [
                 Padding(
@@ -225,7 +228,36 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                 ),
                 Expanded(
                   child: _filteredTransactions.isEmpty
-                      ? const Center(child: Text('No transactions match your filters.'))
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(32.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.search_off_outlined,
+                                  size: 64,
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No transactions found',
+                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                      ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Try adjusting your filters or search terms',
+                                  textAlign: TextAlign.center,
+                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
                       : ListView.builder(
                           itemCount: _filteredTransactions.length,
                           itemBuilder: (context, index) {

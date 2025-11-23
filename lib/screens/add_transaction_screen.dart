@@ -4,7 +4,8 @@ import 'package:intl/intl.dart';
 import '../helpers/database_helper.dart';
 import '../models/category.dart';
 import '../models/transaction.dart' as model;
-import 'manage_categories_screen.dart'; // Import for the new screen
+import '../widgets/modern_date_picker.dart';
+import 'manage_categories_screen.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   const AddTransactionScreen({super.key});
@@ -76,11 +77,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Future<void> _pickDate() async {
-    final DateTime? picked = await showDatePicker(
+    final DateTime? picked = await showModernDatePicker(
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
+      title: 'Select Date',
+      showPresets: true,
     );
     if (picked != null && picked != _selectedDate) {
       setState(() {

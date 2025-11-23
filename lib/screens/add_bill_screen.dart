@@ -7,6 +7,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import '../helpers/database_helper.dart';
 import '../helpers/notification_service.dart';
 import '../models/bill.dart';
+import '../widgets/modern_date_picker.dart';
 
 class AddBillScreen extends StatefulWidget {
   const AddBillScreen({super.key});
@@ -80,11 +81,13 @@ class _AddBillScreenState extends State<AddBillScreen> {
   }
 
   Future<void> _pickDate() async {
-    final DateTime? picked = await showDatePicker(
+    final DateTime? picked = await showModernDatePicker(
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime.now(),
       lastDate: DateTime(2100),
+      title: 'Select Due Date',
+      showPresets: false,
     );
     if (picked != null && picked != _selectedDate) {
       setState(() {

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
@@ -14,7 +15,10 @@ import '../helpers/config.dart';
 import '../helpers/database_helper.dart';
 import '../models/category.dart';
 import '../theme_provider.dart';
+import '../widgets/dialog_helpers.dart';
 import 'passcode_screen.dart';
+import 'help_screen.dart';
+import 'faq_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -114,36 +118,80 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _showUpdateNameDialog() {
     _nameController.text = currentUser?.displayName ?? '';
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Update Your Name'),
-        content: TextField(
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    
+    if (isIOS) {
+      showCupertinoDialog(
+        context: context,
+        builder: (context) => CupertinoAlertDialog(
+          title: const Text('Update Your Name'),
+          content: Padding(
+            padding: const EdgeInsets.only(top: 16),
+            child: CupertinoTextField(
+              controller: _nameController,
+              autofocus: true,
+              placeholder: 'Full Name',
+              padding: const EdgeInsets.all(12),
+            ),
+          ),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            CupertinoDialogAction(
+              onPressed: () async {
+                if (_nameController.text.isNotEmpty) {
+                  await currentUser?.updateDisplayName(_nameController.text.trim());
+                  Navigator.pop(context);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Name updated successfully!')),
+                    );
+                    setState(() {});
+                  }
+                }
+              },
+              child: const Text('Update'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Update Your Name'),
+          content: TextField(
             controller: _nameController,
             autofocus: true,
-            decoration: const InputDecoration(labelText: 'Full Name')),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
-          TextButton(
-            onPressed: () async {
-              if (_nameController.text.isNotEmpty) {
-                await currentUser
-                    ?.updateDisplayName(_nameController.text.trim());
-                Navigator.pop(context);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text('Name updated successfully!')));
-                  setState(() {});
-                }
-              }
-            },
-            child: const Text('Update'),
+            decoration: const InputDecoration(labelText: 'Full Name'),
           ),
-        ],
-      ),
-    );
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                if (_nameController.text.isNotEmpty) {
+                  await currentUser?.updateDisplayName(_nameController.text.trim());
+                  Navigator.pop(context);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Name updated successfully!')),
+                    );
+                    setState(() {});
+                  }
+                }
+              },
+              child: const Text('Update'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   Future<void> _sendPasswordResetEmail() async {
@@ -157,21 +205,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _deleteAccount() async {
-    final bool? confirm = await showDialog(
+    final bool? confirm = await showModernConfirmDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('DELETE ACCOUNT'),
-        content: const Text(
-            'This is irreversible. All your data will be permanently deleted. Are you sure?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel')),
-          TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('DELETE', style: TextStyle(color: Colors.red))),
-        ],
-      ),
+      title: 'DELETE ACCOUNT',
+      message: 'This is irreversible. All your data will be permanently deleted. Are you sure?',
+      confirmText: 'DELETE',
+      cancelText: 'Cancel',
+      isDestructive: true,
     );
 
     if (confirm == true) {
@@ -185,20 +225,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _logout() async {
-    final bool? confirm = await showDialog(
+    final bool? confirm = await showModernConfirmDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirm Logout'),
-        content: const Text('Are you sure you want to log out?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel')),
-          TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Logout', style: TextStyle(color: Colors.red))),
-        ],
-      ),
+      title: 'Confirm Logout',
+      message: 'Are you sure you want to log out?',
+      confirmText: 'Logout',
+      cancelText: 'Cancel',
+      isDestructive: true,
     );
 
     if (confirm == true) {
@@ -225,49 +258,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _showFaqDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Frequently Asked Questions'),
-        content: const SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Getting Started', style: TextStyle(fontWeight: FontWeight.bold)),
-              Text('Use the tabs at the bottom to navigate...'),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
+  void _showFaqScreen() {
+    Navigator.of(context).push(
+      CupertinoPageRoute(builder: (context) => const FaqScreen()),
     );
   }
 
   Future<void> _handleRestore() async {
     if (currentUser == null) return;
 
-    final bool? confirm = await showDialog(
+    final bool? confirm = await showModernConfirmDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Restore from Cloud'),
-        content: const Text(
-            'This will replace all local data with your cloud backup. Are you sure?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel')),
-          TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child:
-                  const Text('Restore', style: TextStyle(color: Colors.blue))),
-        ],
-      ),
+      title: 'Restore from Cloud',
+      message: 'This will replace all local data with your cloud backup. Are you sure?',
+      confirmText: 'Restore',
+      cancelText: 'Cancel',
+      isDestructive: false,
     );
 
     if (confirm == true && mounted) {
@@ -500,7 +506,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ListTile(
               leading: const Icon(Icons.question_answer_outlined),
               title: const Text('FAQ'),
-              onTap: _showFaqDialog,
+              onTap: _showFaqScreen,
+            ),
+            ListTile(
+              leading: const Icon(Icons.help_outline),
+              title: const Text('Help & Support'),
+              onTap: () {
+                Navigator.of(context).push(
+                  CupertinoPageRoute(builder: (context) => const HelpScreen()),
+                );
+              },
             ),
             ListTile(
               leading: const Icon(Icons.support_agent),
