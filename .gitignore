@@ -118,10 +118,9 @@ app.*.map.json
 .env.local
 .env.*.local
 *.key
-# Note: google-services.json and GoogleService-Info.plist should be committed if not sensitive
-# Uncomment the following lines if they contain sensitive data:
-# google-services.json
-# GoogleService-Info.plist
+# Firebase configuration files - DO NOT COMMIT (contain sensitive API keys)
+**/google-services.json
+**/GoogleService-Info.plist
 firebase-debug.log
 firestore-debug.log
 ui-debug.log

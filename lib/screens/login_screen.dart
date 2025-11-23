@@ -5,6 +5,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'signup_screen.dart';
 import '../widgets/loading_widgets.dart';
+import '../services/google_sign_in_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -61,6 +62,47 @@ class _LoginScreenState extends State<LoginScreen> {
         setState(() {
           _isLoading = false;
         });
+      }
+    }
+  }
+
+  Future<void> _signInWithGoogle() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final userCredential = await GoogleSignInService.signInWithGoogle();
+      
+      if (userCredential != null && mounted) {
+        // Success - AuthGate will handle navigation
+        Fluttertoast.showToast(
+          msg: 'Signed in with Google successfully!',
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          textColor: Theme.of(context).colorScheme.onPrimary,
+        );
+      } else if (mounted) {
+        // User cancelled
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        final theme = Theme.of(context);
+        Fluttertoast.showToast(
+          msg: e.toString().replaceAll('Exception: ', ''),
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: theme.colorScheme.error,
+          textColor: theme.colorScheme.onError,
+          fontSize: 16.0,
+        );
       }
     }
   }
@@ -243,6 +285,60 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               child: Text(
                                 'Sign In',
+                                style: GoogleFonts.inter(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // Divider with "OR"
+                            Row(
+                              children: [
+                                Expanded(child: Divider(color: colorScheme.outline)),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  child: Text(
+                                    'OR',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      color: colorScheme.onSurfaceVariant,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(child: Divider(color: colorScheme.outline)),
+                              ],
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // Google Sign-In button
+                            OutlinedButton.icon(
+                              onPressed: _isLoading ? null : _signInWithGoogle,
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                side: BorderSide(
+                                  color: colorScheme.outline,
+                                  width: 1.5,
+                                ),
+                              ),
+                              icon: Image.asset(
+                                'assets/google_logo.png',
+                                height: 20,
+                                width: 20,
+                                errorBuilder: (context, error, stackTrace) {
+                                  // Fallback if Google logo asset doesn't exist
+                                  return const Icon(Icons.g_mobiledata, size: 24);
+                                },
+                              ),
+                              label: Text(
+                                'Continue with Google',
                                 style: GoogleFonts.inter(
                                   fontSize: 17,
                                   fontWeight: FontWeight.w600,
