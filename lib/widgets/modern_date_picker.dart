@@ -67,19 +67,20 @@ Future<DateTimeRange?> showModernDateRangePicker({
 }) async {
   firstDate ??= DateTime(2020);
   lastDate ??= DateTime(2030);
-  initialDateRange ??= DateTimeRange(
+  final effectiveInitialRange = initialDateRange ?? DateTimeRange(
     start: DateTime.now().subtract(const Duration(days: 7)),
     end: DateTime.now(),
   );
 
   if (Theme.of(context).platform == TargetPlatform.iOS) {
-    DateTime startDate = initialDateRange.start;
-    DateTime endDate = initialDateRange.end;
+    final range = effectiveInitialRange;
+    DateTime startDate = range.start;
+    DateTime endDate = range.end;
 
     final result = await showCupertinoModalPopup<DateTimeRange>(
       context: context,
       builder: (context) => _iOSDateRangePickerBottomSheet(
-        initialRange: initialDateRange,
+        initialRange: range,
         firstDate: firstDate!,
         lastDate: lastDate!,
         title: title ?? 'Select Date Range',
@@ -96,7 +97,7 @@ Future<DateTimeRange?> showModernDateRangePicker({
       context: context,
       firstDate: firstDate!,
       lastDate: lastDate!,
-      initialDateRange: initialDateRange,
+      initialDateRange: effectiveInitialRange,
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -502,4 +503,5 @@ class _iOSDateRangePickerBottomSheetState
     );
   }
 }
+
 
