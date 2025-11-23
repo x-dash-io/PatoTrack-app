@@ -1,6 +1,7 @@
 // lib/main.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -37,31 +38,41 @@ class PatoTrack extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.themeMode == ThemeMode.dark;
 
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'PatoTrack', // Updated app title
-      themeMode: themeProvider.themeMode,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
-        textTheme: GoogleFonts.interTextTheme(Theme.of(context).textTheme),
-        useMaterial3: true,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
       ),
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.teal,
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'PatoTrack', // Updated app title
+        themeMode: themeProvider.themeMode,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+          textTheme: GoogleFonts.interTextTheme(Theme.of(context).textTheme),
+          useMaterial3: true,
+        ),
+        darkTheme: ThemeData(
           brightness: Brightness.dark,
-        ),
-        textTheme: GoogleFonts.interTextTheme(
-          Theme.of(context).textTheme.apply(
-            bodyColor: Colors.white,
-            displayColor: Colors.white,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.teal,
+            brightness: Brightness.dark,
           ),
+          textTheme: GoogleFonts.interTextTheme(
+            Theme.of(context).textTheme.apply(
+              bodyColor: Colors.white,
+              displayColor: Colors.white,
+            ),
+          ),
+          useMaterial3: true,
         ),
-        useMaterial3: true,
+        home: const AuthGate(),
       ),
-      home: const AuthGate(),
     );
   }
 }
@@ -90,6 +101,19 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    // Ensure status bar is visible
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+      ),
+    );
+
     return Scaffold(
       body: SafeArea(
         child: _widgetOptions.elementAt(_selectedIndex),

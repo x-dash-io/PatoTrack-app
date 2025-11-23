@@ -1,7 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'signup_screen.dart';
 import '../widgets/loading_widgets.dart';
 
@@ -90,14 +92,31 @@ class _LoginScreenState extends State<LoginScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
 
-    return CupertinoPageScaffold(
-      backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.white,
-      navigationBar: CupertinoNavigationBar(
-        middle: const Text('Sign In'),
-        backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.white,
-        border: null,
+    // Set status bar style
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
       ),
-      child: SafeArea(
+    );
+
+    return Scaffold(
+      backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.white,
+      appBar: AppBar(
+        title: Text(
+          'Sign In',
+          style: GoogleFonts.inter(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+      ),
+      body: SafeArea(
         child: LoadingOverlay(
           isLoading: _isLoading,
           message: 'Signing in...',
@@ -133,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Title
                   Text(
                     'Welcome Back',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
                       color: isDark
@@ -147,7 +166,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   Text(
                     'Sign in to continue',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 17,
                       color: isDark
                           ? CupertinoColors.secondaryLabel
@@ -183,15 +202,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     placeholder: 'Password',
                     obscureText: !_isPasswordVisible,
                     prefix: const Icon(CupertinoIcons.lock, size: 20),
-                    suffix: CupertinoButton(
-                      padding: EdgeInsets.zero,
-                      minSize: 0,
+                    suffix: IconButton(
                       onPressed: () {
                         setState(() {
                           _isPasswordVisible = !_isPasswordVisible;
                         });
                       },
-                      child: Icon(
+                      icon: Icon(
                         _isPasswordVisible
                             ? CupertinoIcons.eye_slash
                             : CupertinoIcons.eye,
@@ -215,15 +232,25 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 32),
 
                   // Login button
-                  CupertinoButton.filled(
-                    onPressed: _isLoading ? null : _login,
-                    borderRadius: BorderRadius.circular(12),
-                    disabledColor: CupertinoColors.systemGrey,
-                    child: const Text(
-                      'Sign In',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _login,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: CupertinoColors.activeBlue,
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor: CupertinoColors.systemGrey,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        'Sign In',
+                        style: GoogleFonts.inter(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
@@ -236,28 +263,27 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       Text(
                         "Don't have an account? ",
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           fontSize: 15,
                           color: isDark
-                              ? CupertinoColors.secondaryLabel
-                              : CupertinoColors.secondaryLabel.darkColor,
+                              ? Colors.white70
+                              : Colors.black87,
                         ),
                       ),
-                      CupertinoButton(
-                        padding: EdgeInsets.zero,
-                        minSize: 0,
-                        onPressed: () {
+                      GestureDetector(
+                        onTap: () {
                           Navigator.of(context).push(
-                            CupertinoPageRoute(
+                            MaterialPageRoute(
                               builder: (context) => const SignUpScreen(),
                             ),
                           );
                         },
-                        child: const Text(
+                        child: Text(
                           'Sign Up',
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
+                            color: CupertinoColors.activeBlue,
                           ),
                         ),
                       ),
@@ -296,6 +322,10 @@ class _LoginScreenState extends State<LoginScreen> {
           keyboardType: keyboardType,
           obscureText: obscureText,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          style: GoogleFonts.inter(),
+          placeholderStyle: GoogleFonts.inter(
+            color: CupertinoColors.placeholderText,
+          ),
           prefix: prefix != null
               ? Padding(
                   padding: const EdgeInsets.only(left: 12),
@@ -308,19 +338,37 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } else {
       // Android fallback with validation
-      return TextFormField(
-        controller: controller,
-        keyboardType: keyboardType,
-        obscureText: obscureText,
-        decoration: InputDecoration(
-          labelText: placeholder,
-          prefixIcon: prefix,
-          suffixIcon: suffix,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+      return Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        child: TextFormField(
+          controller: controller,
+          keyboardType: keyboardType,
+          obscureText: obscureText,
+          style: GoogleFonts.inter(),
+          decoration: InputDecoration(
+            labelText: placeholder,
+            labelStyle: GoogleFonts.inter(),
+            prefixIcon: prefix,
+            suffixIcon: suffix,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: CupertinoColors.activeBlue, width: 2),
+            ),
+            filled: true,
+            fillColor: Theme.of(context).brightness == Brightness.dark
+                ? CupertinoColors.systemGrey6.darkColor
+                : CupertinoColors.systemGrey6,
           ),
+          validator: validator,
         ),
-        validator: validator,
       );
     }
   }

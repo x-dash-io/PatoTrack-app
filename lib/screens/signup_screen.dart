@@ -1,7 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'login_screen.dart';
 import '../widgets/loading_widgets.dart';
 
@@ -111,14 +113,31 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return CupertinoPageScaffold(
-      backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.white,
-      navigationBar: CupertinoNavigationBar(
-        middle: const Text('Create Account'),
-        backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.white,
-        border: null,
+    // Set status bar style
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
       ),
-      child: SafeArea(
+    );
+
+    return Scaffold(
+      backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.white,
+      appBar: AppBar(
+        title: Text(
+          'Create Account',
+          style: GoogleFonts.inter(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+      ),
+      body: SafeArea(
         child: LoadingOverlay(
           isLoading: _isLoading,
           message: 'Creating account...',
@@ -154,7 +173,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   // Title
                   Text(
                     'Get Started',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
                       color: isDark
@@ -168,11 +187,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                   Text(
                     'Create your account to start tracking',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 17,
                       color: isDark
-                          ? CupertinoColors.secondaryLabel
-                          : CupertinoColors.secondaryLabel.darkColor,
+                          ? Colors.white70
+                          : Colors.black87,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -220,15 +239,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     placeholder: 'Password',
                     obscureText: !_isPasswordVisible,
                     prefix: const Icon(CupertinoIcons.lock, size: 20),
-                    suffix: CupertinoButton(
-                      padding: EdgeInsets.zero,
-                      minSize: 0,
+                    suffix: IconButton(
                       onPressed: () {
                         setState(() {
                           _isPasswordVisible = !_isPasswordVisible;
                         });
                       },
-                      child: Icon(
+                      icon: Icon(
                         _isPasswordVisible
                             ? CupertinoIcons.eye_slash
                             : CupertinoIcons.eye,
@@ -252,15 +269,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   const SizedBox(height: 32),
 
                   // Sign up button
-                  CupertinoButton.filled(
-                    onPressed: _isLoading ? null : _signUp,
-                    borderRadius: BorderRadius.circular(12),
-                    disabledColor: CupertinoColors.systemGrey,
-                    child: const Text(
-                      'Create Account',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _signUp,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: CupertinoColors.activeBlue,
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor: CupertinoColors.systemGrey,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        'Create Account',
+                        style: GoogleFonts.inter(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
@@ -273,28 +300,27 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     children: [
                       Text(
                         'Already have an account? ',
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           fontSize: 15,
                           color: isDark
-                              ? CupertinoColors.secondaryLabel
-                              : CupertinoColors.secondaryLabel.darkColor,
+                              ? Colors.white70
+                              : Colors.black87,
                         ),
                       ),
-                      CupertinoButton(
-                        padding: EdgeInsets.zero,
-                        minSize: 0,
-                        onPressed: () {
+                      GestureDetector(
+                        onTap: () {
                           Navigator.of(context).push(
-                            CupertinoPageRoute(
+                            MaterialPageRoute(
                               builder: (context) => const LoginScreen(),
                             ),
                           );
                         },
-                        child: const Text(
+                        child: Text(
                           'Sign In',
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
+                            color: CupertinoColors.activeBlue,
                           ),
                         ),
                       ),
@@ -333,6 +359,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
           keyboardType: keyboardType,
           obscureText: obscureText,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          style: GoogleFonts.inter(),
+          placeholderStyle: GoogleFonts.inter(
+            color: CupertinoColors.placeholderText,
+          ),
           prefix: prefix != null
               ? Padding(
                   padding: const EdgeInsets.only(left: 12),
@@ -345,19 +375,37 @@ class _SignUpScreenState extends State<SignUpScreen> {
       );
     } else {
       // Android fallback with validation
-      return TextFormField(
-        controller: controller,
-        keyboardType: keyboardType,
-        obscureText: obscureText,
-        decoration: InputDecoration(
-          labelText: placeholder,
-          prefixIcon: prefix,
-          suffixIcon: suffix,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+      return Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        child: TextFormField(
+          controller: controller,
+          keyboardType: keyboardType,
+          obscureText: obscureText,
+          style: GoogleFonts.inter(),
+          decoration: InputDecoration(
+            labelText: placeholder,
+            labelStyle: GoogleFonts.inter(),
+            prefixIcon: prefix,
+            suffixIcon: suffix,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: CupertinoColors.activeBlue, width: 2),
+            ),
+            filled: true,
+            fillColor: Theme.of(context).brightness == Brightness.dark
+                ? CupertinoColors.systemGrey6.darkColor
+                : CupertinoColors.systemGrey6,
           ),
+          validator: validator,
         ),
-        validator: validator,
       );
     }
   }
