@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'login_screen.dart';
 import 'signup_screen.dart';
@@ -20,25 +21,25 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       title: 'Track Your Expenses',
       description: 'Easily record and categorize your daily expenses and income to stay on top of your finances.',
       icon: Icons.receipt_long_rounded,
-      color: CupertinoColors.systemBlue,
+      color: const Color(0xFF007AFF), // iOS Blue
     ),
     OnboardingSlide(
       title: 'Bill Reminders',
       description: 'Never miss a payment again. Set up bill reminders and get notified before due dates.',
       icon: Icons.calendar_today_rounded,
-      color: CupertinoColors.systemOrange,
+      color: const Color(0xFFFF9500), // iOS Orange
     ),
     OnboardingSlide(
       title: 'Manage Categories',
       description: 'Organize your transactions with custom categories. Track business and personal expenses separately.',
       icon: Icons.category_rounded,
-      color: CupertinoColors.systemPurple,
+      color: const Color(0xFFAF52DE), // iOS Purple
     ),
     OnboardingSlide(
       title: 'Reports & Analytics',
       description: 'Visualize your spending patterns with charts and reports. Make informed financial decisions.',
       icon: Icons.bar_chart_rounded,
-      color: CupertinoColors.systemGreen,
+      color: const Color(0xFF34C759), // iOS Green
     ),
   ];
 
@@ -53,7 +54,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     await prefs.setBool('onboarding_completed', true);
     if (mounted) {
       Navigator.of(context).pushReplacement(
-        CupertinoPageRoute(builder: (context) => const LoginScreen()),
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
       );
     }
   }
@@ -76,23 +77,29 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : const Color(0xFF1C1C1E);
+    final secondaryTextColor = isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73);
+    final backgroundColor = isDark ? const Color(0xFF000000) : const Color(0xFFFFFFFF);
 
-    return CupertinoPageScaffold(
-      backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.white,
-      child: SafeArea(
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      body: SafeArea(
         child: Column(
           children: [
             // Skip button
             Align(
               alignment: Alignment.topRight,
-              child: CupertinoButton(
-                padding: const EdgeInsets.all(16),
+              child: TextButton(
                 onPressed: _skipToLogin,
-                child: const Text(
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.all(16),
+                ),
+                child: Text(
                   'Skip',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
+                    color: CupertinoColors.activeBlue,
                   ),
                 ),
               ),
@@ -109,7 +116,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 },
                 itemCount: _slides.length,
                 itemBuilder: (context, index) {
-                  return _OnboardingSlideWidget(slide: _slides[index]);
+                  return _OnboardingSlideWidget(
+                    slide: _slides[index],
+                    textColor: textColor,
+                    secondaryTextColor: secondaryTextColor,
+                  );
                 },
               ),
             ),
@@ -135,14 +146,21 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   // Next/Get Started button
                   SizedBox(
                     width: double.infinity,
-                    child: CupertinoButton.filled(
+                    child: ElevatedButton(
                       onPressed: _nextPage,
-                      borderRadius: BorderRadius.circular(12),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: CupertinoColors.activeBlue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                       child: Text(
                         _currentPage == _slides.length - 1
                             ? 'Get Started'
                             : 'Next',
-                        style: const TextStyle(
+                        style: GoogleFonts.inter(
                           fontSize: 17,
                           fontWeight: FontWeight.w600,
                         ),
@@ -155,19 +173,20 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     // Sign in button
                     SizedBox(
                       width: double.infinity,
-                      child: CupertinoButton(
+                      child: TextButton(
                         onPressed: () {
                           Navigator.of(context).push(
-                            CupertinoPageRoute(
+                            MaterialPageRoute(
                               builder: (context) => const LoginScreen(),
                             ),
                           );
                         },
-                        child: const Text(
+                        child: Text(
                           'Already have an account? Sign In',
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
+                            color: CupertinoColors.activeBlue,
                           ),
                         ),
                       ),
@@ -177,19 +196,20 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     // Sign up button
                     SizedBox(
                       width: double.infinity,
-                      child: CupertinoButton(
+                      child: TextButton(
                         onPressed: () {
                           Navigator.of(context).push(
-                            CupertinoPageRoute(
+                            MaterialPageRoute(
                               builder: (context) => const SignUpScreen(),
                             ),
                           );
                         },
-                        child: const Text(
+                        child: Text(
                           'Create Account',
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
+                            color: CupertinoColors.activeBlue,
                           ),
                         ),
                       ),
@@ -223,12 +243,19 @@ class OnboardingSlide {
 
 class _OnboardingSlideWidget extends StatelessWidget {
   final OnboardingSlide slide;
+  final Color textColor;
+  final Color secondaryTextColor;
 
-  const _OnboardingSlideWidget({required this.slide});
+  const _OnboardingSlideWidget({
+    required this.slide,
+    required this.textColor,
+    required this.secondaryTextColor,
+  });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark ? const Color(0xFF000000) : const Color(0xFFFFFFFF);
 
     return Padding(
       padding: const EdgeInsets.all(32.0),
@@ -240,7 +267,7 @@ class _OnboardingSlideWidget extends StatelessWidget {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              color: slide.color.withOpacity(0.1),
+              color: slide.color.withOpacity(isDark ? 0.2 : 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -255,10 +282,11 @@ class _OnboardingSlideWidget extends StatelessWidget {
           // Title
           Text(
             slide.title,
-            style: TextStyle(
-              fontSize: 28,
+            style: GoogleFonts.inter(
+              fontSize: 30,
               fontWeight: FontWeight.bold,
-              color: isDark ? CupertinoColors.white : CupertinoColors.black,
+              color: textColor,
+              height: 1.2,
             ),
             textAlign: TextAlign.center,
           ),
@@ -268,12 +296,12 @@ class _OnboardingSlideWidget extends StatelessWidget {
           // Description
           Text(
             slide.description,
-            style: TextStyle(
+            style: GoogleFonts.inter(
               fontSize: 17,
+              fontWeight: FontWeight.w400,
               height: 1.5,
-              color: isDark
-                  ? CupertinoColors.secondaryLabel
-                  : CupertinoColors.secondaryLabel.darkColor,
+              color: secondaryTextColor,
+              letterSpacing: -0.2,
             ),
             textAlign: TextAlign.center,
           ),
@@ -298,11 +326,9 @@ class _PageIndicator extends StatelessWidget {
       decoration: BoxDecoration(
         color: isActive
             ? CupertinoColors.activeBlue
-            : CupertinoColors.systemGrey4,
+            : CupertinoColors.tertiarySystemFill,
         borderRadius: BorderRadius.circular(4),
       ),
     );
   }
 }
-
-
