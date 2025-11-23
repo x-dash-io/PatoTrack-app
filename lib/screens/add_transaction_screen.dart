@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../helpers/database_helper.dart';
 import '../models/category.dart';
 import '../models/transaction.dart' as model;
 import '../widgets/modern_date_picker.dart';
+import '../widgets/loading_widgets.dart';
 import 'manage_categories_screen.dart';
 
 class AddTransactionScreen extends StatefulWidget {
@@ -94,63 +97,139 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: theme.brightness == Brightness.dark
+            ? Brightness.light
+            : Brightness.dark,
+      ),
+    );
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Transaction'),
+        title: Text(
+          'Add Transaction',
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+        ),
+        elevation: 0,
       ),
       body: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(16.0),
           children: [
-            SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(
+            // Transaction Type
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: SegmentedButton<String>(
+                segments: [
+                  ButtonSegment(
                     value: 'expense',
-                    label: Text('Expense'),
-                    icon: Icon(Icons.arrow_upward)),
-                ButtonSegment(
+                    label: Text(
+                      'Expense',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                    ),
+                    icon: const Icon(Icons.arrow_upward, size: 18),
+                  ),
+                  ButtonSegment(
                     value: 'income',
-                    label: Text('Income'),
-                    icon: Icon(Icons.arrow_downward)),
-              ],
-              selected: {_transactionType},
-              onSelectionChanged: (Set<String> newSelection) {
-                setState(() {
-                  _transactionType = newSelection.first;
-                  _selectedCategoryId = null;
-                  _loadCategories();
-                });
-              },
+                    label: Text(
+                      'Income',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                    ),
+                    icon: const Icon(Icons.arrow_downward, size: 18),
+                  ),
+                ],
+                selected: {_transactionType},
+                onSelectionChanged: (Set<String> newSelection) {
+                  setState(() {
+                    _transactionType = newSelection.first;
+                    _selectedCategoryId = null;
+                    _loadCategories();
+                  });
+                },
+              ),
             ),
             const SizedBox(height: 16),
-            SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(
+
+            // Tag Type
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: SegmentedButton<String>(
+                segments: [
+                  ButtonSegment(
                     value: 'business',
-                    label: Text('Business'),
-                    icon: Icon(Icons.business_center)),
-                ButtonSegment(
+                    label: Text(
+                      'Business',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                    ),
+                    icon: const Icon(Icons.business_center, size: 18),
+                  ),
+                  ButtonSegment(
                     value: 'personal',
-                    label: Text('Personal'),
-                    icon: Icon(Icons.person)),
-              ],
-              selected: {_selectedTag},
-              onSelectionChanged: (Set<String> newSelection) {
-                setState(() {
-                  _selectedTag = newSelection.first;
-                });
-              },
+                    label: Text(
+                      'Personal',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                    ),
+                    icon: const Icon(Icons.person, size: 18),
+                  ),
+                ],
+                selected: {_selectedTag},
+                onSelectionChanged: (Set<String> newSelection) {
+                  setState(() {
+                    _selectedTag = newSelection.first;
+                  });
+                },
+              ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
+
+            // Amount Field
             TextFormField(
               controller: _amountController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              style: GoogleFonts.inter(),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+              ],
+              decoration: InputDecoration(
                 labelText: 'Amount',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.attach_money),
+                labelStyle: GoogleFonts.inter(),
+                prefixIcon: const Icon(Icons.attach_money),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: colorScheme.primary,
+                    width: 2,
+                  ),
+                ),
+                filled: true,
+                fillColor: isDark
+                    colorScheme.surfaceContainerHighest,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -163,6 +242,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               },
             ),
             const SizedBox(height: 16),
+
+            // Category Field
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -171,26 +252,52 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     future: _categoriesFuture,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
+                        return const ModernLoadingIndicator();
                       }
 
                       final categories = snapshot.data ?? [];
 
                       return DropdownButtonFormField<int>(
                         value: _selectedCategoryId,
+                        style: GoogleFonts.inter(),
                         decoration: InputDecoration(
                           labelText: 'Category',
-                          border: const OutlineInputBorder(),
+                          labelStyle: GoogleFonts.inter(),
                           prefixIcon: Icon(
                             _transactionType == 'expense'
                                 ? Icons.category
                                 : Icons.source,
                           ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: colorScheme.primary,
+                              width: 2,
+                            ),
+                          ),
+                          filled: true,
+                          fillColor: colorScheme.surfaceContainerHighest,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 16,
+                          ),
                         ),
                         items: categories.map((category) {
                           return DropdownMenuItem<int>(
                             value: category.id,
-                            child: Text(category.name),
+                            child: Text(
+                              category.name,
+                              style: GoogleFonts.inter(),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           );
                         }).toList(),
                         onChanged: (int? newValue) {
@@ -205,56 +312,122 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                IconButton.filledTonal(
-                  icon: const Icon(Icons.settings_outlined),
-                  tooltip: 'Manage Categories',
-                  onPressed: () async {
-                    await Navigator.of(context).push(
-                      MaterialPageRoute(
-                          builder: (context) =>
-                              const ManageCategoriesScreen()),
-                    );
-                    _loadCategories();
-                  },
-                )
+                Container(
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.settings_outlined),
+                    tooltip: 'Manage Categories',
+                    onPressed: () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const ManageCategoriesScreen(),
+                        ),
+                      );
+                      _loadCategories();
+                    },
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 16),
+
+            // Description Field
             TextFormField(
               controller: _descriptionController,
-              decoration: const InputDecoration(
+              style: GoogleFonts.inter(),
+              maxLines: 3,
+              decoration: InputDecoration(
                 labelText: 'Description / Note (Optional)',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.description),
+                labelStyle: GoogleFonts.inter(),
+                prefixIcon: const Icon(Icons.description),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: colorScheme.primary,
+                    width: 2,
+                  ),
+                ),
+                filled: true,
+                fillColor: isDark
+                    colorScheme.surfaceContainerHighest,
+                contentPadding: const EdgeInsets.all(16),
               ),
             ),
             const SizedBox(height: 16),
+
+            // Date Field
             GestureDetector(
               onTap: _pickDate,
               child: AbsorbPointer(
                 child: TextFormField(
                   controller: TextEditingController(
-                    text: DateFormat('yyyy-MM-dd').format(_selectedDate),
+                    text: DateFormat('MMMM dd, yyyy').format(_selectedDate),
                   ),
-                  decoration: const InputDecoration(
+                  style: GoogleFonts.inter(),
+                  decoration: InputDecoration(
                     labelText: 'Date',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.calendar_today),
+                    labelStyle: GoogleFonts.inter(),
+                    prefixIcon: const Icon(Icons.calendar_today),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: colorScheme.primary,
+                        width: 2,
+                      ),
+                    ),
+                    filled: true,
+                    fillColor: colorScheme.surfaceContainerHighest,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            const SizedBox(height: 32),
+
+            // Save Button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                ),
+                onPressed: _saveTransaction,
+                child: Text(
+                  'Save Transaction',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-              onPressed: _saveTransaction,
-              child: const Text('Save Transaction',
-                  style: TextStyle(fontSize: 16)),
             ),
           ],
         ),

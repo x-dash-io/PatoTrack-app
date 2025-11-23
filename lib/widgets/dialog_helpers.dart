@@ -1,9 +1,9 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-/// Modern dialog helpers using Cupertino design language
+/// Modern Material Design 3 dialog helpers
 
-/// Shows a modern confirmation dialog with iOS-style design
+/// Shows a modern confirmation dialog with Material 3 design
 Future<bool?> showModernConfirmDialog({
   required BuildContext context,
   required String title,
@@ -12,48 +12,49 @@ Future<bool?> showModernConfirmDialog({
   String cancelText = 'Cancel',
   bool isDestructive = false,
 }) async {
-  if (Theme.of(context).platform == TargetPlatform.iOS) {
-    return showCupertinoDialog<bool>(
-      context: context,
-      builder: (context) => CupertinoAlertDialog(
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(cancelText),
-          ),
-          CupertinoDialogAction(
-            isDestructiveAction: isDestructive,
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(confirmText),
-          ),
-        ],
+  final theme = Theme.of(context);
+  final colorScheme = theme.colorScheme;
+
+  return showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(28),
       ),
-    );
-  } else {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(cancelText),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(
-              foregroundColor: isDestructive ? Colors.red : null,
-            ),
-            child: Text(confirmText),
-          ),
-        ],
+      title: Text(
+        title,
+        style: GoogleFonts.inter(fontWeight: FontWeight.w600),
       ),
-    );
-  }
+      content: Text(
+        message,
+        style: GoogleFonts.inter(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text(
+            cancelText,
+            style: GoogleFonts.inter(),
+          ),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          style: FilledButton.styleFrom(
+            backgroundColor: isDestructive
+                ? colorScheme.error
+                : colorScheme.primary,
+            foregroundColor: isDestructive
+                ? colorScheme.onError
+                : colorScheme.onPrimary,
+          ),
+          child: Text(
+            confirmText,
+            style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 /// Shows a modern information dialog
@@ -63,36 +64,31 @@ Future<void> showModernInfoDialog({
   required String message,
   String buttonText = 'OK',
 }) async {
-  if (Theme.of(context).platform == TargetPlatform.iOS) {
-    return showCupertinoDialog(
-      context: context,
-      builder: (context) => CupertinoAlertDialog(
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(buttonText),
-          ),
-        ],
+  return showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(28),
       ),
-    );
-  } else {
-    return showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(buttonText),
-          ),
-        ],
+      title: Text(
+        title,
+        style: GoogleFonts.inter(fontWeight: FontWeight.w600),
       ),
-    );
-  }
+      content: Text(
+        message,
+        style: GoogleFonts.inter(),
+      ),
+      actions: [
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(
+            buttonText,
+            style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 /// Shows a modern alert dialog with custom actions
@@ -100,135 +96,156 @@ Future<T?> showModernAlertDialog<T>({
   required BuildContext context,
   required String title,
   String? message,
-  List<CupertinoDialogAction>? actions,
-  List<Widget>? materialActions,
+  List<Widget>? actions,
 }) async {
-  if (Theme.of(context).platform == TargetPlatform.iOS) {
-    return showCupertinoDialog<T>(
-      context: context,
-      builder: (context) => CupertinoAlertDialog(
-        title: Text(title),
-        content: message != null ? Text(message) : null,
-        actions: actions ?? [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
+  return showDialog<T>(
+    context: context,
+    builder: (context) => AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(28),
       ),
-    );
-  } else {
-    return showDialog<T>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: message != null ? Text(message) : null,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        actions: materialActions ?? [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
+      title: Text(
+        title,
+        style: GoogleFonts.inter(fontWeight: FontWeight.w600),
       ),
-    );
-  }
+      content: message != null
+          ? Text(
+              message,
+              style: GoogleFonts.inter(),
+            )
+          : null,
+      actions: actions ??
+          [
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'OK',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+    ),
+  );
 }
 
-/// Shows a modern bottom sheet (action sheet on iOS)
+/// Shows a modern bottom sheet with Material 3 styling
 Future<T?> showModernBottomSheet<T>({
   required BuildContext context,
   required Widget child,
   bool isDismissible = true,
   bool enableDrag = true,
+  bool isScrollControlled = false,
+  double? height,
 }) async {
-  if (Theme.of(context).platform == TargetPlatform.iOS) {
-    return showCupertinoModalPopup<T>(
-      context: context,
-      barrierDismissible: isDismissible,
-      builder: (context) => child,
-    );
-  } else {
-    return showModalBottomSheet<T>(
-      context: context,
-      isDismissible: isDismissible,
-      enableDrag: enableDrag,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+  return showModalBottomSheet<T>(
+    context: context,
+    isDismissible: isDismissible,
+    enableDrag: enableDrag,
+    isScrollControlled: isScrollControlled,
+    backgroundColor: Colors.transparent,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+    ),
+    builder: (context) => Container(
+      height: height,
+      constraints: height == null
+          ? BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.9,
+            )
+          : null,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      builder: (context) => child,
-    );
-  }
+      child: child,
+    ),
+  );
 }
 
-/// Shows an action sheet with options (iOS-style)
+/// Shows an action sheet with options (Material 3 style)
 Future<T?> showActionSheet<T>({
   required BuildContext context,
   required String title,
   required List<ActionSheetAction<T>> actions,
   String? cancelText,
 }) async {
-  if (Theme.of(context).platform == TargetPlatform.iOS) {
-    return showCupertinoModalPopup<T>(
-      context: context,
-      builder: (context) => CupertinoActionSheet(
-        title: Text(title),
-        actions: actions
-            .where((a) => !a.isCancel)
-            .map((action) => CupertinoActionSheetAction(
-                  onPressed: () => Navigator.of(context).pop(action.value),
-                  child: Text(action.label),
-                  isDestructiveAction: action.isDestructive,
-                ))
-            .toList(),
-        cancelButton: cancelText != null
-            ? CupertinoActionSheetAction(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text(cancelText),
-              )
-            : null,
+  final theme = Theme.of(context);
+  final colorScheme = theme.colorScheme;
+
+  return showModalBottomSheet<T>(
+    context: context,
+    backgroundColor: Colors.transparent,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+    ),
+    builder: (context) => Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
-    );
-  } else {
-    return showModalBottomSheet<T>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Column(
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              title,
-              style: Theme.of(context).textTheme.titleLarge,
+          // Handle bar
+          Container(
+            width: 40,
+            height: 4,
+            margin: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: colorScheme.onSurfaceVariant.withOpacity(0.4),
+              borderRadius: BorderRadius.circular(2),
             ),
           ),
-          ...actions
-              .where((a) => !a.isCancel)
-              .map((action) => ListTile(
-                    title: Text(
-                      action.label,
-                      style: TextStyle(
-                        color: action.isDestructive ? Colors.red : null,
-                      ),
-                    ),
-                    onTap: () => Navigator.of(context).pop(action.value),
-                  )),
-          if (cancelText != null)
-            ListTile(
-              title: Text(
-                cancelText,
-                style: Theme.of(context).textTheme.titleMedium,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Text(
+              title,
+              style: GoogleFonts.inter(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
               ),
-              onTap: () => Navigator.of(context).pop(),
             ),
-          SizedBox(height: MediaQuery.of(context).padding.bottom),
+          ),
+          const Divider(height: 1),
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                ...actions
+                    .where((a) => !a.isCancel)
+                    .map((action) => ListTile(
+                          title: Text(
+                            action.label,
+                            style: GoogleFonts.inter(
+                              color: action.isDestructive
+                                  ? colorScheme.error
+                                  : null,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          onTap: () => Navigator.of(context).pop(action.value),
+                        )),
+                if (cancelText != null) ...[
+                  const Divider(height: 1),
+                  ListTile(
+                    title: Text(
+                      cancelText,
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    onTap: () => Navigator.of(context).pop(),
+                  ),
+                ],
+                SizedBox(height: MediaQuery.of(context).padding.bottom),
+              ],
+            ),
+          ),
         ],
       ),
-    );
-  }
+    ),
+  );
 }
 
 /// Action sheet action model
@@ -245,5 +262,3 @@ class ActionSheetAction<T> {
     this.isCancel = false,
   });
 }
-
-

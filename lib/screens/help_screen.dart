@@ -1,22 +1,36 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'faq_screen.dart';
+import '../widgets/dialog_helpers.dart';
 
 class HelpScreen extends StatelessWidget {
   const HelpScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-    return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: const Text('Help & Support'),
-        backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.white,
-        border: null,
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: theme.brightness == Brightness.dark
+            ? Brightness.light
+            : Brightness.dark,
       ),
-      child: SafeArea(
+    );
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Help & Support',
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+        ),
+        elevation: 0,
+      ),
+      body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -28,13 +42,13 @@ class HelpScreen extends StatelessWidget {
                 width: 100,
                 height: 100,
                 decoration: BoxDecoration(
-                  color: CupertinoColors.activeBlue.withOpacity(0.1),
+                  color: colorScheme.primaryContainer,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  CupertinoIcons.question_circle_fill,
+                child: Icon(
+                  Icons.help_outline,
                   size: 60,
-                  color: CupertinoColors.activeBlue,
+                  color: colorScheme.primary,
                 ),
               ),
             ),
@@ -45,10 +59,10 @@ class HelpScreen extends StatelessWidget {
             _HelpSection(
               title: 'Frequently Asked Questions',
               description: 'Find answers to common questions',
-              icon: CupertinoIcons.question_circle,
+              icon: Icons.question_answer_outlined,
               onTap: () {
                 Navigator.of(context).push(
-                  CupertinoPageRoute(builder: (context) => const FaqScreen()),
+                  MaterialPageRoute(builder: (context) => const FaqScreen()),
                 );
               },
             ),
@@ -59,7 +73,7 @@ class HelpScreen extends StatelessWidget {
             _HelpSection(
               title: 'Contact Support',
               description: 'Get help via WhatsApp',
-              icon: CupertinoIcons.chat_bubble_text,
+              icon: Icons.chat_outlined,
               onTap: () => _launchWhatsApp(context),
             ),
 
@@ -69,18 +83,18 @@ class HelpScreen extends StatelessWidget {
             _HelpSection(
               title: 'Quick Start Guide',
               description: 'Learn how to get started with PatoTrack',
-              icon: CupertinoIcons.book,
+              icon: Icons.menu_book_outlined,
               onTap: () => _showQuickStartGuide(context),
             ),
 
             const SizedBox(height: 32),
 
             // Help Articles
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               child: Text(
                 'Help Articles',
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
@@ -90,25 +104,25 @@ class HelpScreen extends StatelessWidget {
             _HelpArticleCard(
               title: 'Adding Your First Transaction',
               description: 'Learn how to record income and expenses',
-              icon: CupertinoIcons.plus_circle,
+              icon: Icons.add_circle_outline,
             ),
 
             _HelpArticleCard(
               title: 'Setting Up Bill Reminders',
               description: 'Never miss a payment with automatic reminders',
-              icon: CupertinoIcons.calendar,
+              icon: Icons.calendar_today_outlined,
             ),
 
             _HelpArticleCard(
               title: 'Managing Categories',
               description: 'Organize your transactions with custom categories',
-              icon: CupertinoIcons.folder,
+              icon: Icons.folder_outlined,
             ),
 
             _HelpArticleCard(
               title: 'Understanding Reports',
               description: 'Make sense of your spending with visual reports',
-              icon: CupertinoIcons.chart_bar,
+              icon: Icons.bar_chart_outlined,
             ),
 
             const SizedBox(height: 32),
@@ -117,9 +131,9 @@ class HelpScreen extends StatelessWidget {
             Center(
               child: Text(
                 'PatoTrack v1.0.0',
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   fontSize: 14,
-                  color: CupertinoColors.secondaryLabel,
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
             ),
@@ -143,50 +157,34 @@ class HelpScreen extends StatelessWidget {
         await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
       } else {
         if (context.mounted) {
-          showCupertinoDialog(
+          await showModernInfoDialog(
             context: context,
-            builder: (context) => CupertinoAlertDialog(
-              title: const Text('Cannot Open WhatsApp'),
-              content: const Text(
-                'Please make sure WhatsApp is installed on your device.',
-              ),
-              actions: [
-                CupertinoDialogAction(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('OK'),
-                ),
-              ],
-            ),
+            title: 'Cannot Open WhatsApp',
+            message: 'Please make sure WhatsApp is installed on your device.',
           );
         }
       }
     } catch (e) {
       if (context.mounted) {
-        showCupertinoDialog(
+        await showModernAlertDialog(
           context: context,
-          builder: (context) => CupertinoAlertDialog(
-            title: const Text('Error'),
-            content: Text('An error occurred: $e'),
-            actions: [
-              CupertinoDialogAction(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
+          title: 'Error',
+          message: 'An error occurred: $e',
         );
       }
     }
   }
 
   void _showQuickStartGuide(BuildContext context) {
-    showCupertinoModalPopup(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.7,
-        decoration: const BoxDecoration(
-          color: CupertinoColors.systemBackground,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        height: MediaQuery.of(context).size.height * 0.85,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: SafeArea(
           child: Column(
@@ -195,32 +193,37 @@ class HelpScreen extends StatelessWidget {
               Container(
                 width: 40,
                 height: 4,
-                margin: const EdgeInsets.symmetric(vertical: 8),
+                margin: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: CupertinoColors.separator,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.4),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Quick Start Guide',
-                      style: TextStyle(
+                      style: GoogleFonts.inter(
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    CupertinoButton(
-                      padding: EdgeInsets.zero,
+                    TextButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Done'),
+                      child: Text(
+                        'Done',
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
+              const Divider(height: 1),
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.all(16),
@@ -281,62 +284,61 @@ class _HelpSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isDark
-              ? CupertinoColors.systemGrey6.darkColor
-              : CupertinoColors.systemGrey6,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: CupertinoColors.activeBlue.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
+    return Card(
+      margin: EdgeInsets.zero,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  icon,
+                  color: colorScheme.onPrimaryContainer,
+                  size: 28,
+                ),
               ),
-              child: Icon(
-                icon,
-                color: CupertinoColors.activeBlue,
-                size: 26,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: GoogleFonts.inter(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    description,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: CupertinoColors.secondaryLabel,
+                    const SizedBox(height: 4),
+                    Text(
+                      description,
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const Icon(
-              CupertinoIcons.chevron_right,
-              size: 20,
-              color: CupertinoColors.secondaryLabel,
-            ),
-          ],
+              Icon(
+                Icons.chevron_right,
+                size: 24,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -356,44 +358,45 @@ class _HelpArticleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-    return Container(
+    return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark
-            ? CupertinoColors.systemGrey6.darkColor
-            : CupertinoColors.systemGrey6,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 24, color: CupertinoColors.activeBlue),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  description,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: CupertinoColors.secondaryLabel,
-                  ),
-                ),
-              ],
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 28,
+              color: colorScheme.primary,
             ),
-          ),
-        ],
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    description,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -412,24 +415,28 @@ class _GuideStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 24),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 32,
-            height: 32,
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
-              color: CupertinoColors.activeBlue,
+              color: colorScheme.primary,
               shape: BoxShape.circle,
             ),
             child: Center(
               child: Text(
                 '$number',
-                style: const TextStyle(
-                  color: Colors.white,
+                style: GoogleFonts.inter(
+                  color: colorScheme.onPrimary,
                   fontWeight: FontWeight.bold,
+                  fontSize: 16,
                 ),
               ),
             ),
@@ -441,18 +448,18 @@ class _GuideStep extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: GoogleFonts.inter(
                     fontSize: 17,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text(
                   description,
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     fontSize: 15,
-                    color: CupertinoColors.secondaryLabel,
-                    height: 1.4,
+                    color: colorScheme.onSurfaceVariant,
+                    height: 1.5,
                   ),
                 ),
               ],
@@ -463,5 +470,3 @@ class _GuideStep extends StatelessWidget {
     );
   }
 }
-
-

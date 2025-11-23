@@ -260,7 +260,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _showFaqScreen() {
     Navigator.of(context).push(
-      CupertinoPageRoute(builder: (context) => const FaqScreen()),
+      MaterialPageRoute(builder: (context) => const FaqScreen()),
     );
   }
 
@@ -513,7 +513,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               title: const Text('Help & Support'),
               onTap: () {
                 Navigator.of(context).push(
-                  CupertinoPageRoute(builder: (context) => const HelpScreen()),
+                  MaterialPageRoute(builder: (context) => const HelpScreen()),
                 );
               },
             ),

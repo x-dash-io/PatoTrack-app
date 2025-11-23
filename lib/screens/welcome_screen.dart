@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -22,25 +21,25 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       title: 'Track Your Expenses',
       description: 'Easily record and categorize your daily expenses and income to stay on top of your finances.',
       icon: Icons.receipt_long_rounded,
-      color: const Color(0xFF007AFF), // iOS Blue
+      gradient: [Color(0xFF007AFF), Color(0xFF0051D5)],
     ),
     OnboardingSlide(
       title: 'Bill Reminders',
       description: 'Never miss a payment again. Set up bill reminders and get notified before due dates.',
       icon: Icons.calendar_today_rounded,
-      color: const Color(0xFFFF9500), // iOS Orange
+      gradient: [Color(0xFFFF9500), Color(0xFFFF6B00)],
     ),
     OnboardingSlide(
       title: 'Manage Categories',
       description: 'Organize your transactions with custom categories. Track business and personal expenses separately.',
       icon: Icons.category_rounded,
-      color: const Color(0xFFAF52DE), // iOS Purple
+      gradient: [Color(0xFFAF52DE), Color(0xFF8E44AD)],
     ),
     OnboardingSlide(
       title: 'Reports & Analytics',
       description: 'Visualize your spending patterns with charts and reports. Make informed financial decisions.',
       icon: Icons.bar_chart_rounded,
-      color: const Color(0xFF34C759), // iOS Green
+      gradient: [Color(0xFF34C759), Color(0xFF27AE60)],
     ),
   ];
 
@@ -77,162 +76,173 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : const Color(0xFF1C1C1E);
-    final secondaryTextColor = isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73);
-    final backgroundColor = isDark ? const Color(0xFF000000) : const Color(0xFFFFFFFF);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-    // Set status bar style
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+        statusBarIconBrightness: theme.brightness == Brightness.dark
+            ? Brightness.light
+            : Brightness.dark,
+        statusBarBrightness: theme.brightness == Brightness.dark
+            ? Brightness.dark
+            : Brightness.light,
         systemNavigationBarColor: Colors.transparent,
-        systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        systemNavigationBarIconBrightness:
+            theme.brightness == Brightness.dark
+                ? Brightness.light
+                : Brightness.dark,
       ),
     );
 
     return Scaffold(
-      backgroundColor: backgroundColor,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Skip button
-            Align(
-              alignment: Alignment.topRight,
-              child: TextButton(
-                onPressed: _skipToLogin,
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.all(16),
-                ),
-                child: Text(
-                  'Skip',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: CupertinoColors.activeBlue,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              colorScheme.primaryContainer.withOpacity(0.3),
+              colorScheme.surface,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Skip button
+              Align(
+                alignment: Alignment.topRight,
+                child: TextButton(
+                  onPressed: _skipToLogin,
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.all(16),
                   ),
-                ),
-              ),
-            ),
-
-            // Page view
-            Expanded(
-              child: PageView.builder(
-                controller: _pageController,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentPage = index;
-                  });
-                },
-                itemCount: _slides.length,
-                itemBuilder: (context, index) {
-                  return _OnboardingSlideWidget(
-                    slide: _slides[index],
-                    textColor: textColor,
-                    secondaryTextColor: secondaryTextColor,
-                  );
-                },
-              ),
-            ),
-
-            // Page indicators
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                _slides.length,
-                (index) => _PageIndicator(
-                  isActive: index == _currentPage,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // Navigation buttons
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              child: Column(
-                children: [
-                  // Next/Get Started button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _nextPage,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: CupertinoColors.activeBlue,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        _currentPage == _slides.length - 1
-                            ? 'Get Started'
-                            : 'Next',
-                        style: GoogleFonts.inter(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                  child: Text(
+                    'Skip',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.primary,
                     ),
                   ),
+                ),
+              ),
 
-                  if (_currentPage == _slides.length - 1) ...[
-                    const SizedBox(height: 12),
-                    // Sign in button
+              // Page view
+              Expanded(
+                child: PageView.builder(
+                  controller: _pageController,
+                  onPageChanged: (index) {
+                    setState(() {
+                      _currentPage = index;
+                    });
+                  },
+                  itemCount: _slides.length,
+                  itemBuilder: (context, index) {
+                    return _OnboardingSlideWidget(
+                      slide: _slides[index],
+                      colorScheme: colorScheme,
+                    );
+                  },
+                ),
+              ),
+
+              // Page indicators
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  _slides.length,
+                  (index) => _PageIndicator(
+                    isActive: index == _currentPage,
+                    colorScheme: colorScheme,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 32),
+
+              // Navigation buttons
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                child: Column(
+                  children: [
+                    // Next/Get Started button
                     SizedBox(
                       width: double.infinity,
-                      child: TextButton(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const LoginScreen(),
-                            ),
-                          );
-                        },
+                      child: FilledButton(
+                        onPressed: _nextPage,
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
                         child: Text(
-                          'Already have an account? Sign In',
+                          _currentPage == _slides.length - 1
+                              ? 'Get Started'
+                              : 'Next',
                           style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: CupertinoColors.activeBlue,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
                     ),
-                  ] else ...[
-                    const SizedBox(height: 12),
-                    // Sign up button
-                    SizedBox(
-                      width: double.infinity,
-                      child: TextButton(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const SignUpScreen(),
+
+                    if (_currentPage == _slides.length - 1) ...[
+                      const SizedBox(height: 12),
+                      // Sign in button
+                      SizedBox(
+                        width: double.infinity,
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const LoginScreen(),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            'Already have an account? Sign In',
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
                             ),
-                          );
-                        },
-                        child: Text(
-                          'Create Account',
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: CupertinoColors.activeBlue,
                           ),
                         ),
                       ),
-                    ),
+                    ] else ...[
+                      const SizedBox(height: 12),
+                      // Sign up button
+                      SizedBox(
+                        width: double.infinity,
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const SignUpScreen(),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            'Create Account',
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
 
-            SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
-          ],
+              SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
+            ],
+          ),
         ),
       ),
     );
@@ -243,61 +253,67 @@ class OnboardingSlide {
   final String title;
   final String description;
   final IconData icon;
-  final Color color;
+  final List<Color> gradient;
 
   OnboardingSlide({
     required this.title,
     required this.description,
     required this.icon,
-    required this.color,
+    required this.gradient,
   });
 }
 
 class _OnboardingSlideWidget extends StatelessWidget {
   final OnboardingSlide slide;
-  final Color textColor;
-  final Color secondaryTextColor;
+  final ColorScheme colorScheme;
 
   const _OnboardingSlideWidget({
     required this.slide,
-    required this.textColor,
-    required this.secondaryTextColor,
+    required this.colorScheme,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? const Color(0xFF000000) : const Color(0xFFFFFFFF);
-
     return Padding(
       padding: const EdgeInsets.all(32.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Icon
+          // Icon with gradient background
           Container(
-            width: 120,
-            height: 120,
+            width: 140,
+            height: 140,
             decoration: BoxDecoration(
-              color: slide.color.withOpacity(isDark ? 0.2 : 0.1),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: slide.gradient,
+              ),
               shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: slide.gradient[0].withOpacity(0.3),
+                  blurRadius: 30,
+                  offset: const Offset(0, 15),
+                ),
+              ],
             ),
             child: Icon(
               slide.icon,
-              size: 60,
-              color: slide.color,
+              size: 70,
+              color: Colors.white,
             ),
           ),
 
-          const SizedBox(height: 48),
+          const SizedBox(height: 56),
 
           // Title
           Text(
             slide.title,
             style: GoogleFonts.inter(
-              fontSize: 30,
+              fontSize: 32,
               fontWeight: FontWeight.bold,
-              color: textColor,
+              color: colorScheme.onSurface,
               height: 1.2,
             ),
             textAlign: TextAlign.center,
@@ -311,9 +327,8 @@ class _OnboardingSlideWidget extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 17,
               fontWeight: FontWeight.w400,
-              height: 1.5,
-              color: secondaryTextColor,
-              letterSpacing: -0.2,
+              height: 1.6,
+              color: colorScheme.onSurfaceVariant,
             ),
             textAlign: TextAlign.center,
           ),
@@ -325,20 +340,25 @@ class _OnboardingSlideWidget extends StatelessWidget {
 
 class _PageIndicator extends StatelessWidget {
   final bool isActive;
+  final ColorScheme colorScheme;
 
-  const _PageIndicator({required this.isActive});
+  const _PageIndicator({
+    required this.isActive,
+    required this.colorScheme,
+  });
 
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
       margin: const EdgeInsets.symmetric(horizontal: 4),
-      width: isActive ? 24 : 8,
+      width: isActive ? 32 : 8,
       height: 8,
       decoration: BoxDecoration(
         color: isActive
-            ? CupertinoColors.activeBlue
-            : CupertinoColors.tertiarySystemFill,
+            ? colorScheme.primary
+            : colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(4),
       ),
     );

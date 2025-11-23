@@ -1,5 +1,6 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class FaqScreen extends StatefulWidget {
   const FaqScreen({super.key});
@@ -11,6 +12,7 @@ class FaqScreen extends StatefulWidget {
 class _FaqScreenState extends State<FaqScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<FAQItem> _filteredFAQs = [];
+  String? _selectedCategory;
 
   final List<FAQItem> _allFAQs = [
     FAQItem(
@@ -110,6 +112,11 @@ class _FaqScreenState extends State<FaqScreen> {
     super.initState();
     _filteredFAQs = _allFAQs;
     _searchController.addListener(_filterFAQs);
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+      ),
+    );
   }
 
   @override
@@ -121,16 +128,26 @@ class _FaqScreenState extends State<FaqScreen> {
   void _filterFAQs() {
     final query = _searchController.text.toLowerCase();
     setState(() {
-      if (query.isEmpty) {
+      if (query.isEmpty && _selectedCategory == null) {
         _filteredFAQs = _allFAQs;
       } else {
-        _filteredFAQs = _allFAQs
-            .where((faq) =>
-                faq.question.toLowerCase().contains(query) ||
-                faq.answer.toLowerCase().contains(query) ||
-                faq.category.toLowerCase().contains(query))
-            .toList();
+        _filteredFAQs = _allFAQs.where((faq) {
+          final matchesQuery = query.isEmpty ||
+              faq.question.toLowerCase().contains(query) ||
+              faq.answer.toLowerCase().contains(query) ||
+              faq.category.toLowerCase().contains(query);
+          final matchesCategory =
+              _selectedCategory == null || faq.category == _selectedCategory;
+          return matchesQuery && matchesCategory;
+        }).toList();
       }
+    });
+  }
+
+  void _selectCategory(String? category) {
+    setState(() {
+      _selectedCategory = category;
+      _filterFAQs();
     });
   }
 
@@ -139,29 +156,67 @@ class _FaqScreenState extends State<FaqScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final categories = _allFAQs.map((e) => e.category).toSet().toList();
 
-    return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: const Text('FAQ'),
-        backgroundColor: isDark ? CupertinoColors.black : CupertinoColors.white,
-        border: null,
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'FAQ',
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+        ),
+        elevation: 0,
       ),
-      child: SafeArea(
+      body: SafeArea(
         child: Column(
           children: [
             // Search bar
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: CupertinoSearchTextField(
+              child: TextField(
                 controller: _searchController,
-                placeholder: 'Search FAQ...',
-                decoration: BoxDecoration(
-                  color: CupertinoColors.systemGrey6,
-                  borderRadius: BorderRadius.circular(12),
+                style: GoogleFonts.inter(),
+                decoration: InputDecoration(
+                  hintText: 'Search FAQ...',
+                  hintStyle: GoogleFonts.inter(
+                    color: isDark ? Colors.white54 : Colors.black54,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: isDark ? Colors.white54 : Colors.black54,
+                  ),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                            _filterFAQs();
+                          },
+                        )
+                      : null,
+                  filled: true,
+                  fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 2,
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                 ),
               ),
             ),
 
-            // Category filter (optional)
+            // Category filter
             SizedBox(
               height: 50,
               child: ListView(
@@ -170,11 +225,8 @@ class _FaqScreenState extends State<FaqScreen> {
                 children: [
                   _CategoryChip(
                     label: 'All',
-                    isSelected: true,
-                    onTap: () {
-                      setState(() => _filteredFAQs = _allFAQs);
-                      _searchController.clear();
-                    },
+                    isSelected: _selectedCategory == null,
+                    onTap: () => _selectCategory(null),
                   ),
                   const SizedBox(width: 8),
                   ...categories.map(
@@ -182,15 +234,8 @@ class _FaqScreenState extends State<FaqScreen> {
                       padding: const EdgeInsets.only(right: 8),
                       child: _CategoryChip(
                         label: category,
-                        isSelected: false,
-                        onTap: () {
-                          setState(() {
-                            _filteredFAQs = _allFAQs
-                                .where((faq) => faq.category == category)
-                                .toList();
-                          });
-                          _searchController.clear();
-                        },
+                        isSelected: _selectedCategory == category,
+                        onTap: () => _selectCategory(category),
                       ),
                     ),
                   ),
@@ -198,20 +243,33 @@ class _FaqScreenState extends State<FaqScreen> {
               ),
             ),
 
+            const SizedBox(height: 8),
+
             // FAQ List
             Expanded(
               child: _filteredFAQs.isEmpty
                   ? Center(
-                      child: Text(
-                        'No FAQs found',
-                        style: TextStyle(
-                          color: CupertinoColors.secondaryLabel,
-                          fontSize: 17,
-                        ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.search_off,
+                            size: 64,
+                            color: isDark ? Colors.white38 : Colors.black38,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No FAQs found',
+                            style: GoogleFonts.inter(
+                              fontSize: 17,
+                              color: isDark ? Colors.white54 : Colors.black54,
+                            ),
+                          ),
+                        ],
                       ),
                     )
                   : ListView.builder(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       itemCount: _filteredFAQs.length,
                       itemBuilder: (context, index) {
                         final faq = _filteredFAQs[index];
@@ -254,33 +312,50 @@ class _FAQCardState extends State<_FAQCard> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: isDark ? CupertinoColors.systemGrey6.darkColor : CupertinoColors.systemGrey6,
-        borderRadius: BorderRadius.circular(12),
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ListTile(
-            title: Text(
-              widget.faq.question,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-              ),
-            ),
-            trailing: Icon(
-              _isExpanded
-                  ? CupertinoIcons.chevron_up
-                  : CupertinoIcons.chevron_down,
-              size: 20,
-            ),
+          InkWell(
             onTap: () {
               setState(() {
                 _isExpanded = !_isExpanded;
               });
             },
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      widget.faq.question,
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                      maxLines: _isExpanded ? null : 2,
+                      overflow: _isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Icon(
+                    _isExpanded ? Icons.expand_less : Icons.expand_more,
+                    size: 24,
+                    color: isDark ? Colors.white70 : Colors.black54,
+                  ),
+                ],
+              ),
+            ),
           ),
           if (_isExpanded)
             Padding(
@@ -288,20 +363,29 @@ class _FAQCardState extends State<_FAQCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    widget.faq.category,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: CupertinoColors.secondaryLabel,
-                      fontWeight: FontWeight.w500,
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      widget.faq.category.toUpperCase(),
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   Text(
                     widget.faq.answer,
-                    style: const TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 15,
-                      height: 1.4,
+                      height: 1.6,
+                      color: isDark ? Colors.white87 : Colors.black87,
                     ),
                   ),
                 ],
@@ -326,22 +410,32 @@ class _CategoryChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        constraints: const BoxConstraints(minWidth: 60),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? CupertinoColors.activeBlue
-              : CupertinoColors.systemGrey6,
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
           label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : CupertinoColors.label,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+          style: GoogleFonts.inter(
+            color: isSelected
+                ? Colors.white
+                : isDark
+                    ? Colors.white87
+                    : Colors.black87,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            fontSize: 14,
           ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
       ),
     );

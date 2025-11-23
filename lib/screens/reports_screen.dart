@@ -333,25 +333,87 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 ),
                 Padding(
                   padding: const EdgeInsets.all(16.0),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        if (_currentUser != null) {
-                          final filterName = _selectedTagFilter.capitalize();
-                          final dateStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
-                          final fileName = 'PatoTrack_${filterName}_Report_$dateStr.pdf';
-
-                          PdfHelper.generateAndSharePdf(fullyFilteredTransactions, _currentUser!.displayName ?? 'User', fileName);
-                        }
-                      },
-                      icon: const Icon(Icons.picture_as_pdf),
-                      label: Text('Export "${_selectedTagFilter.capitalize()}" Report'),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: Column(
+                    children: [
+                      // Info card explaining business-only reports
+                      Card(
+                        color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.info_outline,
+                                color: Theme.of(context).colorScheme.primary,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'PDF reports contain ONLY business transactions, suitable for loan applications and investor presentations.',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            if (_currentUser != null) {
+                              try {
+                                // Filter to only business transactions for PDF
+                                final businessTransactions = fullyFilteredTransactions
+                                    .where((t) => t.tag == 'business')
+                                    .toList();
+                                
+                                if (businessTransactions.isEmpty) {
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('No business transactions found in the selected period. Cannot generate report.'),
+                                        duration: Duration(seconds: 3),
+                                      ),
+                                    );
+                                  }
+                                  return;
+                                }
+                                
+                                final dateStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+                                final fileName = 'PatoTrack_Business_Report_$dateStr.pdf';
+
+                                await PdfHelper.generateAndSharePdf(
+                                  businessTransactions, 
+                                  _currentUser!.displayName ?? 'User', 
+                                  fileName
+                                );
+                              } catch (e) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Error generating report: $e'),
+                                      duration: const Duration(seconds: 3),
+                                    ),
+                                  );
+                                }
+                              }
+                            }
+                          },
+                          icon: const Icon(Icons.picture_as_pdf),
+                          label: const Text('Export Business Report (PDF)'),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
