@@ -113,7 +113,7 @@ class StandardTextFormField extends StatelessWidget {
         filled: true,
         fillColor: theme.brightness == Brightness.dark
             ? colorScheme.surfaceContainerHighest
-            : colorScheme.surfaceContainerHighest.withOpacity(0.6),
+            : Colors.white,
         contentPadding: EdgeInsets.symmetric(
           horizontal: 16,
           vertical: maxLines == null || maxLines! > 1 ? 16 : 16,
@@ -210,7 +210,7 @@ class StandardDropdownFormField<T> extends StatelessWidget {
         filled: true,
         fillColor: theme.brightness == Brightness.dark
             ? colorScheme.surfaceContainerHighest
-            : colorScheme.surfaceContainerHighest.withOpacity(0.6),
+            : Colors.white,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 16,

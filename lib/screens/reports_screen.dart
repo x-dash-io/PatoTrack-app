@@ -794,12 +794,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
           borderRadius: const BorderRadius.vertical(
             top: Radius.circular(12),
           ),
-          gradientFrom: const Offset(0, 1),
-          gradientTo: const Offset(0, 0),
-          gradientColors: [
-            color.withOpacity(0.8),
-            color,
-          ],
         ),
       ],
     );

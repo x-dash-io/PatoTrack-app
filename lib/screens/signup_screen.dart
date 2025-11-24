@@ -61,14 +61,22 @@ class _SignUpScreenState extends State<SignUpScreen> {
       // Update the user's display name
       await userCredential.user?.updateDisplayName(_nameController.text.trim());
 
+      // AuthGate will automatically detect the auth state change via StreamBuilder
+      // and navigate to the dashboard
+      // Clear loading state after a brief delay to allow StreamBuilder to react
       if (mounted) {
-        final theme = Theme.of(context);
-        Fluttertoast.showToast(
-          msg: "Account Created Successfully!",
-          backgroundColor: theme.colorScheme.primary,
-          textColor: theme.colorScheme.onPrimary,
-        );
-        Navigator.pop(context);
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+          final theme = Theme.of(context);
+          Fluttertoast.showToast(
+            msg: "Account Created Successfully!",
+            backgroundColor: theme.colorScheme.primary,
+            textColor: theme.colorScheme.onPrimary,
+          );
+        }
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
@@ -82,7 +90,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
           fontSize: 16.0,
         );
       }
-    } finally {
+    } catch (e) {
+      // Only clear loading state on error
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -103,21 +112,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
         // Verify user is authenticated
         final currentUser = FirebaseAuth.instance.currentUser;
         if (currentUser != null) {
-          // Success - Reset loading state
-          // AuthGate will automatically detect the auth state change via StreamBuilder
+          // Success - AuthGate will automatically detect the auth state change via StreamBuilder
           // and navigate to the dashboard
-          setState(() {
-            _isLoading = false;
-          });
-          
-          // Show success message briefly (AuthGate will handle navigation)
-          Fluttertoast.showToast(
-            msg: 'Account created with Google successfully!',
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            textColor: Theme.of(context).colorScheme.onPrimary,
-          );
+          // Clear loading state after a brief delay to allow StreamBuilder to react
+          await Future.delayed(const Duration(milliseconds: 500));
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+            
+            // Show success message briefly (AuthGate will handle navigation)
+            Fluttertoast.showToast(
+              msg: 'Account created with Google successfully!',
+              toastLength: Toast.LENGTH_SHORT,
+              gravity: ToastGravity.BOTTOM,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              textColor: Theme.of(context).colorScheme.onPrimary,
+            );
+          }
         } else {
           // User not properly authenticated
           if (mounted) {

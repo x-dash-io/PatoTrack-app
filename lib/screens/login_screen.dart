@@ -54,9 +54,22 @@ class _LoginScreenState extends State<LoginScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
-      // The AuthGate will handle navigation on success
+      // AuthGate will automatically detect the auth state change via StreamBuilder
+      // and navigate to the dashboard
+      // Clear loading state after a brief delay to allow StreamBuilder to react
+      if (mounted) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
         final theme = Theme.of(context);
         Fluttertoast.showToast(
           msg: e.message ?? 'Login failed',
@@ -67,13 +80,8 @@ class _LoginScreenState extends State<LoginScreen> {
           fontSize: 16.0,
         );
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
+    // Don't clear loading state in finally - let AuthGate handle it on success
   }
 
   Future<void> _signInWithGoogle() async {
@@ -88,21 +96,24 @@ class _LoginScreenState extends State<LoginScreen> {
         // Verify user is authenticated
         final currentUser = FirebaseAuth.instance.currentUser;
         if (currentUser != null) {
-          // Success - Reset loading state
-          // AuthGate will automatically detect the auth state change via StreamBuilder
+          // Success - AuthGate will automatically detect the auth state change via StreamBuilder
           // and navigate to the dashboard
-          setState(() {
-            _isLoading = false;
-          });
-          
-          // Show success message briefly (AuthGate will handle navigation)
-          Fluttertoast.showToast(
-            msg: 'Signed in with Google successfully!',
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            textColor: Theme.of(context).colorScheme.onPrimary,
-          );
+          // Clear loading state after a brief delay to allow StreamBuilder to react
+          await Future.delayed(const Duration(milliseconds: 500));
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+            
+            // Show success message briefly (AuthGate will handle navigation)
+            Fluttertoast.showToast(
+              msg: 'Signed in with Google successfully!',
+              toastLength: Toast.LENGTH_SHORT,
+              gravity: ToastGravity.BOTTOM,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              textColor: Theme.of(context).colorScheme.onPrimary,
+            );
+          }
         } else {
           // User not properly authenticated
           if (mounted) {
