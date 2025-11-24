@@ -49,6 +49,13 @@ class _PasscodeScreenState extends State<PasscodeScreen>
         curve: Curves.elasticIn,
       ),
     );
+    
+    // Focus first field when screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _focusNodes.isNotEmpty) {
+        _focusNodes[0].requestFocus();
+      }
+    });
   }
 
   void _updateUI() {

@@ -19,6 +19,13 @@ android {
         jvmTarget = "17"
     }
     
+    // Suppress Java 8 deprecation warnings from dependencies
+    tasks.withType<JavaCompile>().configureEach {
+        options.compilerArgs.add("-Xlint:-options")
+        sourceCompatibility = "17"
+        targetCompatibility = "17"
+    }
+    
     defaultConfig {
         applicationId = "com.example.ledgerlite"
         minSdk = flutter.minSdkVersion
