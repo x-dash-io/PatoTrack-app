@@ -27,6 +27,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   int? _selectedCategoryId;
   late Future<List<Category>> _categoriesFuture;
+  bool _isSaving = false;
 
   final dbHelper = DatabaseHelper();
   final User? _currentUser = FirebaseAuth.instance.currentUser;
@@ -58,24 +59,50 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       return;
     }
 
-    final navigator = Navigator.of(context);
-    final messenger = ScaffoldMessenger.of(context);
+    if (_isSaving) return; // Prevent double submission
 
-    final newTransaction = model.Transaction(
-      type: _transactionType,
-      amount: double.parse(_amountController.text),
-      description: _descriptionController.text,
-      date: _selectedDate.toIso8601String(),
-      categoryId: _selectedCategoryId,
-      tag: 'business', // Always business
-    );
+    setState(() => _isSaving = true);
 
-    await dbHelper.addTransaction(newTransaction, _currentUser!.uid);
+    try {
+      final navigator = Navigator.of(context);
+      final messenger = ScaffoldMessenger.of(context);
 
-    messenger.showSnackBar(
-      const SnackBar(content: Text('Transaction Saved')),
-    );
-    navigator.pop();
+      final newTransaction = model.Transaction(
+        type: _transactionType,
+        amount: double.parse(_amountController.text),
+        description: _descriptionController.text,
+        date: _selectedDate.toIso8601String(),
+        categoryId: _selectedCategoryId,
+        tag: 'business', // Always business
+      );
+
+      await dbHelper.addTransaction(newTransaction, _currentUser!.uid);
+
+      if (mounted) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              'Transaction Saved',
+              style: GoogleFonts.inter(),
+            ),
+          ),
+        );
+        navigator.pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error saving transaction: $e',
+              style: GoogleFonts.inter(),
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _pickDate() async {
@@ -267,24 +294,32 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             // Save Button
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
+              child: FilledButton(
+                style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  backgroundColor: colorScheme.primary,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                ),
-                onPressed: _saveTransaction,
-                child: Text(
-                  'Save Transaction',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
+                onPressed: _isSaving ? null : _saveTransaction,
+                child: _isSaving
+                    ? SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            colorScheme.onPrimary,
+                          ),
+                        ),
+                      )
+                    : Text(
+                        'Save Transaction',
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
               ),
             ),
           ],

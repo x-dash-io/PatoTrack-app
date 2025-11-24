@@ -24,6 +24,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
   List<Category> _expenseCategories = [];
   List<Category> _incomeCategories = [];
   bool _isLoading = true;
+  bool _isSavingCategory = false;
 
   final _nameController = TextEditingController();
   static const List<IconData> _selectableIcons = [
@@ -232,45 +233,65 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                       Expanded(
                         flex: 2,
                         child: FilledButton(
-                          onPressed: () async {
-                            if (_nameController.text.isNotEmpty &&
-                                currentUser != null) {
-                              if (category == null) {
-                                final newCategory = Category(
-                                  name: _nameController.text.trim(),
-                                  iconCodePoint: selectedIcon?.codePoint,
-                                  type: type,
-                                );
-                                await dbHelper.addCategory(
-                                  newCategory,
-                                  currentUser!.uid,
-                                );
-                              } else {
-                                final updatedCategory = category.copyWith(
-                                  name: _nameController.text.trim(),
-                                  iconCodePoint: selectedIcon?.codePoint,
-                                );
-                                await dbHelper.updateCategory(
-                                  updatedCategory,
-                                  currentUser!.uid,
-                                );
-                              }
-                              Navigator.pop(context);
-                              _refreshCategories();
-                            }
-                          },
+                          onPressed: _isSavingCategory
+                              ? null
+                              : () async {
+                                  if (_nameController.text.isNotEmpty &&
+                                      currentUser != null) {
+                                    setDialogState(() => _isSavingCategory = true);
+                                    try {
+                                      if (category == null) {
+                                        final newCategory = Category(
+                                          name: _nameController.text.trim(),
+                                          iconCodePoint: selectedIcon?.codePoint,
+                                          type: type,
+                                        );
+                                        await dbHelper.addCategory(
+                                          newCategory,
+                                          currentUser!.uid,
+                                        );
+                                      } else {
+                                        final updatedCategory = category.copyWith(
+                                          name: _nameController.text.trim(),
+                                          iconCodePoint: selectedIcon?.codePoint,
+                                        );
+                                        await dbHelper.updateCategory(
+                                          updatedCategory,
+                                          currentUser!.uid,
+                                        );
+                                      }
+                                      if (mounted) {
+                                        Navigator.pop(context);
+                                        _refreshCategories();
+                                      }
+                                    } catch (e) {
+                                      setDialogState(() => _isSavingCategory = false);
+                                    }
+                                  }
+                                },
                           style: FilledButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
                           ),
-                          child: Text(
-                            category == null ? 'Add' : 'Save',
-                            style: GoogleFonts.inter(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                          child: _isSavingCategory
+                              ? SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      colorScheme.onPrimary,
+                                    ),
+                                  ),
+                                )
+                              : Text(
+                                  category == null ? 'Add' : 'Save',
+                                  style: GoogleFonts.inter(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                         ),
                       ),
                     ],

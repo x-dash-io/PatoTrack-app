@@ -4,6 +4,7 @@ import 'package:path/path.dart';
 import '../models/bill.dart';
 import '../models/transaction.dart' as model;
 import '../models/category.dart';
+import '../models/frequency.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
@@ -23,7 +24,7 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'PatoTrack.db');
     return await openDatabase(
       path,
-      version: 7,
+      version: 8,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -65,6 +66,26 @@ class DatabaseHelper {
         recurrenceValue INTEGER
       )
     ''');
+    await db.execute('''
+      CREATE TABLE frequencies(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        type TEXT NOT NULL,
+        value INTEGER NOT NULL,
+        displayName TEXT NOT NULL,
+        userId TEXT NOT NULL
+      )
+      ''');
+    await db.execute('''
+      CREATE TABLE frequencies(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        type TEXT NOT NULL,
+        value INTEGER NOT NULL,
+        displayName TEXT NOT NULL,
+        userId TEXT NOT NULL
+      )
+    ''');
   }
 
   Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -89,6 +110,44 @@ class DatabaseHelper {
     }
     if (oldVersion < 7) {
       await db.execute("ALTER TABLE categories ADD COLUMN type TEXT NOT NULL DEFAULT 'expense'");
+    }
+    if (oldVersion < 8) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS frequencies(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          type TEXT NOT NULL,
+          value INTEGER NOT NULL,
+          displayName TEXT NOT NULL,
+          userId TEXT NOT NULL
+        )
+      ''');
+      // Insert default frequencies for all users
+      await _insertDefaultFrequencies(db);
+    }
+  }
+
+  Future<void> _insertDefaultFrequencies(Database db) async {
+    final defaultFrequencies = [
+      {'name': 'Weekly', 'type': 'weekly', 'value': 7, 'displayName': 'Weekly'},
+      {'name': 'Bi-weekly', 'type': 'biweekly', 'value': 14, 'displayName': 'Bi-weekly'},
+      {'name': 'Monthly', 'type': 'monthly', 'value': 30, 'displayName': 'Monthly'},
+      {'name': 'Quarterly', 'type': 'quarterly', 'value': 90, 'displayName': 'Quarterly'},
+      {'name': 'Yearly', 'type': 'yearly', 'value': 365, 'displayName': 'Yearly'},
+    ];
+    
+    // Get all unique user IDs from transactions
+    final userMaps = await db.query('transactions', columns: ['userId'], distinct: true);
+    final userIds = userMaps.map((map) => map['userId'] as String).toSet();
+    
+    // Add default frequencies for each user
+    for (final userId in userIds) {
+      for (final freq in defaultFrequencies) {
+        await db.insert('frequencies', {
+          ...freq,
+          'userId': userId,
+        });
+      }
     }
   }
 
@@ -276,6 +335,97 @@ class DatabaseHelper {
 
     await batch.commit(noResult: true);
     print('--- Successfully restored data from Firestore ---');
+  }
+
+  // --- Frequency Functions ---
+  Future<List<Frequency>> getFrequencies(String userId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'frequencies',
+      where: 'userId = ?',
+      whereArgs: [userId],
+      orderBy: 'value ASC',
+    );
+    
+    // If no frequencies found, create default ones
+    if (maps.isEmpty) {
+      await _initializeDefaultFrequencies(userId);
+      // Query again after initialization
+      final List<Map<String, dynamic>> updatedMaps = await db.query(
+        'frequencies',
+        where: 'userId = ?',
+        whereArgs: [userId],
+        orderBy: 'value ASC',
+      );
+      return List.generate(updatedMaps.length, (i) => Frequency.fromMap(updatedMaps[i]));
+    }
+    
+    return List.generate(maps.length, (i) => Frequency.fromMap(maps[i]));
+  }
+
+  Future<void> _initializeDefaultFrequencies(String userId) async {
+    final defaultFrequencies = [
+      {'name': 'Weekly', 'type': 'weekly', 'value': 7, 'displayName': 'Weekly'},
+      {'name': 'Bi-weekly', 'type': 'biweekly', 'value': 14, 'displayName': 'Bi-weekly'},
+      {'name': 'Monthly', 'type': 'monthly', 'value': 30, 'displayName': 'Monthly'},
+      {'name': 'Quarterly', 'type': 'quarterly', 'value': 90, 'displayName': 'Quarterly'},
+      {'name': 'Yearly', 'type': 'yearly', 'value': 365, 'displayName': 'Yearly'},
+    ];
+    
+    final db = await database;
+    for (final freq in defaultFrequencies) {
+      final freqObj = Frequency(
+        name: freq['name'] as String,
+        type: freq['type'] as String,
+        value: freq['value'] as int,
+        displayName: freq['displayName'] as String,
+        userId: userId,
+      );
+      await addFrequency(freqObj, userId);
+    }
+  }
+
+  Future<int> addFrequency(Frequency frequency, String userId) async {
+    final db = await database;
+    final newId = await db.insert('frequencies', frequency.toMap()..['userId'] = userId);
+    try {
+      final docData = frequency.toMap()..['id'] = newId..['userId'] = userId;
+      await _firestore.collection('users').doc(userId).collection('frequencies').doc(newId.toString()).set(docData);
+    } catch (e) {
+      print('Firestore sync failed for addFrequency: $e');
+    }
+    return newId;
+  }
+
+  Future<int> updateFrequency(Frequency frequency, String userId) async {
+    final db = await database;
+    final result = await db.update(
+      'frequencies',
+      frequency.toMap()..['userId'] = userId,
+      where: 'id = ? AND userId = ?',
+      whereArgs: [frequency.id, userId],
+    );
+    try {
+      await _firestore.collection('users').doc(userId).collection('frequencies').doc(frequency.id.toString()).update(frequency.toMap());
+    } catch (e) {
+      print('Firestore sync failed for updateFrequency: $e');
+    }
+    return result;
+  }
+
+  Future<int> deleteFrequency(int id, String userId) async {
+    final db = await database;
+    final result = await db.delete(
+      'frequencies',
+      where: 'id = ? AND userId = ?',
+      whereArgs: [id, userId],
+    );
+    try {
+      await _firestore.collection('users').doc(userId).collection('frequencies').doc(id.toString()).delete();
+    } catch (e) {
+      print('Firestore sync failed for deleteFrequency: $e');
+    }
+    return result;
   }
 }
 

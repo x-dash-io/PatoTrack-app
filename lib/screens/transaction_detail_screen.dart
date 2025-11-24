@@ -30,6 +30,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   
   int? _selectedCategoryId;
   late Future<List<Category>> _categoriesFuture;
+  bool _isUpdating = false;
+  bool _isDeleting = false;
   
   final dbHelper = DatabaseHelper();
   final User? _currentUser = FirebaseAuth.instance.currentUser;
@@ -65,33 +67,56 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
       return;
     }
 
-    final navigator = Navigator.of(context);
-    final messenger = ScaffoldMessenger.of(context);
+    if (_isUpdating) return; // Prevent double submission
 
-    final updatedTransaction = widget.transaction.copyWith(
-      type: _transactionType,
-      amount: double.parse(_amountController.text),
-      description: _descriptionController.text,
-      date: _selectedDate.toIso8601String(),
-      categoryId: _selectedCategoryId,
-      tag: 'business', // Always business
-    );
+    setState(() => _isUpdating = true);
 
-    await dbHelper.updateTransaction(updatedTransaction, _currentUser!.uid);
+    try {
+      final navigator = Navigator.of(context);
+      final messenger = ScaffoldMessenger.of(context);
 
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(
-          'Transaction Updated',
-          style: GoogleFonts.inter(),
-        ),
-      ),
-    );
-    navigator.pop(true);
+      final updatedTransaction = widget.transaction.copyWith(
+        type: _transactionType,
+        amount: double.parse(_amountController.text),
+        description: _descriptionController.text,
+        date: _selectedDate.toIso8601String(),
+        categoryId: _selectedCategoryId,
+        tag: 'business', // Always business
+      );
+
+      await dbHelper.updateTransaction(updatedTransaction, _currentUser!.uid);
+
+      if (mounted) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              'Transaction Updated',
+              style: GoogleFonts.inter(),
+            ),
+          ),
+        );
+        navigator.pop(true);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isUpdating = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error updating transaction: $e',
+              style: GoogleFonts.inter(),
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _deleteTransaction() async {
     if (_currentUser == null) return;
+
+    if (_isDeleting) return; // Prevent double submission
 
     final bool? confirm = await showModernConfirmDialog(
       context: context,
@@ -103,16 +128,35 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     );
 
     if (confirm == true && mounted) {
-      await dbHelper.deleteTransaction(widget.transaction.id!, _currentUser!.uid);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Transaction Deleted',
-            style: GoogleFonts.inter(),
-          ),
-        ),
-      );
-      Navigator.of(context).pop(true);
+      setState(() => _isDeleting = true);
+
+      try {
+        await dbHelper.deleteTransaction(widget.transaction.id!, _currentUser!.uid);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Transaction Deleted',
+                style: GoogleFonts.inter(),
+              ),
+            ),
+          );
+          Navigator.of(context).pop(true);
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isDeleting = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Error deleting transaction: $e',
+                style: GoogleFonts.inter(),
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -151,12 +195,21 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
         ),
         elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.delete_outline),
-            color: Colors.red,
-            onPressed: _deleteTransaction,
-            tooltip: 'Delete Transaction',
-          ),
+          _isDeleting
+              ? const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              : IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  color: Colors.red,
+                  onPressed: _isDeleting ? null : _deleteTransaction,
+                  tooltip: 'Delete Transaction',
+                ),
         ],
       ),
       body: Form(
@@ -323,24 +376,32 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
             // Update Button
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
+              child: FilledButton(
+                style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  backgroundColor: colorScheme.primary,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                ),
-                onPressed: _updateTransaction,
-                child: Text(
-                  'Update Transaction',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
+                onPressed: (_isUpdating || _isDeleting) ? null : _updateTransaction,
+                child: _isUpdating
+                    ? SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            colorScheme.onPrimary,
+                          ),
+                        ),
+                      )
+                    : Text(
+                        'Update Transaction',
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
               ),
             ),
           ],

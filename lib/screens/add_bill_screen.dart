@@ -9,8 +9,10 @@ import 'package:google_fonts/google_fonts.dart';
 import '../helpers/database_helper.dart';
 import '../helpers/notification_service.dart';
 import '../models/bill.dart';
+import '../models/frequency.dart';
 import '../widgets/modern_date_picker.dart';
 import '../widgets/input_fields.dart';
+import 'manage_frequencies_screen.dart';
 
 class AddBillScreen extends StatefulWidget {
   const AddBillScreen({super.key});
@@ -28,7 +30,16 @@ class _AddBillScreenState extends State<AddBillScreen> {
   
   // NEW: State variables for recurring bills
   bool _isRecurring = false;
-  String _recurrenceType = 'monthly'; // Default recurrence type
+  Frequency? _selectedFrequency;
+  List<Frequency> _frequencies = [];
+  bool _isLoadingFrequencies = true;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFrequencies();
+  }
 
   @override
   void dispose() {
@@ -37,49 +48,82 @@ class _AddBillScreenState extends State<AddBillScreen> {
     super.dispose();
   }
 
-  Future<void> _saveBill() async {
+  Future<void> _loadFrequencies() async {
+    if (_currentUser == null) return;
+    
+    setState(() => _isLoadingFrequencies = true);
     try {
-      if (_formKey.currentState!.validate() && _currentUser != null) {
-        final dbHelper = DatabaseHelper();
-        final billName = _nameController.text.trim();
-
-        // Check for duplicate bill names
-        final existingBills = await dbHelper.getBills(_currentUser.uid);
-        final isDuplicate = existingBills.any((bill) => bill.name.toLowerCase() == billName.toLowerCase());
-
-        if (isDuplicate) {
-          Fluttertoast.showToast(msg: 'A bill with this name already exists.');
-          return;
-        }
-
-        // UPDATED: Create a Bill object with the new recurring properties
-        final newBill = Bill(
-          name: billName,
-          amount: double.parse(_amountController.text),
-          dueDate: _selectedDate,
-          isRecurring: _isRecurring,
-          recurrenceType: _isRecurring ? _recurrenceType : null,
-          recurrenceValue: _isRecurring
-              ? (_recurrenceType == 'weekly' ? _selectedDate.weekday : _selectedDate.day)
-              : null,
-        );
-
-        final newBillId = await dbHelper.addBill(newBill, _currentUser.uid);
-
-        // Schedule notification for the new bill
-        final notificationService = NotificationService();
-        await notificationService.scheduleBillNotification(newBill.copyWith(id: newBillId));
-
-        if (mounted) {
-          Navigator.of(context).pop();
-        }
+      final dbHelper = DatabaseHelper();
+      final frequencies = await dbHelper.getFrequencies(_currentUser!.uid);
+      if (mounted) {
+        setState(() {
+          _frequencies = frequencies;
+          _selectedFrequency = frequencies.isNotEmpty ? frequencies.firstWhere(
+            (f) => f.type == 'monthly',
+            orElse: () => frequencies.first,
+          ) : null;
+          _isLoadingFrequencies = false;
+        });
       }
     } catch (e) {
-      print('--- ERROR SAVING BILL: $e ---');
-      Fluttertoast.showToast(
-        msg: 'An error occurred while saving the bill.',
-        backgroundColor: Colors.red,
+      if (mounted) {
+        setState(() => _isLoadingFrequencies = false);
+      }
+    }
+  }
+
+  Future<void> _saveBill() async {
+    if (!_formKey.currentState!.validate() || _currentUser == null) {
+      return;
+    }
+
+    if (_isSaving) return; // Prevent double submission
+
+    setState(() => _isSaving = true);
+
+    try {
+      final dbHelper = DatabaseHelper();
+      final billName = _nameController.text.trim();
+
+      // Check for duplicate bill names
+      final existingBills = await dbHelper.getBills(_currentUser!.uid);
+      final isDuplicate = existingBills.any((bill) => bill.name.toLowerCase() == billName.toLowerCase());
+
+      if (isDuplicate && mounted) {
+        setState(() => _isSaving = false);
+        Fluttertoast.showToast(msg: 'A bill with this name already exists.');
+        return;
+      }
+
+      // UPDATED: Create a Bill object with the new recurring properties
+      final newBill = Bill(
+        name: billName,
+        amount: double.parse(_amountController.text),
+        dueDate: _selectedDate,
+        isRecurring: _isRecurring,
+        recurrenceType: _isRecurring && _selectedFrequency != null ? _selectedFrequency!.type : null,
+        recurrenceValue: _isRecurring && _selectedFrequency != null
+            ? (_selectedFrequency!.type == 'weekly' ? _selectedDate.weekday : _selectedDate.day)
+            : null,
       );
+
+      final newBillId = await dbHelper.addBill(newBill, _currentUser!.uid);
+
+      // Schedule notification for the new bill
+      final notificationService = NotificationService();
+      await notificationService.scheduleBillNotification(newBill.copyWith(id: newBillId));
+
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        Fluttertoast.showToast(
+          msg: 'An error occurred while saving the bill.',
+          backgroundColor: Colors.red,
+        );
+      }
     }
   }
 
@@ -118,11 +162,23 @@ class _AddBillScreenState extends State<AddBillScreen> {
           style: GoogleFonts.inter(fontWeight: FontWeight.w600),
         ),
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(20.0),
-          children: [
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              colorScheme.primaryContainer.withOpacity(0.2),
+              colorScheme.surface,
+              colorScheme.surface,
+            ],
+          ),
+        ),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(20.0),
+            children: [
             StandardTextFormField(
               controller: _nameController,
               labelText: 'Bill Name',
@@ -162,84 +218,198 @@ class _AddBillScreenState extends State<AddBillScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Recurring bill toggle
-            Card(
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: SwitchListTile(
-                title: Text(
-                  'Make this a recurring bill',
-                  style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+            // Modern Recurring bill toggle card
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    colorScheme.surfaceContainerHighest,
+                    colorScheme.surfaceContainerHighest.withOpacity(0.7),
+                  ],
                 ),
-                subtitle: _isRecurring
-                    ? Text(
-                        _recurrenceType == 'weekly'
-                            ? 'Repeats every ${DateFormat('EEEE').format(_selectedDate)}'
-                            : 'Repeats on the ${_selectedDate.day}th of every month',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          color: colorScheme.onSurfaceVariant,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: colorScheme.outline.withOpacity(0.1),
+                  width: 1,
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.repeat_rounded,
+                            color: colorScheme.onPrimaryContainer,
+                            size: 24,
+                          ),
                         ),
-                      )
-                    : null,
-                value: _isRecurring,
-                onChanged: (bool value) {
-                  setState(() {
-                    _isRecurring = value;
-                  });
-                },
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Make this a recurring bill',
+                                style: GoogleFonts.inter(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              if (_isRecurring && _selectedFrequency != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 6),
+                                  child: Text(
+                                    _getRecurrenceDescription(),
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        Switch(
+                          value: _isRecurring,
+                          onChanged: (bool value) {
+                            setState(() {
+                              _isRecurring = value;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
 
             // Show dropdown only if the bill is recurring
             if (_isRecurring) ...[
               const SizedBox(height: 16),
-              StandardDropdownFormField<String>(
-                value: _recurrenceType,
-                labelText: 'Frequency',
-                prefixIcon: Icons.repeat_rounded,
-                items: const [
-                  DropdownMenuItem(
-                    value: 'weekly',
-                    child: Text('Weekly'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'monthly',
-                    child: Text('Monthly'),
-                  ),
-                ],
-                onChanged: (String? newValue) {
-                  if (newValue != null) {
-                    setState(() {
-                      _recurrenceType = newValue;
-                    });
-                  }
-                },
-              ),
+              _isLoadingFrequencies
+                  ? const Center(child: CircularProgressIndicator())
+                  : Row(
+                      children: [
+                        Expanded(
+                          child: StandardDropdownFormField<Frequency>(
+                            value: _selectedFrequency,
+                            labelText: 'Frequency',
+                            prefixIcon: Icons.repeat_rounded,
+                            items: _frequencies.map((frequency) {
+                              return DropdownMenuItem<Frequency>(
+                                value: frequency,
+                                child: Text(frequency.displayName),
+                              );
+                            }).toList(),
+                            onChanged: (Frequency? newValue) {
+                              if (newValue != null) {
+                                setState(() {
+                                  _selectedFrequency = newValue;
+                                });
+                              }
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        IconButton(
+                          onPressed: () async {
+                            final result = await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const ManageFrequenciesScreen(),
+                              ),
+                            );
+                            if (result == true) {
+                              await _loadFrequencies();
+                            }
+                          },
+                          icon: const Icon(Icons.settings_rounded),
+                          tooltip: 'Manage Frequencies',
+                          style: IconButton.styleFrom(
+                            backgroundColor: colorScheme.surfaceContainerHighest,
+                            foregroundColor: colorScheme.primary,
+                          ),
+                        ),
+                      ],
+                    ),
             ],
 
             const SizedBox(height: 32),
             FilledButton(
-              onPressed: _saveBill,
+              onPressed: _isSaving ? null : _saveBill,
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
-              child: Text(
-                'Save Bill',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              child: _isSaving
+                  ? SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          colorScheme.onPrimary,
+                        ),
+                      ),
+                    )
+                  : Text(
+                      'Save Bill',
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
             ),
           ],
         ),
       ),
+      ),
     );
+  }
+
+  String _getRecurrenceDescription() {
+    if (_selectedFrequency == null) return '';
+    
+    switch (_selectedFrequency!.type) {
+      case 'weekly':
+        return 'Repeats every ${DateFormat('EEEE').format(_selectedDate)}';
+      case 'biweekly':
+        return 'Repeats every 2 weeks on ${DateFormat('EEEE').format(_selectedDate)}';
+      case 'monthly':
+        return 'Repeats on the ${_selectedDate.day}${_getDaySuffix(_selectedDate.day)} of every month';
+      case 'quarterly':
+        return 'Repeats on the ${_selectedDate.day}${_getDaySuffix(_selectedDate.day)} every 3 months';
+      case 'yearly':
+        return 'Repeats on ${DateFormat('MMMM dd').format(_selectedDate)} every year';
+      default:
+        return 'Repeats ${_selectedFrequency!.displayName.toLowerCase()}';
+    }
+  }
+
+  String _getDaySuffix(int day) {
+    if (day >= 11 && day <= 13) return 'th';
+    switch (day % 10) {
+      case 1:
+        return 'st';
+      case 2:
+        return 'nd';
+      case 3:
+        return 'rd';
+      default:
+        return 'th';
+    }
   }
 }

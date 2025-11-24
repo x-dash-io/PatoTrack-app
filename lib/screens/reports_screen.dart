@@ -21,6 +21,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   final String _currencySymbol = 'KSh';
   final compactFormatter = NumberFormat.compact();
   final User? _currentUser = FirebaseAuth.instance.currentUser;
+  bool _isExportingPDF = false;
 
   String _selectedTimeFilter = 'month';
 
@@ -347,105 +348,107 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             const SizedBox(height: 24),
                             SizedBox(
                               height: 280,
-                              child: BarChart(
-                                BarChartData(
-                                  alignment: BarChartAlignment.spaceAround,
-                                  maxY: (barChartData['Income']! > barChartData['Expenses']!
+                              child: Builder(
+                                builder: (context) {
+                                  final maxValue = (barChartData['Income']! > barChartData['Expenses']!
                                           ? barChartData['Income']!
-                                          : barChartData['Expenses']!) *
-                                      1.15,
-                                  barGroups: [
-                                    _buildModernBarGroupData(
-                                      0,
-                                      barChartData['Income'] ?? 0,
-                                      Colors.green.shade600,
-                                      theme,
-                                    ),
-                                    _buildModernBarGroupData(
-                                      1,
-                                      barChartData['Expenses'] ?? 0,
-                                      Colors.red.shade600,
-                                      theme,
-                                    ),
-                                  ],
-                                  titlesData: FlTitlesData(
-                                    bottomTitles: AxisTitles(
-                                      sideTitles: SideTitles(
-                                        showTitles: true,
-                                        getTitlesWidget: (value, meta) {
-                                          String text = '';
-                                          if (value.toInt() == 0) text = 'Income';
-                                          if (value.toInt() == 1) text = 'Expenses';
-                                          return Padding(
-                                            padding: const EdgeInsets.only(top: 8.0),
-                                            child: Text(
-                                              text,
-                                              style: GoogleFonts.inter(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          );
-                                        },
+                                          : barChartData['Expenses']!);
+                                  final safeMaxY = maxValue > 0 ? maxValue * 1.15 : 100.0;
+                                  // Ensure interval is never zero - calculate interval or use a safe default
+                                  final calculatedInterval = maxValue > 0 ? (maxValue / 5) : 20.0;
+                                  final safeInterval = calculatedInterval > 0 && calculatedInterval.isFinite 
+                                      ? calculatedInterval 
+                                      : 20.0;
+                                  
+                                  return BarChart(
+                                    BarChartData(
+                                      alignment: BarChartAlignment.spaceAround,
+                                      maxY: safeMaxY,
+                                      barGroups: [
+                                        _buildModernBarGroupData(
+                                          0,
+                                          barChartData['Income'] ?? 0,
+                                          Colors.green.shade600,
+                                          theme,
+                                        ),
+                                        _buildModernBarGroupData(
+                                          1,
+                                          barChartData['Expenses'] ?? 0,
+                                          Colors.red.shade600,
+                                          theme,
+                                        ),
+                                      ],
+                                      titlesData: FlTitlesData(
+                                        bottomTitles: AxisTitles(
+                                          sideTitles: SideTitles(
+                                            showTitles: true,
+                                            getTitlesWidget: (value, meta) {
+                                              String text = '';
+                                              if (value.toInt() == 0) text = 'Income';
+                                              if (value.toInt() == 1) text = 'Expenses';
+                                              return Padding(
+                                                padding: const EdgeInsets.only(top: 8.0),
+                                                child: Text(
+                                                  text,
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: 13,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                        leftTitles: AxisTitles(
+                                          sideTitles: SideTitles(
+                                            showTitles: true,
+                                            reservedSize: 60,
+                                            getTitlesWidget: (value, meta) {
+                                              if (value == 0) return const Text('');
+                                              return Padding(
+                                                padding: const EdgeInsets.only(right: 8.0),
+                                                child: Text(
+                                                  compactFormatter.format(value),
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: 11,
+                                                    color: theme.colorScheme.onSurfaceVariant,
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                            interval: safeInterval,
+                                          ),
+                                        ),
+                                        topTitles: const AxisTitles(
+                                          sideTitles: SideTitles(showTitles: false),
+                                        ),
+                                        rightTitles: const AxisTitles(
+                                          sideTitles: SideTitles(showTitles: false),
+                                        ),
                                       ),
-                                    ),
-                                    leftTitles: AxisTitles(
-                                      sideTitles: SideTitles(
-                                        showTitles: true,
-                                        reservedSize: 60,
-                                        getTitlesWidget: (value, meta) {
-                                          if (value == 0) return const Text('');
-                                          return Padding(
-                                            padding: const EdgeInsets.only(right: 8.0),
-                                            child: Text(
-                                              compactFormatter.format(value),
-                                              style: GoogleFonts.inter(
-                                                fontSize: 11,
-                                                color: theme.colorScheme.onSurfaceVariant,
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                        interval: (barChartData['Income']! > barChartData['Expenses']!
-                                                ? barChartData['Income']!
-                                                : barChartData['Expenses']!) /
-                                            5,
+                                      borderData: FlBorderData(
+                                        show: true,
+                                        border: Border(
+                                          bottom: BorderSide(
+                                            color: theme.colorScheme.outline.withOpacity(0.3),
+                                            width: 1.5,
+                                          ),
+                                          left: BorderSide(
+                                            color: theme.colorScheme.outline.withOpacity(0.3),
+                                            width: 1.5,
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                    topTitles: const AxisTitles(
-                                      sideTitles: SideTitles(showTitles: false),
-                                    ),
-                                    rightTitles: const AxisTitles(
-                                      sideTitles: SideTitles(showTitles: false),
-                                    ),
-                                  ),
-                                  borderData: FlBorderData(
-                                    show: true,
-                                    border: Border(
-                                      bottom: BorderSide(
-                                        color: theme.colorScheme.outline.withOpacity(0.3),
-                                        width: 1.5,
+                                      gridData: FlGridData(
+                                        show: true,
+                                        drawVerticalLine: false,
+                                        horizontalInterval: safeInterval,
+                                        getDrawingHorizontalLine: (value) => FlLine(
+                                          color: theme.colorScheme.outline.withOpacity(0.15),
+                                          strokeWidth: 1,
+                                          dashArray: [5, 5],
+                                        ),
                                       ),
-                                      left: BorderSide(
-                                        color: theme.colorScheme.outline.withOpacity(0.3),
-                                        width: 1.5,
-                                      ),
-                                    ),
-                                  ),
-                                  gridData: FlGridData(
-                                    show: true,
-                                    drawVerticalLine: false,
-                                    horizontalInterval: (barChartData['Income']! >
-                                            barChartData['Expenses']!
-                                        ? barChartData['Income']!
-                                        : barChartData['Expenses']!) /
-                                        5,
-                                    getDrawingHorizontalLine: (value) => FlLine(
-                                      color: theme.colorScheme.outline.withOpacity(0.15),
-                                      strokeWidth: 1,
-                                      dashArray: [5, 5],
-                                    ),
-                                  ),
                                   barTouchData: BarTouchData(
                                     enabled: true,
                                     touchTooltipData: BarTouchTooltipData(
@@ -465,7 +468,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                       },
                                     ),
                                   ),
-                                ),
+                                    ),
+                                  );
+                                },
                               ),
                             ),
                             const SizedBox(height: 20),
@@ -713,49 +718,68 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             SizedBox(
                               width: double.infinity,
                               child: FilledButton.icon(
-                                onPressed: () async {
-                            if (_currentUser != null) {
-                              try {
-                                // Filter to only business transactions for PDF
-                                final businessTransactions = fullyFilteredTransactions
-                                    .where((t) => t.tag == 'business')
-                                    .toList();
-                                
-                                if (businessTransactions.isEmpty) {
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('No business transactions found in the selected period. Cannot generate report.'),
-                                        duration: Duration(seconds: 3),
-                                      ),
-                                    );
-                                  }
-                                  return;
-                                }
-                                
-                                final dateStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
-                                final fileName = 'PatoTrack_Business_Report_$dateStr.pdf';
+                                onPressed: _isExportingPDF
+                                    ? null
+                                    : () async {
+                                        if (_currentUser != null && !_isExportingPDF) {
+                                          setState(() => _isExportingPDF = true);
+                                          try {
+                                            // Filter to only business transactions for PDF
+                                            final businessTransactions = fullyFilteredTransactions
+                                                .where((t) => t.tag == 'business')
+                                                .toList();
+                                            
+                                            if (businessTransactions.isEmpty) {
+                                              if (mounted) {
+                                                setState(() => _isExportingPDF = false);
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text('No business transactions found in the selected period. Cannot generate report.'),
+                                                    duration: Duration(seconds: 3),
+                                                  ),
+                                                );
+                                              }
+                                              return;
+                                            }
+                                            
+                                            final dateStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+                                            final fileName = 'PatoTrack_Business_Report_$dateStr.pdf';
 
-                                await PdfHelper.generateAndSharePdf(
-                                  businessTransactions, 
-                                  _currentUser!.displayName ?? 'User', 
-                                  fileName
-                                );
-                              } catch (e) {
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Error generating report: $e'),
-                                      duration: const Duration(seconds: 3),
-                                    ),
-                                  );
-                                }
-                              }
-                            }
-                          },
-                                icon: const Icon(Icons.picture_as_pdf_rounded, size: 22),
+                                            await PdfHelper.generateAndSharePdf(
+                                              businessTransactions, 
+                                              _currentUser!.displayName ?? 'User', 
+                                              fileName
+                                            );
+                                            if (mounted) {
+                                              setState(() => _isExportingPDF = false);
+                                            }
+                                          } catch (e) {
+                                            if (mounted) {
+                                              setState(() => _isExportingPDF = false);
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  content: Text('Error generating report: $e'),
+                                                  duration: const Duration(seconds: 3),
+                                                ),
+                                              );
+                                            }
+                                          }
+                                        }
+                                      },
+                                icon: _isExportingPDF
+                                    ? SizedBox(
+                                        width: 22,
+                                        height: 22,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor: AlwaysStoppedAnimation<Color>(
+                                            theme.colorScheme.onPrimary,
+                                          ),
+                                        ),
+                                      )
+                                    : const Icon(Icons.picture_as_pdf_rounded, size: 22),
                                 label: Text(
-                                  'Generate PDF Report',
+                                  _isExportingPDF ? 'Generating...' : 'Generate PDF Report',
                                   style: GoogleFonts.inter(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
