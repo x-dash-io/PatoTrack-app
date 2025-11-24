@@ -73,6 +73,9 @@ class _LoginScreenState extends State<LoginScreen> {
         // Continue even if reload fails
       }
 
+      // Give StreamBuilder time to react to auth state change
+      await Future.delayed(const Duration(milliseconds: 100));
+      
       // Show success feedback
       if (mounted) {
         final theme = Theme.of(context);
@@ -83,22 +86,14 @@ class _LoginScreenState extends State<LoginScreen> {
           toastLength: Toast.LENGTH_SHORT,
           gravity: ToastGravity.BOTTOM,
         );
-      }
-
-      // Verify auth state is properly set before clearing loading
-      // This ensures StreamBuilder has the latest state
-      await Future.delayed(const Duration(milliseconds: 100));
-      
-      // Clear loading state
-      if (mounted) {
+        
+        // Clear loading state - AuthGate's StreamBuilder will automatically
+        // detect the auth state change via authStateChanges() stream and rebuild
+        // to show MainScreen or PasscodeScreen
         setState(() {
           _isLoading = false;
         });
       }
-      
-      // AuthGate's StreamBuilder listening to authStateChanges() will automatically
-      // detect the auth state change and rebuild to show MainScreen.
-      // The stream emits immediately after signInWithEmailAndPassword completes.
     } on FirebaseAuthException catch (e) {
       if (mounted) {
         setState(() {
@@ -143,6 +138,9 @@ class _LoginScreenState extends State<LoginScreen> {
             // Continue even if reload fails
           }
           
+          // Give StreamBuilder time to react to auth state change
+          await Future.delayed(const Duration(milliseconds: 100));
+          
           // Show success message
           if (mounted) {
             final theme = Theme.of(context);
@@ -153,22 +151,14 @@ class _LoginScreenState extends State<LoginScreen> {
               backgroundColor: theme.colorScheme.primary,
               textColor: theme.colorScheme.onPrimary,
             );
-          }
-          
-          // Verify auth state is properly set before clearing loading
-          // This ensures StreamBuilder has the latest state
-          await Future.delayed(const Duration(milliseconds: 100));
-          
-          // Clear loading state
-          if (mounted) {
+            
+            // Clear loading state - AuthGate's StreamBuilder will automatically
+            // detect the auth state change via authStateChanges() stream and rebuild
+            // to show MainScreen or PasscodeScreen
             setState(() {
               _isLoading = false;
             });
           }
-          
-          // AuthGate's StreamBuilder listening to authStateChanges() will automatically
-          // detect the auth state change and rebuild to show MainScreen.
-          // The stream emits immediately after Google sign-in completes.
         } else {
           // User not properly authenticated
           if (mounted) {

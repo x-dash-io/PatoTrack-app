@@ -89,7 +89,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
         // Continue even if reload fails
       }
 
-      // Show success feedback immediately
+      // Give StreamBuilder time to react to auth state change
+      await Future.delayed(const Duration(milliseconds: 100));
+      
+      // Clear loading state first
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+      
+      // Show success feedback
       if (mounted) {
         final theme = Theme.of(context);
         Fluttertoast.showToast(
@@ -99,23 +109,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
           toastLength: Toast.LENGTH_SHORT,
           gravity: ToastGravity.BOTTOM,
         );
-      }
-
-      // Verify auth state is properly set before clearing loading
-      // This ensures StreamBuilder has the latest state
-      await Future.delayed(const Duration(milliseconds: 100));
-      
-      // Clear loading state
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-      
-      // Pop SignUpScreen to return to AuthGate
-      // AuthGate's StreamBuilder will automatically detect the auth state change
-      // and rebuild to show MainScreen instead of LoginScreen
-      if (mounted) {
+        
+        // Pop SignUpScreen to return to AuthGate
+        // AuthGate's StreamBuilder will automatically detect the auth state change
+        // via authStateChanges() stream and rebuild to show MainScreen or PasscodeScreen
+        // instead of LoginScreen
         Navigator.of(context).pop();
       }
     } on FirebaseAuthException catch (e) {
@@ -176,6 +174,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
             // Continue even if reload fails
           }
           
+          // Give StreamBuilder time to react to auth state change
+          await Future.delayed(const Duration(milliseconds: 100));
+          
+          // Clear loading state first
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+          }
+          
           // Show success message
           if (mounted) {
             final theme = Theme.of(context);
@@ -186,23 +194,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
               backgroundColor: theme.colorScheme.primary,
               textColor: theme.colorScheme.onPrimary,
             );
-          }
-          
-          // Verify auth state is properly set before clearing loading
-          // This ensures StreamBuilder has the latest state
-          await Future.delayed(const Duration(milliseconds: 100));
-          
-          // Clear loading state
-          if (mounted) {
-            setState(() {
-              _isLoading = false;
-            });
-          }
-          
-          // Pop SignUpScreen to return to AuthGate
-          // AuthGate's StreamBuilder will automatically detect the auth state change
-          // and rebuild to show MainScreen instead of LoginScreen
-          if (mounted) {
+            
+            // Pop SignUpScreen to return to AuthGate
+            // AuthGate's StreamBuilder will automatically detect the auth state change
+            // via authStateChanges() stream and rebuild to show MainScreen or PasscodeScreen
+            // instead of LoginScreen
             Navigator.of(context).pop();
           }
         } else {

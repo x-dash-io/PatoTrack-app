@@ -46,15 +46,22 @@ class _AuthGateState extends State<AuthGate> {
         return StreamBuilder<User?>(
           stream: FirebaseAuth.instance.authStateChanges(),
           builder: (context, snapshot) {
-            // While waiting for auth state, show a loading indicator
-            if (snapshot.connectionState == ConnectionState.waiting) {
+            // Check current auth state immediately (not just from stream)
+            // This ensures we detect auth changes even if stream hasn't emitted yet
+            final currentUser = FirebaseAuth.instance.currentUser;
+            
+            // Use stream data if available, otherwise fall back to currentUser
+            final user = snapshot.hasData ? snapshot.data : currentUser;
+            
+            // While waiting for auth state and no current user, show a loading indicator
+            if (snapshot.connectionState == ConnectionState.waiting && user == null) {
               return const Scaffold(
                 body: ModernLoadingIndicator(),
               );
             }
 
             // User is not signed in, show the login screen
-            if (!snapshot.hasData) {
+            if (user == null) {
               return const LoginScreen();
             }
 
