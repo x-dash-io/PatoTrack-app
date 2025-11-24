@@ -85,13 +85,22 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
 
-      // Clear loading state - AuthGate's StreamBuilder will automatically detect
-      // the auth state change and navigate to MainScreen
+      // Clear loading state first
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
-        // Don't pop - AuthGate handles navigation automatically via StreamBuilder
+      }
+      
+      // Wait briefly for auth state to propagate, then ensure navigation happens
+      // If this screen was pushed (e.g., from SignUpScreen), pop it first
+      // AuthGate's StreamBuilder will then automatically show MainScreen
+      if (mounted) {
+        await Future.delayed(const Duration(milliseconds: 300));
+        if (mounted && Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+        // AuthGate's StreamBuilder will handle the rest automatically
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
@@ -149,17 +158,22 @@ class _LoginScreenState extends State<LoginScreen> {
             );
           }
           
-          // Wait a moment for AuthGate's StreamBuilder to detect the auth state change
-          // The StreamBuilder will automatically navigate to MainScreen
+          // Clear loading state first
           if (mounted) {
-            await Future.delayed(const Duration(milliseconds: 500));
-            if (mounted) {
-              setState(() {
-                _isLoading = false;
-              });
-              // AuthGate's StreamBuilder will handle navigation automatically
-              // No need to pop - the screen will be replaced by AuthGate
+            setState(() {
+              _isLoading = false;
+            });
+          }
+          
+          // Wait briefly for auth state to propagate, then ensure navigation happens
+          // If this screen was pushed (e.g., from SignUpScreen), pop it first
+          // AuthGate's StreamBuilder will then automatically show MainScreen
+          if (mounted) {
+            await Future.delayed(const Duration(milliseconds: 300));
+            if (mounted && Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
             }
+            // AuthGate's StreamBuilder will handle the rest automatically
           }
         } else {
           // User not properly authenticated
