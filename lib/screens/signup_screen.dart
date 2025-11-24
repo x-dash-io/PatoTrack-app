@@ -101,35 +101,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
         );
       }
 
-      // Wait for AuthGate's StreamBuilder to detect the auth state change
-      // Then pop this screen so AuthGate can navigate to MainScreen
+      // Clear loading state - AuthGate's StreamBuilder will automatically detect
+      // the auth state change and navigate to MainScreen
       if (mounted) {
-        await Future.delayed(const Duration(milliseconds: 800));
-        
-        // Verify auth state one more time before popping
-        final verifyUser = FirebaseAuth.instance.currentUser;
-        if (verifyUser != null && mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-          // Pop this screen - AuthGate will automatically navigate to MainScreen
-          // The delay allows StreamBuilder to react to the auth state change
-          Navigator.of(context).pop();
-        } else {
-          // Auth state lost - shouldn't happen but handle gracefully
-          if (mounted) {
-            setState(() {
-              _isLoading = false;
-            });
-            final theme = Theme.of(context);
-            Fluttertoast.showToast(
-              msg: 'Authentication failed. Please try again.',
-              backgroundColor: theme.colorScheme.error,
-              textColor: theme.colorScheme.onError,
-              toastLength: Toast.LENGTH_LONG,
-            );
-          }
-        }
+        setState(() {
+          _isLoading = false;
+        });
+        // Don't pop - AuthGate handles navigation automatically via StreamBuilder
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
@@ -201,15 +179,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
             );
           }
           
-          // Wait for AuthGate's StreamBuilder to detect the auth state change
-          await Future.delayed(const Duration(milliseconds: 800));
-          
+          // Wait a moment for AuthGate's StreamBuilder to detect the auth state change
+          // The StreamBuilder will automatically navigate to MainScreen
           if (mounted) {
-            setState(() {
-              _isLoading = false;
-            });
-            // Pop this screen - AuthGate will automatically navigate to MainScreen
-            Navigator.of(context).pop();
+            await Future.delayed(const Duration(milliseconds: 500));
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+              });
+              // AuthGate's StreamBuilder will handle navigation automatically
+              // No need to pop - the screen will be replaced by AuthGate
+            }
           }
         } else {
           // User not properly authenticated

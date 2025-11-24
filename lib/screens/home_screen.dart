@@ -541,7 +541,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Calculate card width dynamically based on screen size
                   final screenWidth = MediaQuery.of(context).size.width;
                   final cardWidth = (screenWidth * 0.75).clamp(200.0, 240.0);
-                  final cardHeight = 200.0; // Increased height to accommodate button
+                  final cardHeight = 210.0; // Increased height to prevent overflow
                   
                   return SizedBox(
                     height: cardHeight,
@@ -579,136 +579,139 @@ class _HomeScreenState extends State<HomeScreen> {
                                 borderRadius: BorderRadius.circular(24),
                               ),
                               child: Padding(
-                                padding: EdgeInsets.all((cardWidth * 0.08).clamp(12.0, 16.0)),
+                                padding: EdgeInsets.all((cardWidth * 0.07).clamp(10.0, 14.0)),
                                 child: LayoutBuilder(
                                   builder: (context, cardConstraints) {
                                     // Calculate responsive sizes based on card width
                                     final cardW = cardConstraints.maxWidth;
-                                    final iconSize = (cardW * 0.12).clamp(18.0, 24.0);
-                                    final fontSizeName = (cardW * 0.08).clamp(14.0, 16.0);
-                                    final fontSizeAmount = (cardW * 0.11).clamp(20.0, 22.0);
-                                    final fontSizeStatus = (cardW * 0.055).clamp(10.0, 11.0);
-                                    final spacing = (cardW * 0.04).clamp(6.0, 12.0);
-                                    final buttonHeight = (cardHeight * 0.16).clamp(26.0, 30.0);
+                                    final availableHeight = cardHeight - ((cardWidth * 0.14).clamp(20.0, 28.0)); // Account for padding
+                                    final iconSize = (cardW * 0.11).clamp(16.0, 20.0);
+                                    final fontSizeName = (cardW * 0.075).clamp(13.0, 15.0);
+                                    final fontSizeAmount = (cardW * 0.10).clamp(18.0, 20.0);
+                                    final fontSizeStatus = (cardW * 0.05).clamp(9.0, 10.0);
+                                    final spacing = (cardW * 0.035).clamp(5.0, 8.0);
+                                    final buttonHeight = (availableHeight * 0.18).clamp(24.0, 28.0);
                                     
-                                    return Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        // Icon row
-                                        Row(
-                                          children: [
-                                            Container(
-                                              padding: EdgeInsets.all(iconSize * 0.4),
-                                              decoration: BoxDecoration(
-                                                gradient: LinearGradient(
-                                                  begin: Alignment.topLeft,
-                                                  end: Alignment.bottomRight,
-                                                  colors: [
-                                                    styling.color,
-                                                    styling.color.withOpacity(0.7),
-                                                  ],
-                                                ),
-                                                borderRadius: BorderRadius.circular(12),
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    color: styling.color.withOpacity(0.3),
-                                                    blurRadius: 6,
-                                                    offset: const Offset(0, 2),
-                                                  ),
-                                                ],
-                                              ),
-                                              child: Icon(
-                                                styling.icon,
-                                                size: iconSize,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                            const Spacer(),
-                                            if (bill.isRecurring)
+                                    return SizedBox(
+                                      height: availableHeight,
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          // Icon row
+                                          Row(
+                                            children: [
                                               Container(
                                                 padding: EdgeInsets.all(iconSize * 0.35),
                                                 decoration: BoxDecoration(
-                                                  color: colorScheme.primaryContainer.withOpacity(0.5),
-                                                  shape: BoxShape.circle,
+                                                  gradient: LinearGradient(
+                                                    begin: Alignment.topLeft,
+                                                    end: Alignment.bottomRight,
+                                                    colors: [
+                                                      styling.color,
+                                                      styling.color.withOpacity(0.7),
+                                                    ],
+                                                  ),
+                                                  borderRadius: BorderRadius.circular(10),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: styling.color.withOpacity(0.3),
+                                                      blurRadius: 4,
+                                                      offset: const Offset(0, 2),
+                                                    ),
+                                                  ],
                                                 ),
                                                 child: Icon(
-                                                  Icons.sync_rounded,
-                                                  size: iconSize * 0.7,
-                                                  color: colorScheme.onPrimaryContainer,
+                                                  styling.icon,
+                                                  size: iconSize,
+                                                  color: Colors.white,
                                                 ),
                                               ),
-                                          ],
-                                        ),
-                                        SizedBox(height: spacing),
-                                        // Bill name
-                                        Text(
-                                          bill.name,
-                                          style: GoogleFonts.inter(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: fontSizeName,
-                                            color: colorScheme.onSurface,
-                                            height: 1.2,
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        SizedBox(height: spacing * 0.7),
-                                        // Amount
-                                        Text(
-                                          '$_currencySymbol${bill.amount.toStringAsFixed(0)}',
-                                          style: GoogleFonts.inter(
-                                            fontSize: fontSizeAmount,
-                                            fontWeight: FontWeight.w700,
-                                            color: colorScheme.onSurface,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        SizedBox(height: spacing),
-                                        // Status badge
-                                        Container(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: spacing * 0.8,
-                                            vertical: spacing * 0.5,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: status.color.withOpacity(0.15),
-                                            borderRadius: BorderRadius.circular(8),
-                                            border: Border.all(
-                                              color: status.color.withOpacity(0.3),
-                                              width: 1,
-                                            ),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(
-                                                _getStatusIcon(status.text),
-                                                size: fontSizeStatus,
-                                                color: status.color,
-                                              ),
-                                              SizedBox(width: spacing * 0.4),
-                                              Flexible(
-                                                child: Text(
-                                                  status.text,
-                                                  style: GoogleFonts.inter(
-                                                    color: status.color,
-                                                    fontSize: fontSizeStatus,
-                                                    fontWeight: FontWeight.w600,
+                                              const Spacer(),
+                                              if (bill.isRecurring)
+                                                Container(
+                                                  padding: EdgeInsets.all(iconSize * 0.3),
+                                                  decoration: BoxDecoration(
+                                                    color: colorScheme.primaryContainer.withOpacity(0.5),
+                                                    shape: BoxShape.circle,
                                                   ),
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
+                                                  child: Icon(
+                                                    Icons.sync_rounded,
+                                                    size: iconSize * 0.65,
+                                                    color: colorScheme.onPrimaryContainer,
+                                                  ),
                                                 ),
-                                              ),
                                             ],
                                           ),
-                                        ),
-                                        SizedBox(height: spacing),
-                                        // Pay button - always visible at bottom
-                                        SizedBox(
-                                          width: double.infinity,
-                                          child: FilledButton.tonal(
+                                          SizedBox(height: spacing * 0.8),
+                                          // Bill name
+                                          Text(
+                                            bill.name,
+                                            style: GoogleFonts.inter(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: fontSizeName,
+                                              color: colorScheme.onSurface,
+                                              height: 1.1,
+                                            ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          SizedBox(height: spacing * 0.6),
+                                          // Amount
+                                          Text(
+                                            '$_currencySymbol${bill.amount.toStringAsFixed(0)}',
+                                            style: GoogleFonts.inter(
+                                              fontSize: fontSizeAmount,
+                                              fontWeight: FontWeight.w700,
+                                              color: colorScheme.onSurface,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          SizedBox(height: spacing * 0.8),
+                                          // Status badge
+                                          Container(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: spacing * 0.7,
+                                              vertical: spacing * 0.4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: status.color.withOpacity(0.15),
+                                              borderRadius: BorderRadius.circular(6),
+                                              border: Border.all(
+                                                color: status.color.withOpacity(0.3),
+                                                width: 1,
+                                              ),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  _getStatusIcon(status.text),
+                                                  size: fontSizeStatus,
+                                                  color: status.color,
+                                                ),
+                                                SizedBox(width: spacing * 0.3),
+                                                Flexible(
+                                                  child: Text(
+                                                    status.text,
+                                                    style: GoogleFonts.inter(
+                                                      color: status.color,
+                                                      fontSize: fontSizeStatus,
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const Spacer(),
+                                          // Pay button - always visible at bottom
+                                          SizedBox(
+                                            width: double.infinity,
+                                            child: FilledButton.tonal(
                                             onPressed: () async {
                                               if (currentUser == null) return;
                                               
@@ -763,23 +766,24 @@ class _HomeScreenState extends State<HomeScreen> {
 
                                               _refreshData();
                                             },
-                                            style: FilledButton.styleFrom(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: spacing * 0.8,
-                                                vertical: spacing * 0.6,
+                                              style: FilledButton.styleFrom(
+                                                padding: EdgeInsets.symmetric(
+                                                  horizontal: spacing * 0.7,
+                                                  vertical: spacing * 0.5,
+                                                ),
+                                                minimumSize: Size(0, buttonHeight),
                                               ),
-                                              minimumSize: Size(0, buttonHeight),
-                                            ),
-                                            child: Text(
-                                              'Pay Bill',
-                                              style: GoogleFonts.inter(
-                                                fontSize: fontSizeStatus + 1,
-                                                fontWeight: FontWeight.w600,
+                                              child: Text(
+                                                'Pay Bill',
+                                                style: GoogleFonts.inter(
+                                                  fontSize: fontSizeStatus,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
                                               ),
                                             ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     );
                                   },
                                 ),
