@@ -15,6 +15,20 @@ class AuthGate extends StatefulWidget {
 }
 
 class _AuthGateState extends State<AuthGate> {
+  @override
+  void initState() {
+    super.initState();
+    // Listen to auth state changes and force rebuilds when auth state changes
+    // This ensures AuthGate rebuilds immediately when authentication state changes
+    FirebaseAuth.instance.authStateChanges().listen((User? user) {
+      if (mounted) {
+        // Force a rebuild when auth state changes
+        // This is necessary because the StreamBuilder might not rebuild immediately
+        setState(() {});
+      }
+    });
+  }
+
   Future<bool> _isPasscodeEnabled() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('passcode') != null;
@@ -43,18 +57,19 @@ class _AuthGateState extends State<AuthGate> {
         }
 
         // Once onboarding is done, check auth state
+        // Use StreamBuilder for reactive updates, always check currentUser for immediate state
         return StreamBuilder<User?>(
           stream: FirebaseAuth.instance.authStateChanges(),
           builder: (context, snapshot) {
-            // Check current auth state immediately (not just from stream)
-            // This ensures we detect auth changes even if stream hasn't emitted yet
+            // Always check currentUser directly - it's the most reliable and immediate source
+            // The stream might lag behind, so we prioritize currentUser
             final currentUser = FirebaseAuth.instance.currentUser;
             
-            // Use stream data if available, otherwise fall back to currentUser
-            final user = snapshot.hasData ? snapshot.data : currentUser;
+            // Use currentUser if available (most reliable), otherwise use stream data
+            final user = currentUser ?? snapshot.data;
             
-            // While waiting for auth state and no current user, show a loading indicator
-            if (snapshot.connectionState == ConnectionState.waiting && user == null) {
+            // While waiting for initial auth state and no current user, show a loading indicator
+            if (snapshot.connectionState == ConnectionState.waiting && currentUser == null) {
               return const Scaffold(
                 body: ModernLoadingIndicator(),
               );

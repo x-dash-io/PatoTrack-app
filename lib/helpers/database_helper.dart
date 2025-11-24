@@ -67,17 +67,7 @@ class DatabaseHelper {
       )
     ''');
     await db.execute('''
-      CREATE TABLE frequencies(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        type TEXT NOT NULL,
-        value INTEGER NOT NULL,
-        displayName TEXT NOT NULL,
-        userId TEXT NOT NULL
-      )
-      ''');
-    await db.execute('''
-      CREATE TABLE frequencies(
+      CREATE TABLE IF NOT EXISTS frequencies(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         type TEXT NOT NULL,

@@ -73,11 +73,25 @@ class _LoginScreenState extends State<LoginScreen> {
         // Continue even if reload fails
       }
 
-      // Give StreamBuilder time to react to auth state change
-      await Future.delayed(const Duration(milliseconds: 100));
+      // Ensure the auth state change has been processed
+      // Wait for the stream to emit and AuthGate to rebuild
+      await Future.delayed(const Duration(milliseconds: 500));
       
-      // Show success feedback
+      // Double-check that user is still authenticated after the delay
+      final verifyUser = FirebaseAuth.instance.currentUser;
+      if (verifyUser == null) {
+        throw Exception('Authentication state lost');
+      }
+      
+      // Clear loading state - AuthGate's StreamBuilder will automatically
+      // detect the auth state change via authStateChanges() stream and rebuild
+      // to show MainScreen or PasscodeScreen
       if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        
+        // Show success feedback
         final theme = Theme.of(context);
         Fluttertoast.showToast(
           msg: "Login Successful!",
@@ -86,13 +100,6 @@ class _LoginScreenState extends State<LoginScreen> {
           toastLength: Toast.LENGTH_SHORT,
           gravity: ToastGravity.BOTTOM,
         );
-        
-        // Clear loading state - AuthGate's StreamBuilder will automatically
-        // detect the auth state change via authStateChanges() stream and rebuild
-        // to show MainScreen or PasscodeScreen
-        setState(() {
-          _isLoading = false;
-        });
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
@@ -138,11 +145,25 @@ class _LoginScreenState extends State<LoginScreen> {
             // Continue even if reload fails
           }
           
-          // Give StreamBuilder time to react to auth state change
-          await Future.delayed(const Duration(milliseconds: 100));
+          // Ensure the auth state change has been processed
+          // Wait for the stream to emit and AuthGate to rebuild
+          await Future.delayed(const Duration(milliseconds: 500));
           
-          // Show success message
+          // Double-check that user is still authenticated after the delay
+          final verifyUser = FirebaseAuth.instance.currentUser;
+          if (verifyUser == null) {
+            throw Exception('Authentication state lost');
+          }
+          
+          // Clear loading state - AuthGate's StreamBuilder will automatically
+          // detect the auth state change via authStateChanges() stream and rebuild
+          // to show MainScreen or PasscodeScreen
           if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+            
+            // Show success message
             final theme = Theme.of(context);
             Fluttertoast.showToast(
               msg: 'Signed in with Google successfully!',
@@ -151,13 +172,6 @@ class _LoginScreenState extends State<LoginScreen> {
               backgroundColor: theme.colorScheme.primary,
               textColor: theme.colorScheme.onPrimary,
             );
-            
-            // Clear loading state - AuthGate's StreamBuilder will automatically
-            // detect the auth state change via authStateChanges() stream and rebuild
-            // to show MainScreen or PasscodeScreen
-            setState(() {
-              _isLoading = false;
-            });
           }
         } else {
           // User not properly authenticated

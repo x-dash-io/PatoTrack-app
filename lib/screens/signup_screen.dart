@@ -89,18 +89,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
         // Continue even if reload fails
       }
 
-      // Give StreamBuilder time to react to auth state change
-      await Future.delayed(const Duration(milliseconds: 100));
+      // Ensure the auth state change has been processed
+      // Wait for the stream to emit and AuthGate to rebuild
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // Double-check that user is still authenticated after the delay
+      final verifyUser = FirebaseAuth.instance.currentUser;
+      if (verifyUser == null) {
+        throw Exception('Authentication state lost');
+      }
       
       // Clear loading state first
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
-      }
-      
-      // Show success feedback
-      if (mounted) {
+        
+        // Show success feedback
         final theme = Theme.of(context);
         Fluttertoast.showToast(
           msg: "Account Created Successfully!",
@@ -174,18 +179,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
             // Continue even if reload fails
           }
           
-          // Give StreamBuilder time to react to auth state change
-          await Future.delayed(const Duration(milliseconds: 100));
+          // Ensure the auth state change has been processed
+          // Wait for the stream to emit and AuthGate to rebuild
+          await Future.delayed(const Duration(milliseconds: 500));
+          
+          // Double-check that user is still authenticated after the delay
+          final verifyUser = FirebaseAuth.instance.currentUser;
+          if (verifyUser == null) {
+            throw Exception('Authentication state lost');
+          }
           
           // Clear loading state first
           if (mounted) {
             setState(() {
               _isLoading = false;
             });
-          }
-          
-          // Show success message
-          if (mounted) {
+            
+            // Show success message
             final theme = Theme.of(context);
             Fluttertoast.showToast(
               msg: 'Account created with Google successfully!',
