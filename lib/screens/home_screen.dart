@@ -46,16 +46,30 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
     if (_currentUser != null) {
       // Restore bills and other data from Firestore first
+      // This ensures we have the latest data from the cloud
       try {
+        print('Starting Firestore restore for user: ${_currentUser!.uid}');
         await dbHelper.restoreFromFirestore(_currentUser!.uid);
+        print('Firestore restore completed successfully');
       } catch (e) {
         print('Error restoring from Firestore: $e');
-        // Continue even if restore fails
+        // Continue even if restore fails - we'll still load local data
       }
-      // Sync M-Pesa messages, then refresh data once
-      await _smsService.syncMpesaMessages(_currentUser!.uid);
+      
+      // Sync M-Pesa messages to add any new transactions
+      try {
+        print('Starting M-Pesa message sync...');
+        await _smsService.syncMpesaMessages(_currentUser!.uid);
+        print('M-Pesa message sync completed');
+      } catch (e) {
+        print('Error syncing M-Pesa messages: $e');
+        // Continue even if sync fails
+      }
+      
+      // Finally, refresh the UI with all data (Firestore + local)
       if (mounted) {
-        _refreshData();
+        await _refreshData();
+        print('Data refresh completed. Transactions: ${_transactions.length}, Income: $_totalIncome, Expenses: $_totalExpenses');
       }
     } else {
       if (mounted) {

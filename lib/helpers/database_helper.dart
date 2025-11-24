@@ -302,29 +302,58 @@ class DatabaseHelper {
 
   Future<void> restoreFromFirestore(String userId) async {
     final db = await database;
-    final batch = db.batch();
+    
+    // Use a transaction to ensure atomicity
+    await db.transaction((txn) async {
+      // Delete existing data for this user
+      await txn.delete('transactions', where: 'userId = ?', whereArgs: [userId]);
+      await txn.delete('categories', where: 'userId = ?', whereArgs: [userId]);
+      await txn.delete('bills', where: 'userId = ?', whereArgs: [userId]);
 
-    batch.delete('transactions', where: 'userId = ?', whereArgs: [userId]);
-    batch.delete('categories', where: 'userId = ?', whereArgs: [userId]);
-    batch.delete('bills', where: 'userId = ?', whereArgs: [userId]);
+      // Restore transactions from Firestore
+      try {
+        final transactionSnap = await _firestore.collection('users').doc(userId).collection('transactions').get();
+        for (final doc in transactionSnap.docs) {
+          final data = doc.data();
+          // Ensure userId is in the data
+          data['userId'] = userId;
+          await txn.insert('transactions', data, conflictAlgorithm: ConflictAlgorithm.replace);
+        }
+        print('Restored ${transactionSnap.docs.length} transactions from Firestore');
+      } catch (e) {
+        print('Error restoring transactions: $e');
+      }
 
-    final transactionSnap = await _firestore.collection('users').doc(userId).collection('transactions').get();
-    for (final doc in transactionSnap.docs) {
-      batch.insert('transactions', doc.data(), conflictAlgorithm: ConflictAlgorithm.replace);
-    }
+      // Restore categories from Firestore
+      try {
+        final categorySnap = await _firestore.collection('users').doc(userId).collection('categories').get();
+        for (final doc in categorySnap.docs) {
+          final data = doc.data();
+          // Ensure userId is in the data
+          data['userId'] = userId;
+          await txn.insert('categories', data, conflictAlgorithm: ConflictAlgorithm.replace);
+        }
+        print('Restored ${categorySnap.docs.length} categories from Firestore');
+      } catch (e) {
+        print('Error restoring categories: $e');
+      }
 
-    final categorySnap = await _firestore.collection('users').doc(userId).collection('categories').get();
-    for (final doc in categorySnap.docs) {
-      batch.insert('categories', doc.data(), conflictAlgorithm: ConflictAlgorithm.replace);
-    }
-
-    final billSnap = await _firestore.collection('users').doc(userId).collection('bills').get();
-    for (final doc in billSnap.docs) {
-      batch.insert('bills', doc.data(), conflictAlgorithm: ConflictAlgorithm.replace);
-    }
-
-    await batch.commit(noResult: true);
-    print('--- Successfully restored data from Firestore ---');
+      // Restore bills from Firestore
+      try {
+        final billSnap = await _firestore.collection('users').doc(userId).collection('bills').get();
+        for (final doc in billSnap.docs) {
+          final data = doc.data();
+          // Ensure userId is in the data
+          data['userId'] = userId;
+          await txn.insert('bills', data, conflictAlgorithm: ConflictAlgorithm.replace);
+        }
+        print('Restored ${billSnap.docs.length} bills from Firestore');
+      } catch (e) {
+        print('Error restoring bills: $e');
+      }
+    });
+    
+    print('--- Successfully restored data from Firestore for user $userId ---');
   }
 
   // --- Frequency Functions ---
