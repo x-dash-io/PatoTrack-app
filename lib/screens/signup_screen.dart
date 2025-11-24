@@ -101,21 +101,22 @@ class _SignUpScreenState extends State<SignUpScreen> {
         );
       }
 
-      // Clear loading state first
+      // Verify auth state is properly set before clearing loading
+      // This ensures StreamBuilder has the latest state
+      await Future.delayed(const Duration(milliseconds: 100));
+      
+      // Clear loading state
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
       }
       
-      // Wait briefly for auth state to propagate, then pop back to AuthGate
-      // AuthGate's StreamBuilder will then automatically show MainScreen
+      // Pop SignUpScreen to return to AuthGate
+      // AuthGate's StreamBuilder will automatically detect the auth state change
+      // and rebuild to show MainScreen instead of LoginScreen
       if (mounted) {
-        await Future.delayed(const Duration(milliseconds: 300));
-        if (mounted) {
-          // Pop SignUpScreen back to AuthGate - StreamBuilder will show MainScreen
-          Navigator.of(context).pop();
-        }
+        Navigator.of(context).pop();
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
@@ -187,21 +188,22 @@ class _SignUpScreenState extends State<SignUpScreen> {
             );
           }
           
-          // Clear loading state first
+          // Verify auth state is properly set before clearing loading
+          // This ensures StreamBuilder has the latest state
+          await Future.delayed(const Duration(milliseconds: 100));
+          
+          // Clear loading state
           if (mounted) {
             setState(() {
               _isLoading = false;
             });
           }
           
-          // Wait briefly for auth state to propagate, then pop back to AuthGate
-          // AuthGate's StreamBuilder will then automatically show MainScreen
+          // Pop SignUpScreen to return to AuthGate
+          // AuthGate's StreamBuilder will automatically detect the auth state change
+          // and rebuild to show MainScreen instead of LoginScreen
           if (mounted) {
-            await Future.delayed(const Duration(milliseconds: 300));
-            if (mounted) {
-              // Pop SignUpScreen back to AuthGate - StreamBuilder will show MainScreen
-              Navigator.of(context).pop();
-            }
+            Navigator.of(context).pop();
           }
         } else {
           // User not properly authenticated

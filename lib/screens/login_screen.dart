@@ -85,23 +85,20 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
 
-      // Clear loading state first
+      // Verify auth state is properly set before clearing loading
+      // This ensures StreamBuilder has the latest state
+      await Future.delayed(const Duration(milliseconds: 100));
+      
+      // Clear loading state
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
       }
       
-      // Wait briefly for auth state to propagate, then ensure navigation happens
-      // If this screen was pushed (e.g., from SignUpScreen), pop it first
-      // AuthGate's StreamBuilder will then automatically show MainScreen
-      if (mounted) {
-        await Future.delayed(const Duration(milliseconds: 300));
-        if (mounted && Navigator.of(context).canPop()) {
-          Navigator.of(context).pop();
-        }
-        // AuthGate's StreamBuilder will handle the rest automatically
-      }
+      // AuthGate's StreamBuilder listening to authStateChanges() will automatically
+      // detect the auth state change and rebuild to show MainScreen.
+      // The stream emits immediately after signInWithEmailAndPassword completes.
     } on FirebaseAuthException catch (e) {
       if (mounted) {
         setState(() {
@@ -158,23 +155,20 @@ class _LoginScreenState extends State<LoginScreen> {
             );
           }
           
-          // Clear loading state first
+          // Verify auth state is properly set before clearing loading
+          // This ensures StreamBuilder has the latest state
+          await Future.delayed(const Duration(milliseconds: 100));
+          
+          // Clear loading state
           if (mounted) {
             setState(() {
               _isLoading = false;
             });
           }
           
-          // Wait briefly for auth state to propagate, then ensure navigation happens
-          // If this screen was pushed (e.g., from SignUpScreen), pop it first
-          // AuthGate's StreamBuilder will then automatically show MainScreen
-          if (mounted) {
-            await Future.delayed(const Duration(milliseconds: 300));
-            if (mounted && Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            }
-            // AuthGate's StreamBuilder will handle the rest automatically
-          }
+          // AuthGate's StreamBuilder listening to authStateChanges() will automatically
+          // detect the auth state change and rebuild to show MainScreen.
+          // The stream emits immediately after Google sign-in completes.
         } else {
           // User not properly authenticated
           if (mounted) {

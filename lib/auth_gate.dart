@@ -80,6 +80,8 @@ class _AuthGateState extends State<AuthGate> {
                 }
 
                 // If no passcode, go directly to the main screen
+                // Don't use a key based on user ID - this causes MainScreen to reset
+                // its state (like _selectedIndex) every time user data changes
                 return const MainScreen();
               },
             );
