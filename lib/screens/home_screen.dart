@@ -536,233 +536,261 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               )
-            : SizedBox(
-                height: 220,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: _bills.length,
-                  itemBuilder: (context, index) {
-                    final bill = _bills[index];
-                    final styling = _getBillStyling(bill.name);
-                    final status = _getBillStatus(bill.dueDate);
+            : LayoutBuilder(
+                builder: (context, constraints) {
+                  // Calculate card width dynamically based on screen size
+                  final screenWidth = MediaQuery.of(context).size.width;
+                  final cardWidth = (screenWidth * 0.75).clamp(200.0, 240.0);
+                  final cardHeight = 200.0; // Increased height to accommodate button
+                  
+                  return SizedBox(
+                    height: cardHeight,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      itemCount: _bills.length,
+                      itemBuilder: (context, index) {
+                        final bill = _bills[index];
+                        final styling = _getBillStyling(bill.name);
+                        final status = _getBillStatus(bill.dueDate);
 
-                    return Container(
-                      width: MediaQuery.of(context).size.width * 0.8,
-                      constraints: const BoxConstraints(minWidth: 220, maxWidth: 240),
-                      margin: const EdgeInsets.only(right: 16),
-                      child: Card(
-                        elevation: 3,
-                        shape: RoundedRectangleBorder(
-                          side: BorderSide(
-                            color: status.color.withOpacity(0.2),
-                            width: 1,
-                          ),
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                colorScheme.surfaceContainerHighest.withOpacity(0.5),
-                                colorScheme.surface,
-                              ],
+                        return Container(
+                          width: cardWidth,
+                          margin: const EdgeInsets.only(right: 16),
+                          child: Card(
+                            elevation: 3,
+                            shape: RoundedRectangleBorder(
+                              side: BorderSide(
+                                color: status.color.withOpacity(0.2),
+                                width: 1,
+                              ),
+                              borderRadius: BorderRadius.circular(24),
                             ),
-                            borderRadius: BorderRadius.circular(24),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(10),
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                          colors: [
-                                            styling.color,
-                                            styling.color.withOpacity(0.7),
-                                          ],
-                                        ),
-                                        borderRadius: BorderRadius.circular(14),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: styling.color.withOpacity(0.3),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Icon(
-                                        styling.icon,
-                                        size: 24,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    const Spacer(),
-                                    if (bill.isRecurring)
-                                      Container(
-                                        padding: const EdgeInsets.all(6),
-                                        decoration: BoxDecoration(
-                                          color: colorScheme.primaryContainer.withOpacity(0.5),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Icon(
-                                          Icons.sync_rounded,
-                                          size: 16,
-                                          color: colorScheme.onPrimaryContainer,
-                                        ),
-                                      ),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                                    colorScheme.surface,
                                   ],
                                 ),
-                                const SizedBox(height: 16),
-                                // Bill name - always visible, no Flexible
-                                Text(
-                                  bill.name,
-                                  style: GoogleFonts.inter(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                    color: colorScheme.onSurface,
-                                    height: 1.2,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 12),
-                                // Amount
-                                Text(
-                                  '$_currencySymbol${bill.amount.toStringAsFixed(0)}',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w700,
-                                    color: colorScheme.onSurface,
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                // Status badge
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: status.color.withOpacity(0.15),
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                      color: status.color.withOpacity(0.3),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        _getStatusIcon(status.text),
-                                        size: 14,
-                                        color: status.color,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        status.text,
-                                        style: GoogleFonts.inter(
-                                          color: status.color,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                // Pay button
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: FilledButton.tonal(
-                                    onPressed: () async {
-                                      if (currentUser == null) return;
-                                      
-                                      final billTransaction = model.Transaction(
-                                        type: 'expense',
-                                        amount: bill.amount,
-                                        description: 'Paid bill: ${bill.name}',
-                                        date: DateTime.now().toIso8601String(),
-                                        categoryId: await dbHelper.getOrCreateCategory(
-                                          'Bills',
-                                          currentUser.uid,
-                                          type: 'expense',
-                                        ),
-                                      );
-                                      await dbHelper.addTransaction(
-                                        billTransaction,
-                                        currentUser.uid,
-                                      );
-
-                                      if (bill.isRecurring) {
-                                        final nextDueDate = _calculateNextDueDate(bill);
-                                        final updatedBill = bill.copyWith(
-                                          dueDate: nextDueDate,
-                                        );
-                                        await dbHelper.updateBill(
-                                          updatedBill,
-                                          currentUser.uid,
-                                        );
-                                        if (mounted) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                'Recurring bill "${bill.name}" paid. Next due date set.',
-                                                style: GoogleFonts.inter(),
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              child: Padding(
+                                padding: EdgeInsets.all((cardWidth * 0.08).clamp(12.0, 16.0)),
+                                child: LayoutBuilder(
+                                  builder: (context, cardConstraints) {
+                                    // Calculate responsive sizes based on card width
+                                    final cardW = cardConstraints.maxWidth;
+                                    final iconSize = (cardW * 0.12).clamp(18.0, 24.0);
+                                    final fontSizeName = (cardW * 0.08).clamp(14.0, 16.0);
+                                    final fontSizeAmount = (cardW * 0.11).clamp(20.0, 22.0);
+                                    final fontSizeStatus = (cardW * 0.055).clamp(10.0, 11.0);
+                                    final spacing = (cardW * 0.04).clamp(6.0, 12.0);
+                                    final buttonHeight = (cardHeight * 0.16).clamp(26.0, 30.0);
+                                    
+                                    return Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        // Icon row
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding: EdgeInsets.all(iconSize * 0.4),
+                                              decoration: BoxDecoration(
+                                                gradient: LinearGradient(
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
+                                                  colors: [
+                                                    styling.color,
+                                                    styling.color.withOpacity(0.7),
+                                                  ],
+                                                ),
+                                                borderRadius: BorderRadius.circular(12),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: styling.color.withOpacity(0.3),
+                                                    blurRadius: 6,
+                                                    offset: const Offset(0, 2),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: Icon(
+                                                styling.icon,
+                                                size: iconSize,
+                                                color: Colors.white,
                                               ),
                                             ),
-                                          );
-                                        }
-                                      } else {
-                                        await dbHelper.deleteBill(bill.id!, currentUser.uid);
-                                        if (mounted) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                'Bill "${bill.name}" marked as paid.',
-                                                style: GoogleFonts.inter(),
+                                            const Spacer(),
+                                            if (bill.isRecurring)
+                                              Container(
+                                                padding: EdgeInsets.all(iconSize * 0.35),
+                                                decoration: BoxDecoration(
+                                                  color: colorScheme.primaryContainer.withOpacity(0.5),
+                                                  shape: BoxShape.circle,
+                                                ),
+                                                child: Icon(
+                                                  Icons.sync_rounded,
+                                                  size: iconSize * 0.7,
+                                                  color: colorScheme.onPrimaryContainer,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                        SizedBox(height: spacing),
+                                        // Bill name
+                                        Text(
+                                          bill.name,
+                                          style: GoogleFonts.inter(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: fontSizeName,
+                                            color: colorScheme.onSurface,
+                                            height: 1.2,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        SizedBox(height: spacing * 0.7),
+                                        // Amount
+                                        Text(
+                                          '$_currencySymbol${bill.amount.toStringAsFixed(0)}',
+                                          style: GoogleFonts.inter(
+                                            fontSize: fontSizeAmount,
+                                            fontWeight: FontWeight.w700,
+                                            color: colorScheme.onSurface,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        SizedBox(height: spacing),
+                                        // Status badge
+                                        Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: spacing * 0.8,
+                                            vertical: spacing * 0.5,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: status.color.withOpacity(0.15),
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(
+                                              color: status.color.withOpacity(0.3),
+                                              width: 1,
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                _getStatusIcon(status.text),
+                                                size: fontSizeStatus,
+                                                color: status.color,
+                                              ),
+                                              SizedBox(width: spacing * 0.4),
+                                              Flexible(
+                                                child: Text(
+                                                  status.text,
+                                                  style: GoogleFonts.inter(
+                                                    color: status.color,
+                                                    fontSize: fontSizeStatus,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        SizedBox(height: spacing),
+                                        // Pay button - always visible at bottom
+                                        SizedBox(
+                                          width: double.infinity,
+                                          child: FilledButton.tonal(
+                                            onPressed: () async {
+                                              if (currentUser == null) return;
+                                              
+                                              final billTransaction = model.Transaction(
+                                                type: 'expense',
+                                                amount: bill.amount,
+                                                description: 'Paid bill: ${bill.name}',
+                                                date: DateTime.now().toIso8601String(),
+                                                categoryId: await dbHelper.getOrCreateCategory(
+                                                  'Bills',
+                                                  currentUser.uid,
+                                                  type: 'expense',
+                                                ),
+                                              );
+                                              await dbHelper.addTransaction(
+                                                billTransaction,
+                                                currentUser.uid,
+                                              );
+
+                                              if (bill.isRecurring) {
+                                                final nextDueDate = _calculateNextDueDate(bill);
+                                                final updatedBill = bill.copyWith(
+                                                  dueDate: nextDueDate,
+                                                );
+                                                await dbHelper.updateBill(
+                                                  updatedBill,
+                                                  currentUser.uid,
+                                                );
+                                                if (mounted) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        'Recurring bill "${bill.name}" paid. Next due date set.',
+                                                        style: GoogleFonts.inter(),
+                                                      ),
+                                                    ),
+                                                  );
+                                                }
+                                              } else {
+                                                await dbHelper.deleteBill(bill.id!, currentUser.uid);
+                                                if (mounted) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        'Bill "${bill.name}" marked as paid.',
+                                                        style: GoogleFonts.inter(),
+                                                      ),
+                                                    ),
+                                                  );
+                                                }
+                                              }
+
+                                              _refreshData();
+                                            },
+                                            style: FilledButton.styleFrom(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: spacing * 0.8,
+                                                vertical: spacing * 0.6,
+                                              ),
+                                              minimumSize: Size(0, buttonHeight),
+                                            ),
+                                            child: Text(
+                                              'Pay Bill',
+                                              style: GoogleFonts.inter(
+                                                fontSize: fontSizeStatus + 1,
+                                                fontWeight: FontWeight.w600,
                                               ),
                                             ),
-                                          );
-                                        }
-                                      }
-
-                                      _refreshData();
-                                    },
-                                    style: FilledButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 8,
-                                      ),
-                                      minimumSize: const Size(0, 32),
-                                    ),
-                                    child: Text(
-                                      'Pay Bill',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
                                 ),
-                              ],
+                              ),
                             ),
                           ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                        );
+                      },
+                    ),
+                  );
+                },
               ),
       ],
     );
