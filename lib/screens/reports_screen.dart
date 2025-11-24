@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../helpers/database_helper.dart';
 import '../helpers/pdf_helper.dart';
 import '../models/category.dart';
@@ -20,7 +22,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
   final compactFormatter = NumberFormat.compact();
   final User? _currentUser = FirebaseAuth.instance.currentUser;
 
-  String _selectedTagFilter = 'business';
   String _selectedTimeFilter = 'month';
 
   @override
@@ -45,7 +46,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   ({double profitLoss, String tip, Color color}) _getProfitLossAndTip(List<model.Transaction> transactions, String timeFilter) {
-    final businessTransactions = transactions.where((t) => t.tag == 'business' || t.type == 'income').toList();
+    final businessTransactions = transactions.where((t) => t.tag == 'business').toList();
     
     DateTime now = DateTime.now();
     DateTime startDate;
@@ -87,17 +88,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     }
   }
   
-  Map<String, double> _prepareTagBreakdownData(List<model.Transaction> transactions) {
-    final Map<String, double> tagData = {'Business': 0.0, 'Personal': 0.0};
-    for (var transaction in transactions.where((t) => t.type == 'expense')) {
-      if (transaction.tag == 'business') {
-        tagData.update('Business', (value) => value + transaction.amount);
-      } else if (transaction.tag == 'personal') {
-        tagData.update('Personal', (value) => value + transaction.amount);
-      }
-    }
-    return tagData;
-  }
+  // Removed tag breakdown - only business transactions now
 
   Map<String, double> _prepareExpenseData(List<model.Transaction> transactions, Map<int, String> categoryMap) {
     final Map<String, double> expenseData = {};
@@ -125,10 +116,28 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Reports'),
-        actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _refreshReports, tooltip: 'Refresh Data')],
+        title: Text(
+          'Business Reports',
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+        ),
+        elevation: 0,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+          statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            onPressed: _refreshReports,
+            tooltip: 'Refresh Data',
+          ),
+        ],
       ),
       body: SafeArea(
         child: FutureBuilder<Map<String, dynamic>>(
@@ -165,17 +174,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
               try { return DateTime.parse(t.date).isAfter(startDate); } catch (e) { return false; }
             }).toList();
 
-            final fullyFilteredTransactions = timeFilteredTransactions.where((t) {
-              if (_selectedTagFilter == 'all') return true;
-              if (t.type == 'income') return true;
-              return t.tag == _selectedTagFilter;
-            }).toList();
+            // Only show business transactions
+            final fullyFilteredTransactions = timeFilteredTransactions.where((t) => t.tag == 'business').toList();
 
             final expenseData = _prepareExpenseData(fullyFilteredTransactions, categoryMap);
             final barChartData = _prepareBarChartData(fullyFilteredTransactions);
             final totalExpenses = expenseData.values.fold(0.0, (sum, amount) => sum + amount);
-            final profitLossData = _getProfitLossAndTip(allTransactions, _selectedTimeFilter);
-            final tagBreakdownData = _prepareTagBreakdownData(timeFilteredTransactions);
+            final profitLossData = _getProfitLossAndTip(fullyFilteredTransactions, _selectedTimeFilter);
 
             return Column(
               children: [
@@ -197,137 +202,447 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     ],
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-                  child: SegmentedButton<String>(
-                    segments: const [
-                      ButtonSegment(value: 'all', label: Text('All Expenses')),
-                      ButtonSegment(value: 'business', label: Text('Business')),
-                      ButtonSegment(value: 'personal', label: Text('Personal')),
-                    ],
-                    selected: {_selectedTagFilter},
-                    onSelectionChanged: (newSelection) => setState(() => _selectedTagFilter = newSelection.first),
-                  ),
-                ),
+                // Tag filter removed - only business transactions now
                 Expanded(
                   child: ListView(
                     padding: const EdgeInsets.all(16.0),
                     children: [
-                      Card(
-                        color: profitLossData.color.withOpacity(0.15),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(children: [
-                            Text('Business Profit/Loss (${_selectedTimeFilter.capitalize()})', style: Theme.of(context).textTheme.titleMedium),
-                            const SizedBox(height: 8),
-                            Text(
-                              '$_currencySymbol ${NumberFormat.currency(locale: 'en_US', symbol: '').format(profitLossData.profitLoss)}',
-                              style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: profitLossData.color),
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              profitLossData.color.withOpacity(0.2),
+                              profitLossData.color.withOpacity(0.05),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: profitLossData.color.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  profitLossData.profitLoss >= 0
+                                      ? Icons.trending_up_rounded
+                                      : Icons.trending_down_rounded,
+                                  color: profitLossData.color,
+                                  size: 28,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Business Profit/Loss',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 12),
-                            Text(profitLossData.tip, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
-                          ]),
+                            const SizedBox(height: 16),
+                            Text(
+                              '$_currencySymbol ${NumberFormat.currency(locale: 'en_US', symbol: '').format(profitLossData.profitLoss.abs())}',
+                              style: GoogleFonts.inter(
+                                fontSize: 42,
+                                fontWeight: FontWeight.bold,
+                                color: profitLossData.color,
+                                letterSpacing: -1,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: profitLossData.color.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                _selectedTimeFilter.toUpperCase(),
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: profitLossData.color,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.info_outline_rounded,
+                                    size: 18,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      profitLossData.tip,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        color: theme.colorScheme.onSurfaceVariant,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      // Modern Income vs Expenses Card
+                      Container(
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.primaryContainer,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                    Icons.analytics_rounded,
+                                    color: theme.colorScheme.onPrimaryContainer,
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'Income vs Expenses',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 24),
+                            SizedBox(
+                              height: 280,
+                              child: BarChart(
+                                BarChartData(
+                                  alignment: BarChartAlignment.spaceAround,
+                                  maxY: (barChartData['Income']! > barChartData['Expenses']!
+                                          ? barChartData['Income']!
+                                          : barChartData['Expenses']!) *
+                                      1.15,
+                                  barGroups: [
+                                    _buildModernBarGroupData(
+                                      0,
+                                      barChartData['Income'] ?? 0,
+                                      Colors.green.shade600,
+                                      theme,
+                                    ),
+                                    _buildModernBarGroupData(
+                                      1,
+                                      barChartData['Expenses'] ?? 0,
+                                      Colors.red.shade600,
+                                      theme,
+                                    ),
+                                  ],
+                                  titlesData: FlTitlesData(
+                                    bottomTitles: AxisTitles(
+                                      sideTitles: SideTitles(
+                                        showTitles: true,
+                                        getTitlesWidget: (value, meta) {
+                                          String text = '';
+                                          if (value.toInt() == 0) text = 'Income';
+                                          if (value.toInt() == 1) text = 'Expenses';
+                                          return Padding(
+                                            padding: const EdgeInsets.only(top: 8.0),
+                                            child: Text(
+                                              text,
+                                              style: GoogleFonts.inter(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                    leftTitles: AxisTitles(
+                                      sideTitles: SideTitles(
+                                        showTitles: true,
+                                        reservedSize: 60,
+                                        getTitlesWidget: (value, meta) {
+                                          if (value == 0) return const Text('');
+                                          return Padding(
+                                            padding: const EdgeInsets.only(right: 8.0),
+                                            child: Text(
+                                              compactFormatter.format(value),
+                                              style: GoogleFonts.inter(
+                                                fontSize: 11,
+                                                color: theme.colorScheme.onSurfaceVariant,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        interval: (barChartData['Income']! > barChartData['Expenses']!
+                                                ? barChartData['Income']!
+                                                : barChartData['Expenses']!) /
+                                            5,
+                                      ),
+                                    ),
+                                    topTitles: const AxisTitles(
+                                      sideTitles: SideTitles(showTitles: false),
+                                    ),
+                                    rightTitles: const AxisTitles(
+                                      sideTitles: SideTitles(showTitles: false),
+                                    ),
+                                  ),
+                                  borderData: FlBorderData(
+                                    show: true,
+                                    border: Border(
+                                      bottom: BorderSide(
+                                        color: theme.colorScheme.outline.withOpacity(0.3),
+                                        width: 1.5,
+                                      ),
+                                      left: BorderSide(
+                                        color: theme.colorScheme.outline.withOpacity(0.3),
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                  ),
+                                  gridData: FlGridData(
+                                    show: true,
+                                    drawVerticalLine: false,
+                                    horizontalInterval: (barChartData['Income']! >
+                                            barChartData['Expenses']!
+                                        ? barChartData['Income']!
+                                        : barChartData['Expenses']!) /
+                                        5,
+                                    getDrawingHorizontalLine: (value) => FlLine(
+                                      color: theme.colorScheme.outline.withOpacity(0.15),
+                                      strokeWidth: 1,
+                                      dashArray: [5, 5],
+                                    ),
+                                  ),
+                                  barTouchData: BarTouchData(
+                                    enabled: true,
+                                    touchTooltipData: BarTouchTooltipData(
+                                      getTooltipColor: (group) => theme.colorScheme.surface,
+                                      tooltipRoundedRadius: 8,
+                                      tooltipPadding: const EdgeInsets.all(8),
+                                      tooltipMargin: 8,
+                                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                                        return BarTooltipItem(
+                                          '$_currencySymbol${NumberFormat.currency(locale: 'en_US', symbol: '').format(rod.toY)}',
+                                          GoogleFonts.inter(
+                                            color: theme.colorScheme.onSurface,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12,
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                _buildLegendItem(
+                                  'Income',
+                                  Colors.green.shade600,
+                                  barChartData['Income'] ?? 0,
+                                  theme,
+                                ),
+                                _buildLegendItem(
+                                  'Expenses',
+                                  Colors.red.shade600,
+                                  barChartData['Expenses'] ?? 0,
+                                  theme,
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 24),
-                      Text('Income vs. Expenses (${_selectedTimeFilter.capitalize()}, ${_selectedTagFilter.capitalize()})', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-                      const SizedBox(height: 20),
-                      SizedBox(
-                        height: 250, 
-                        child: BarChart(
-                           BarChartData(
-                            alignment: BarChartAlignment.spaceAround,
-                            barGroups: [
-                              _buildBarGroupData(0, barChartData['Income'] ?? 0, Colors.green),
-                              _buildBarGroupData(1, barChartData['Expenses'] ?? 0, Colors.red),
-                            ],
-                            titlesData: FlTitlesData(
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  getTitlesWidget: (value, meta) {
-                                    String text = '';
-                                    if (value.toInt() == 0) text = 'Income';
-                                    if (value.toInt() == 1) text = 'Expenses';
-                                    return Padding(padding: const EdgeInsets.only(top: 8.0), child: Text(text));
-                                  },
-                                ),
-                              ),
-                              leftTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  reservedSize: 50,
-                                  getTitlesWidget: (value, meta) {
-                                    if (value == 0 || value == meta.max) return Text(compactFormatter.format(value));
-                                    if (meta.max > 5 && value % (meta.max / 5) < 100 && value != 0) return Text(compactFormatter.format(value));
-                                    return const Text('');
-                                  },
-                                ),
-                              ),
-                              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                            ),
-                            borderData: FlBorderData(show: true, border: Border(bottom: BorderSide(color: Colors.grey.shade300, width: 2), left: BorderSide(color: Colors.grey.shade300, width: 2))),
-                            gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1)),
-                          ),
-                        )
-                      ),
-                      const SizedBox(height: 40),
-                      
-                      if (tagBreakdownData['Business']! > 0 || tagBreakdownData['Personal']! > 0) ...[
-                        Text('Business vs. Personal (${_selectedTimeFilter.capitalize()})', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-                        const SizedBox(height: 20),
-                        SizedBox(
-                          height: 200, 
-                          child: PieChart(
-                            PieChartData(
-                              sectionsSpace: 2,
-                              centerSpaceRadius: 30,
-                              sections: [
-                                if (tagBreakdownData['Business']! > 0)
-                                  PieChartSectionData(value: tagBreakdownData['Business'], title: 'Business', color: Colors.blue, radius: 80),
-                                if (tagBreakdownData['Personal']! > 0)
-                                  PieChartSectionData(value: tagBreakdownData['Personal'], title: 'Personal', color: Colors.purple, radius: 80),
-                              ],
-                            ),
-                          )
-                        ),
-                        const SizedBox(height: 40),
-                      ],
                       
                       if (expenseData.isNotEmpty) ...[
-                        Text('Expense Breakdown (${_selectedTimeFilter.capitalize()}, ${_selectedTagFilter.capitalize()})', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-                        const SizedBox(height: 20),
-                        SizedBox(
-                          height: 300, 
-                          child: PieChart(
-                            PieChartData(
-                              sectionsSpace: 2,
-                              centerSpaceRadius: 40,
-                              sections: expenseData.entries.map((entry) {
-                                final percentage = (entry.value / totalExpenses) * 100;
-                                return PieChartSectionData(
-                                  color: _getColorForCategory(entry.key),
-                                  value: entry.value,
-                                  title: '${percentage.toStringAsFixed(1)}%',
-                                  radius: 100,
-                                  titleStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
-                                );
-                              }).toList(),
-                            ),
-                          )
+                        const SizedBox(height: 32),
+                        // Modern Expense Breakdown Card
+                        Container(
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: theme.colorScheme.primaryContainer,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Icon(
+                                      Icons.pie_chart_rounded,
+                                      color: theme.colorScheme.onPrimaryContainer,
+                                      size: 24,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      'Expense Breakdown',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 24),
+                              SizedBox(
+                                height: 320,
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      flex: 2,
+                                      child: PieChart(
+                                        PieChartData(
+                                          sectionsSpace: 3,
+                                          centerSpaceRadius: 60,
+                                          sections: expenseData.entries.map((entry) {
+                                            final percentage =
+                                                (entry.value / totalExpenses) * 100;
+                                            return PieChartSectionData(
+                                              color: _getModernColorForCategory(entry.key, theme),
+                                              value: entry.value,
+                                              title: percentage > 5
+                                                  ? '${percentage.toStringAsFixed(1)}%'
+                                                  : '',
+                                              radius: 110,
+                                              titleStyle: GoogleFonts.inter(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white,
+                                              ),
+                                              badgeWidget: percentage > 5
+                                                  ? null
+                                                  : Container(
+                                                      padding: const EdgeInsets.all(4),
+                                                      decoration: BoxDecoration(
+                                                        color: theme.colorScheme.surface,
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                      child: Text(
+                                                        '${percentage.toStringAsFixed(0)}%',
+                                                        style: GoogleFonts.inter(
+                                                          fontSize: 10,
+                                                          fontWeight: FontWeight.bold,
+                                                          color: theme.colorScheme.onSurface,
+                                                        ),
+                                                      ),
+                                                    ),
+                                              badgePositionPercentageOffset: 1.3,
+                                            );
+                                          }).toList(),
+                                          pieTouchData: PieTouchData(
+                                            touchCallback: (FlTouchEvent event, pieTouchResponse) {},
+                                            enabled: true,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      flex: 1,
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: expenseData.entries
+                                            .map((entry) => Padding(
+                                                  padding: const EdgeInsets.only(bottom: 12),
+                                                  child: _buildCategoryLegendItem(
+                                                    entry.key,
+                                                    _getModernColorForCategory(entry.key, theme),
+                                                    entry.value,
+                                                    totalExpenses,
+                                                    theme,
+                                                  ),
+                                                ))
+                                            .toList(),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 24),
-                        ...expenseData.entries.map((entry) => Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 4.0),
-                              child: Row(children: [
-                                Container(width: 16, height: 16, color: _getColorForCategory(entry.key)),
-                                const SizedBox(width: 8),
-                                Text('${entry.key}: $_currencySymbol${entry.value.toStringAsFixed(2)}', style: const TextStyle(fontSize: 16)),
-                              ]),
-                            )),
                       ] else
-                        Center(child: Padding(padding: const EdgeInsets.all(20.0), child: Text('No ${_selectedTagFilter} expense data for this period.'))),
+                        Container(
+                          padding: const EdgeInsets.all(40),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.bar_chart_rounded,
+                                size: 64,
+                                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'No Business Expense Data',
+                                style: GoogleFonts.inter(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Add transactions to see your expense breakdown',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7),
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -335,37 +650,70 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     children: [
-                      // Info card explaining business-only reports
-                      Card(
-                        color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.info_outline,
-                                color: Theme.of(context).colorScheme.primary,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  'PDF reports contain ONLY business transactions, suitable for loan applications and investor presentations.',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ),
+                      // Modern PDF Export Card
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              theme.colorScheme.primaryContainer.withOpacity(0.6),
+                              theme.colorScheme.primaryContainer.withOpacity(0.3),
                             ],
                           ),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: theme.colorScheme.primary.withOpacity(0.3),
+                            width: 1,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: () async {
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.primary,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.picture_as_pdf_rounded,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Export Business Report',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'PDF with clean descriptions',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 13,
+                                          color: theme.colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              width: double.infinity,
+                              child: FilledButton.icon(
+                                onPressed: () async {
                             if (_currentUser != null) {
                               try {
                                 // Filter to only business transactions for PDF
@@ -405,12 +753,23 @@ class _ReportsScreenState extends State<ReportsScreen> {
                               }
                             }
                           },
-                          icon: const Icon(Icons.picture_as_pdf),
-                          label: const Text('Export Business Report (PDF)'),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
+                                icon: const Icon(Icons.picture_as_pdf_rounded, size: 22),
+                                label: Text(
+                                  'Generate PDF Report',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                style: FilledButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -424,25 +783,132 @@ class _ReportsScreenState extends State<ReportsScreen> {
     );
   }
 
-  // RESTORED: Full implementation of _buildBarGroupData
-  BarChartGroupData _buildBarGroupData(int x, double y, Color color) {
+  BarChartGroupData _buildModernBarGroupData(int x, double y, Color color, ThemeData theme) {
     return BarChartGroupData(
       x: x,
       barRods: [
         BarChartRodData(
           toY: y,
           color: color,
-          width: 40,
-          borderRadius: const BorderRadius.only(topLeft: Radius.circular(6), topRight: Radius.circular(6)),
+          width: 50,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(12),
+          ),
+          gradientFrom: const Offset(0, 1),
+          gradientTo: const Offset(0, 0),
+          gradientColors: [
+            color.withOpacity(0.8),
+            color,
+          ],
         ),
       ],
     );
   }
 
-  // RESTORED: Full implementation of _getColorForCategory
-  Color _getColorForCategory(String category) {
-    int hash = category.hashCode;
-    return Color((hash & 0x00FFFFFF) | 0xFF000000).withOpacity(0.8);
+  Color _getModernColorForCategory(String category, ThemeData theme) {
+    // Modern color palette
+    final colors = [
+      Colors.blue.shade600,
+      Colors.green.shade600,
+      Colors.orange.shade600,
+      Colors.purple.shade600,
+      Colors.pink.shade600,
+      Colors.teal.shade600,
+      Colors.indigo.shade600,
+      Colors.amber.shade600,
+      Colors.red.shade600,
+      Colors.cyan.shade600,
+      Colors.deepPurple.shade600,
+      Colors.lime.shade600,
+    ];
+    int hash = category.hashCode.abs();
+    return colors[hash % colors.length];
+  }
+
+  Widget _buildLegendItem(String label, Color color, double value, ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3), width: 1),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '$_currencySymbol${NumberFormat.currency(locale: 'en_US', symbol: '').format(value)}',
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryLegendItem(
+      String category, Color color, double value, double total, ThemeData theme) {
+    final percentage = (value / total) * 100;
+    return Row(
+      children: [
+        Container(
+          width: 14,
+          height: 14,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                category,
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                '${percentage.toStringAsFixed(1)}% · $_currencySymbol${value.toStringAsFixed(0)}',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }
 

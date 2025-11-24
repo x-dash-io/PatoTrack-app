@@ -29,9 +29,9 @@ class _FaqScreenState extends State<FaqScreen> {
     ),
     FAQItem(
       category: 'Getting Started',
-      question: 'What\'s the difference between business and personal tags?',
+      question: 'Are all transactions tracked as business?',
       answer:
-          'Business and personal tags help you separate your transactions. When creating a transaction, you can choose whether it\'s business or personal. This helps you track your spending patterns separately.',
+          'Yes, all transactions in PatoTrack are automatically categorized as business transactions. This ensures your reports are suitable for loan applications and investor presentations.',
     ),
     FAQItem(
       category: 'Bills',
@@ -112,11 +112,6 @@ class _FaqScreenState extends State<FaqScreen> {
     super.initState();
     _filteredFAQs = _allFAQs;
     _searchController.addListener(_filterFAQs);
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-      ),
-    );
   }
 
   @override
@@ -155,7 +150,7 @@ class _FaqScreenState extends State<FaqScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final categories = _allFAQs.map((e) => e.category).toSet().toList();
-
+    
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -163,75 +158,95 @@ class _FaqScreenState extends State<FaqScreen> {
           style: GoogleFonts.inter(fontWeight: FontWeight.w600),
         ),
         elevation: 0,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+          statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+        ),
       ),
       body: SafeArea(
         child: Column(
           children: [
-            // Search bar
+            // Modern Search bar
             Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: TextField(
-                controller: _searchController,
-                style: GoogleFonts.inter(),
-                decoration: InputDecoration(
-                  hintText: 'Search FAQ...',
-                  hintStyle: GoogleFonts.inter(
-                    color: isDark ? Colors.white54 : Colors.black54,
-                  ),
-                  prefixIcon: Icon(
-                    Icons.search,
-                    color: isDark ? Colors.white54 : Colors.black54,
-                  ),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            _searchController.clear();
-                            _filterFAQs();
-                          },
-                        )
-                      : null,
-                  filled: true,
-                  fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.primary,
-                      width: 2,
+              padding: const EdgeInsets.all(20.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
                     ),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
+                  ],
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  style: GoogleFonts.inter(),
+                  decoration: InputDecoration(
+                    hintText: 'Search FAQ...',
+                    hintStyle: GoogleFonts.inter(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6),
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6),
+                      size: 24,
+                    ),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: Icon(
+                              Icons.clear_rounded,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                            onPressed: () {
+                              _searchController.clear();
+                              _filterFAQs();
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 2,
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
                   ),
                 ),
               ),
             ),
 
-            // Category filter
+            // Modern Category filter
             SizedBox(
-              height: 50,
+              height: 56,
               child: ListView(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 children: [
                   _CategoryChip(
                     label: 'All',
                     isSelected: _selectedCategory == null,
                     onTap: () => _selectCategory(null),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 10),
                   ...categories.map(
                     (category) => Padding(
-                      padding: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.only(right: 10),
                       child: _CategoryChip(
                         label: category,
                         isSelected: _selectedCategory == category,
@@ -243,33 +258,52 @@ class _FaqScreenState extends State<FaqScreen> {
               ),
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
 
             // FAQ List
             Expanded(
               child: _filteredFAQs.isEmpty
                   ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.search_off,
-                            size: 64,
-                            color: isDark ? Colors.white38 : Colors.black38,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No FAQs found',
-                            style: GoogleFonts.inter(
-                              fontSize: 17,
-                              color: isDark ? Colors.white54 : Colors.black54,
+                      child: Padding(
+                        padding: const EdgeInsets.all(40),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.search_off_rounded,
+                                size: 48,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.4),
+                              ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 24),
+                            Text(
+                              'No FAQs Found',
+                              style: GoogleFonts.inter(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Try a different search term',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     )
                   : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                       itemCount: _filteredFAQs.length,
                       itemBuilder: (context, index) {
                         final faq = _filteredFAQs[index];
@@ -316,10 +350,27 @@ class _FAQCardState extends State<_FAQCard> {
     final colorScheme = theme.colorScheme;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(20),
+        color: _isExpanded
+            ? colorScheme.surfaceContainerHighest
+            : colorScheme.surfaceContainerHighest.withOpacity(0.6),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: _isExpanded
+              ? colorScheme.primary.withOpacity(0.3)
+              : Colors.transparent,
+          width: 1,
+        ),
+        boxShadow: _isExpanded
+            ? [
+                BoxShadow(
+                  color: colorScheme.primary.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -330,18 +381,31 @@ class _FAQCardState extends State<_FAQCard> {
                 _isExpanded = !_isExpanded;
               });
             },
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(24),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               child: Row(
                 children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      _isExpanded ? Icons.help_rounded : Icons.help_outline_rounded,
+                      size: 22,
+                      color: colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: Text(
                       widget.faq.question,
                       style: GoogleFonts.inter(
                         fontWeight: FontWeight.w600,
                         fontSize: 16,
-                        color: Theme.of(context).colorScheme.onSurface,
+                        color: colorScheme.onSurface,
                       ),
                       maxLines: _isExpanded ? null : 2,
                       overflow: _isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
@@ -349,9 +413,9 @@ class _FAQCardState extends State<_FAQCard> {
                   ),
                   const SizedBox(width: 12),
                   Icon(
-                    _isExpanded ? Icons.expand_less : Icons.expand_more,
-                    size: 24,
-                    color: isDark ? Colors.white70 : Colors.black54,
+                    _isExpanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+                    size: 28,
+                    color: colorScheme.primary,
                   ),
                 ],
               ),
@@ -359,33 +423,56 @@ class _FAQCardState extends State<_FAQCard> {
           ),
           if (_isExpanded)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      widget.faq.category.toUpperCase(),
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        color: Theme.of(context).colorScheme.onPrimaryContainer,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.5,
+                      gradient: LinearGradient(
+                        colors: [
+                          colorScheme.primaryContainer,
+                          colorScheme.primaryContainer.withOpacity(0.7),
+                        ],
                       ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.label_rounded,
+                          size: 14,
+                          color: colorScheme.onPrimaryContainer,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          widget.faq.category.toUpperCase(),
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            color: colorScheme.onPrimaryContainer,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    widget.faq.answer,
-                    style: GoogleFonts.inter(
-                      fontSize: 15,
-                      height: 1.6,
-                      color: isDark ? Colors.white87 : Colors.black87,
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      widget.faq.answer,
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        height: 1.7,
+                        color: colorScheme.onSurface,
+                      ),
                     ),
                   ),
                 ],
@@ -429,7 +516,7 @@ class _CategoryChip extends StatelessWidget {
             color: isSelected
                 ? Colors.white
                 : isDark
-                    ? Colors.white87
+                    ? Colors.white.withOpacity(0.87)
                     : Colors.black87,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
             fontSize: 14,

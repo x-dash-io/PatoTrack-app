@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../helpers/database_helper.dart';
@@ -199,9 +200,17 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
   Widget build(BuildContext context) {
     final currencyFormatter = NumberFormat.currency(locale: 'en_US', symbol: 'KSh ');
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('All Transactions'),
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+          statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+        ),
         actions: [
           // NEW: Filter button
           IconButton(
@@ -270,24 +279,25 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                               margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                               child: ListTile(
                                 leading: Icon(isIncome ? Icons.arrow_downward : Icons.arrow_upward, color: amountColor),
-                                title: Text(transaction.description.isEmpty ? transaction.type.capitalize() : transaction.description),
-                                subtitle: Row(
-                                  children: [
-                                    Icon(
-                                      transaction.tag == 'business' ? Icons.business_center : Icons.person,
-                                      size: 14,
-                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      '${transaction.tag.capitalize()} · ${transaction.date.split('T')[0]}',
-                                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
-                                    ),
-                                  ],
+                                title: Text(
+                                  transaction.description.isEmpty ? transaction.type.capitalize() : transaction.description,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                trailing: Text(
-                                  '$amountPrefix${currencyFormatter.format(transaction.amount)}',
-                                  style: TextStyle(color: amountColor, fontWeight: FontWeight.bold),
+                                subtitle: Text(
+                                  transaction.date.split('T')[0],
+                                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                                trailing: Flexible(
+                                  child: Text(
+                                    '$amountPrefix${currencyFormatter.format(transaction.amount)}',
+                                    style: TextStyle(color: amountColor, fontWeight: FontWeight.bold),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                    textAlign: TextAlign.end,
+                                  ),
                                 ),
                                 onTap: () async {
                                   final result = await Navigator.of(context).push<bool>(

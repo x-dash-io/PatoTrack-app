@@ -194,14 +194,19 @@ class ModernLoadingIndicator extends StatelessWidget {
 
     if (message != null) {
       return Column(
+        mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           indicator,
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
             message!,
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontSize: 14,
+            ),
             textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       );
@@ -234,11 +239,14 @@ class LoadingOverlay extends StatelessWidget {
             color: Colors.black54,
             child: Center(
               child: Container(
-                constraints: const BoxConstraints(maxWidth: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                constraints: const BoxConstraints(
+                  maxWidth: 200,
+                  maxHeight: 120,
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: ModernLoadingIndicator(message: message),
               ),

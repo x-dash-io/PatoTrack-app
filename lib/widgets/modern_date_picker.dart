@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'dialog_helpers.dart';
 
 /// Modern Material Design 3 date picker
 
@@ -110,7 +111,6 @@ class _ModernDatePickerBottomSheet extends StatefulWidget {
 class _ModernDatePickerBottomSheetState
     extends State<_ModernDatePickerBottomSheet> {
   late DateTime selectedDate;
-  final theme = Theme.of(context);
 
   @override
   void initState() {

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'login_screen.dart';
 import '../widgets/loading_widgets.dart';
+import '../widgets/input_fields.dart';
 import '../services/google_sign_in_service.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -33,10 +33,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   Future<void> _signUp() async {
-    if (!_formKey.currentState!.validate()) {
+    // Validate form first - don't proceed if validation fails
+    final isValid = _formKey.currentState?.validate() ?? false;
+    if (!isValid) {
+      // Ensure loading state is false when validation fails
+      if (mounted && _isLoading) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
       return;
     }
 
+    // Only set loading state after validation passes
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
     });
@@ -89,20 +99,50 @@ class _SignUpScreenState extends State<SignUpScreen> {
     try {
       final userCredential = await GoogleSignInService.signInWithGoogle();
       
-      if (userCredential != null && mounted) {
-        // Success - AuthGate will handle navigation
-        Fluttertoast.showToast(
-          msg: 'Account created with Google successfully!',
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          textColor: Theme.of(context).colorScheme.onPrimary,
-        );
-      } else if (mounted) {
-        // User cancelled
-        setState(() {
-          _isLoading = false;
-        });
+      if (userCredential != null && userCredential.user != null && mounted) {
+        // Verify user is authenticated
+        final currentUser = FirebaseAuth.instance.currentUser;
+        if (currentUser != null) {
+          // Success - Reset loading state
+          // AuthGate will automatically detect the auth state change via StreamBuilder
+          // and navigate to the dashboard
+          setState(() {
+            _isLoading = false;
+          });
+          
+          // Show success message briefly (AuthGate will handle navigation)
+          Fluttertoast.showToast(
+            msg: 'Account created with Google successfully!',
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            textColor: Theme.of(context).colorScheme.onPrimary,
+          );
+        } else {
+          // User not properly authenticated
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+            final theme = Theme.of(context);
+            Fluttertoast.showToast(
+              msg: 'Authentication failed. Please try again.',
+              toastLength: Toast.LENGTH_LONG,
+              gravity: ToastGravity.BOTTOM,
+              backgroundColor: theme.colorScheme.error,
+              textColor: theme.colorScheme.onError,
+              fontSize: 16.0,
+            );
+          }
+        }
+      } else {
+        // User cancelled or sign-in returned null
+        // No need to show error - user intentionally cancelled
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -126,20 +166,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
-    SystemChrome.setSystemUIOverlayStyle(
-      SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: theme.brightness == Brightness.dark
-            ? Brightness.light
-            : Brightness.dark,
-        systemNavigationBarColor: Colors.transparent,
-        systemNavigationBarIconBrightness:
-            theme.brightness == Brightness.dark
-                ? Brightness.light
-                : Brightness.dark,
-      ),
-    );
 
     return Scaffold(
       body: Container(
@@ -239,9 +265,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             // Name field
-                            _buildTextField(
+                            StandardTextFormField(
                               controller: _nameController,
-                              label: 'Full Name',
+                              labelText: 'Full Name',
                               keyboardType: TextInputType.name,
                               prefixIcon: Icons.person_outline,
                               validator: (value) {
@@ -255,9 +281,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             const SizedBox(height: 20),
 
                             // Email field
-                            _buildTextField(
+                            StandardTextFormField(
                               controller: _emailController,
-                              label: 'Email',
+                              labelText: 'Email',
                               keyboardType: TextInputType.emailAddress,
                               prefixIcon: Icons.email_outlined,
                               validator: (value) {
@@ -274,9 +300,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             const SizedBox(height: 20),
 
                             // Password field
-                            _buildTextField(
+                            StandardTextFormField(
                               controller: _passwordController,
-                              label: 'Password',
+                              labelText: 'Password',
                               obscureText: !_isPasswordVisible,
                               prefixIcon: Icons.lock_outline,
                               suffixIcon: IconButton(
@@ -423,63 +449,4 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    TextInputType? keyboardType,
-    bool obscureText = false,
-    IconData? prefixIcon,
-    Widget? suffixIcon,
-    String? Function(String?)? validator,
-  }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      obscureText: obscureText,
-      style: GoogleFonts.inter(),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: GoogleFonts.inter(),
-        prefixIcon: prefixIcon != null
-            ? Icon(
-                prefixIcon,
-                size: 22,
-              )
-            : null,
-        suffixIcon: suffixIcon,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(
-            color: colorScheme.primary,
-            width: 2,
-          ),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(
-            color: colorScheme.error,
-            width: 1,
-          ),
-        ),
-        filled: true,
-        fillColor: colorScheme.surfaceContainerHighest,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 16,
-        ),
-      ),
-      validator: validator,
-    );
-  }
 }

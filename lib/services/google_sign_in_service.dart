@@ -13,10 +13,15 @@ class GoogleSignInService {
   /// Returns null if sign-in is cancelled or fails
   static Future<UserCredential?> signInWithGoogle() async {
     try {
-      // Trigger the Google Sign-In flow
+      // Always sign out first to force account selection
+      // This ensures the account picker is shown every time
+      await _googleSignIn.signOut();
+      
+      // Trigger the Google Sign-In flow with account selection
+      // This will show the account picker if multiple accounts exist
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
-      // User cancelled the sign-in
+      // User cancelled the sign-in (closed the account picker without selecting)
       if (googleUser == null) {
         return null;
       }
@@ -24,6 +29,11 @@ class GoogleSignInService {
       // Obtain the auth details from the request
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
+
+      // Verify we have valid tokens
+      if (googleAuth.accessToken == null || googleAuth.idToken == null) {
+        throw Exception('Failed to obtain authentication tokens from Google');
+      }
 
       // Create a new credential
       final credential = GoogleAuthProvider.credential(
@@ -39,7 +49,13 @@ class GoogleSignInService {
       // Handle Firebase Auth errors
       throw _handleAuthException(e);
     } catch (e) {
-      // Handle other errors (network, etc.)
+      // Handle other errors (network, cancellation, etc.)
+      // Don't throw if user cancelled - return null instead
+      if (e.toString().contains('sign_in_canceled') || 
+          e.toString().contains('cancelled') ||
+          e.toString().contains('canceled')) {
+        return null;
+      }
       throw Exception('Google Sign-In failed: $e');
     }
   }

@@ -79,23 +79,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    SystemChrome.setSystemUIOverlayStyle(
-      SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: theme.brightness == Brightness.dark
-            ? Brightness.light
-            : Brightness.dark,
-        statusBarBrightness: theme.brightness == Brightness.dark
-            ? Brightness.dark
-            : Brightness.light,
-        systemNavigationBarColor: Colors.transparent,
-        systemNavigationBarIconBrightness:
-            theme.brightness == Brightness.dark
-                ? Brightness.light
-                : Brightness.dark,
-      ),
-    );
-
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(

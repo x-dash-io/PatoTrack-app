@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../helpers/database_helper.dart';
 import '../models/category.dart';
 import '../widgets/dialog_helpers.dart';
 import '../widgets/loading_widgets.dart';
-import '../widgets/input_fields.dart';
 
 class ManageCategoriesScreen extends StatefulWidget {
   const ManageCategoriesScreen({super.key});
@@ -141,10 +139,24 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                   ),
                   const SizedBox(height: 24),
                   // Category Name Field
-                  StandardTextFormField(
+                  TextFormField(
                     controller: _nameController,
-                    labelText: 'Category Name',
-                    prefixIcon: Icons.label_rounded,
+                    autofocus: true,
+                    style: GoogleFonts.inter(),
+                    decoration: InputDecoration(
+                      labelText: 'Category Name',
+                      labelStyle: GoogleFonts.inter(),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: colorScheme.surfaceContainerHighest,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 24),
                   // Icon Selection
@@ -431,8 +443,6 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                 fontWeight: FontWeight.w600,
                 fontSize: 16,
               ),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
             ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
@@ -478,21 +488,13 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
-    
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
         title: Text(
           'Manage Categories',
           style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-        ),
-        systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-          statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
         ),
         bottom: TabBar(
           controller: _tabController,

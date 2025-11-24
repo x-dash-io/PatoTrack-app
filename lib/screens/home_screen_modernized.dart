@@ -208,7 +208,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
                                   '${_getGreeting()} 👋',
@@ -226,8 +225,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                     fontWeight: FontWeight.bold,
                                     color: colorScheme.onSurface,
                                   ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
                                 ),
                               ],
                             ),
@@ -283,62 +280,35 @@ class _HomeScreenState extends State<HomeScreen> {
                         SliverToBoxAdapter(
                           child: Padding(
                             padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      'Recent Transactions',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Recent Transactions',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    if (currentUser == null) return;
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => const AllTransactionsScreen(),
                                       ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      if (currentUser == null) return;
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => const AllTransactionsScreen(),
-                                        ),
-                                      ).then((_) => _refreshData());
-                                    },
-                                    child: Text(
-                                      'See All',
-                                      style: GoogleFonts.inter(
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.swipe_rounded,
-                                    size: 14,
-                                    color: colorScheme.onSurfaceVariant.withOpacity(0.6),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    'Swipe right to edit, swipe left to delete',
+                                    ).then((_) => _refreshData());
+                                  },
+                                  child: Text(
+                                    'See All',
                                     style: GoogleFonts.inter(
-                                      fontSize: 12,
-                                      color: colorScheme.onSurfaceVariant.withOpacity(0.7),
-                                      fontStyle: FontStyle.italic,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                ],
-                              ),
-                            ],
-                          ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                         // Transaction List
@@ -455,14 +425,11 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Flexible(
-                child: Text(
-                  'Upcoming Bills',
-                  style: GoogleFonts.inter(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+              Text(
+                'Upcoming Bills',
+                style: GoogleFonts.inter(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
               TextButton.icon(
@@ -531,8 +498,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     final status = _getBillStatus(bill.dueDate);
 
                     return Container(
-                      width: MediaQuery.of(context).size.width * 0.75,
-                      constraints: const BoxConstraints(minWidth: 160, maxWidth: 180),
+                      width: 180,
                       margin: const EdgeInsets.only(right: 12),
                       child: Card(
                         elevation: 0,
@@ -572,27 +538,21 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ],
                               ),
                               const Spacer(),
-                              Flexible(
-                                child: Text(
-                                  bill.name,
-                                  style: GoogleFonts.inter(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
+                              Text(
+                                bill.name,
+                                style: GoogleFonts.inter(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
                                 ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 4),
-                              Flexible(
-                                child: Text(
-                                  '$_currencySymbol${bill.amount.toStringAsFixed(0)}',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
+                              Text(
+                                '$_currencySymbol${bill.amount.toStringAsFixed(0)}',
+                                style: GoogleFonts.inter(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -612,8 +572,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
                                   ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
                                 ),
                               ),
                               const Spacer(),
@@ -811,88 +769,78 @@ class _HomeScreenState extends State<HomeScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 8,
                   ),
-                  child: Row(
-                    children: [
-                      // Leading icon
-                      isMpesa
-                          ? Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.green.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Image.asset(
-                                'assets/mpesa_logo.png',
-                                width: 32,
-                                height: 32,
-                              ),
-                            )
-                          : Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: amountColor.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(
-                                isIncome
-                                    ? Icons.arrow_downward_rounded
-                                    : Icons.arrow_upward_rounded,
-                                color: amountColor,
-                                size: 24,
-                              ),
-                            ),
-                      const SizedBox(width: 12),
-                      // Title and subtitle
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              transaction.description.isNotEmpty
-                                  ? transaction.description
-                                  : transaction.type.capitalize(),
-                              style: GoogleFonts.inter(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 15,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              transaction.date.split('T')[0],
-                              style: GoogleFonts.inter(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                fontSize: 12,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      // Amount
-                      Flexible(
-                        child: Text(
-                          '$amountPrefix$_currencySymbol ${currencyFormatter.format(transaction.amount)}',
-                          style: GoogleFonts.inter(
-                            color: amountColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
+                  leading: isMpesa
+                      ? Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          textAlign: TextAlign.end,
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
+                          child: Image.asset(
+                            'assets/mpesa_logo.png',
+                            width: 32,
+                            height: 32,
+                          ),
+                        )
+                      : Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: amountColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            isIncome
+                                ? Icons.arrow_downward_rounded
+                                : Icons.arrow_upward_rounded,
+                            color: amountColor,
+                            size: 24,
+                          ),
                         ),
-                      ),
-                    ],
+                  title: Text(
+                    transaction.description.isNotEmpty
+                        ? transaction.description
+                        : transaction.type.capitalize(),
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Row(
+                      children: [
+                        Icon(
+                          transaction.tag == 'business'
+                              ? Icons.business_center_rounded
+                              : Icons.person_rounded,
+                          size: 14,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${transaction.tag.capitalize()} · ${transaction.date.split('T')[0]}',
+                          style: GoogleFonts.inter(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  trailing: Text(
+                    '$amountPrefix$_currencySymbol ${currencyFormatter.format(transaction.amount)}',
+                    style: GoogleFonts.inter(
+                      color: amountColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
                 ),
               ),
@@ -947,7 +895,6 @@ class _ModernSummaryCard extends StatelessWidget {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
           children: [
             Row(
               children: [
@@ -960,16 +907,12 @@ class _ModernSummaryCard extends StatelessWidget {
                   child: Icon(icon, color: color, size: 24),
                 ),
                 const Spacer(),
-                Flexible(
-                  child: Text(
-                    title,
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -982,8 +925,6 @@ class _ModernSummaryCard extends StatelessWidget {
                 fontWeight: FontWeight.bold,
                 color: color,
               ),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
             ),
           ],
         ),

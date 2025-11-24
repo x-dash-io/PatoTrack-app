@@ -173,9 +173,14 @@ class PdfHelper {
       headers: tableHeaders,
       data: sortedTransactions.map((transaction) {
         final date = DateTime.parse(transaction.date);
+        // Remove MPESA transaction IDs from description (format: (XXXXXXXXXX))
+        String cleanDescription = transaction.description.isEmpty 
+            ? '-' 
+            : transaction.description.replaceAll(RegExp(r'\([A-Z0-9]{10}\)'), '').trim();
+        if (cleanDescription.isEmpty) cleanDescription = '-';
         return [
           DateFormat('MMM dd, yyyy').format(date),
-          transaction.description.isEmpty ? '-' : transaction.description,
+          cleanDescription,
           transaction.type.toUpperCase(),
           'KSh ${transaction.amount.toStringAsFixed(2)}',
         ];

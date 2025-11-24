@@ -8,6 +8,7 @@ import '../models/category.dart';
 import '../models/transaction.dart' as model;
 import '../widgets/modern_date_picker.dart';
 import '../widgets/loading_widgets.dart';
+import '../widgets/input_fields.dart';
 import 'manage_categories_screen.dart';
 
 class AddTransactionScreen extends StatefulWidget {
@@ -26,8 +27,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   int? _selectedCategoryId;
   late Future<List<Category>> _categoriesFuture;
-
-  String _selectedTag = 'business';
 
   final dbHelper = DatabaseHelper();
   final User? _currentUser = FirebaseAuth.instance.currentUser;
@@ -68,7 +67,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       description: _descriptionController.text,
       date: _selectedDate.toIso8601String(),
       categoryId: _selectedCategoryId,
-      tag: _selectedTag,
+      tag: 'business', // Always business
     );
 
     await dbHelper.addTransaction(newTransaction, _currentUser!.uid);
@@ -100,15 +99,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    SystemChrome.setSystemUIOverlayStyle(
-      SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: theme.brightness == Brightness.dark
-            ? Brightness.light
-            : Brightness.dark,
-      ),
-    );
-
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -116,6 +108,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           style: GoogleFonts.inter(fontWeight: FontWeight.w600),
         ),
         elevation: 0,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+          statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+        ),
       ),
       body: Form(
         key: _formKey,
@@ -158,79 +155,17 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 },
               ),
             ),
-            const SizedBox(height: 16),
-
-            // Tag Type
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: SegmentedButton<String>(
-                segments: [
-                  ButtonSegment(
-                    value: 'business',
-                    label: Text(
-                      'Business',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w500),
-                    ),
-                    icon: const Icon(Icons.business_center, size: 18),
-                  ),
-                  ButtonSegment(
-                    value: 'personal',
-                    label: Text(
-                      'Personal',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w500),
-                    ),
-                    icon: const Icon(Icons.person, size: 18),
-                  ),
-                ],
-                selected: {_selectedTag},
-                onSelectionChanged: (Set<String> newSelection) {
-                  setState(() {
-                    _selectedTag = newSelection.first;
-                  });
-                },
-              ),
-            ),
             const SizedBox(height: 24),
 
             // Amount Field
-            TextFormField(
+            StandardTextFormField(
               controller: _amountController,
+              labelText: 'Amount',
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              style: GoogleFonts.inter(),
+              prefixIcon: Icons.attach_money_rounded,
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
               ],
-              decoration: InputDecoration(
-                labelText: 'Amount',
-                labelStyle: GoogleFonts.inter(),
-                prefixIcon: const Icon(Icons.attach_money),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: colorScheme.primary,
-                    width: 2,
-                  ),
-                ),
-                filled: true,
-                fillColor: isDark
-                    colorScheme.surfaceContainerHighest,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 16,
-                ),
-              ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Please enter an amount';
@@ -257,39 +192,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
                       final categories = snapshot.data ?? [];
 
-                      return DropdownButtonFormField<int>(
+                      return StandardDropdownFormField<int>(
                         value: _selectedCategoryId,
-                        style: GoogleFonts.inter(),
-                        decoration: InputDecoration(
-                          labelText: 'Category',
-                          labelStyle: GoogleFonts.inter(),
-                          prefixIcon: Icon(
-                            _transactionType == 'expense'
-                                ? Icons.category
-                                : Icons.source,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: colorScheme.primary,
-                              width: 2,
-                            ),
-                          ),
-                          filled: true,
-                          fillColor: colorScheme.surfaceContainerHighest,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 16,
-                          ),
-                        ),
+                        labelText: 'Category',
+                        prefixIcon: _transactionType == 'expense'
+                            ? Icons.category_rounded
+                            : Icons.account_balance_wallet_rounded,
                         items: categories.map((category) {
                           return DropdownMenuItem<int>(
                             value: category.id,
@@ -297,6 +205,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               category.name,
                               style: GoogleFonts.inter(),
                               overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
                           );
                         }).toList(),
@@ -335,74 +244,23 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             const SizedBox(height: 16),
 
             // Description Field
-            TextFormField(
+            StandardTextFormField(
               controller: _descriptionController,
-              style: GoogleFonts.inter(),
+              labelText: 'Description / Note (Optional)',
+              prefixIcon: Icons.description_rounded,
               maxLines: 3,
-              decoration: InputDecoration(
-                labelText: 'Description / Note (Optional)',
-                labelStyle: GoogleFonts.inter(),
-                prefixIcon: const Icon(Icons.description),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: colorScheme.primary,
-                    width: 2,
-                  ),
-                ),
-                filled: true,
-                fillColor: isDark
-                    colorScheme.surfaceContainerHighest,
-                contentPadding: const EdgeInsets.all(16),
-              ),
             ),
             const SizedBox(height: 16),
 
             // Date Field
-            GestureDetector(
-              onTap: _pickDate,
-              child: AbsorbPointer(
-                child: TextFormField(
-                  controller: TextEditingController(
-                    text: DateFormat('MMMM dd, yyyy').format(_selectedDate),
-                  ),
-                  style: GoogleFonts.inter(),
-                  decoration: InputDecoration(
-                    labelText: 'Date',
-                    labelStyle: GoogleFonts.inter(),
-                    prefixIcon: const Icon(Icons.calendar_today),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: colorScheme.primary,
-                        width: 2,
-                      ),
-                    ),
-                    filled: true,
-                    fillColor: colorScheme.surfaceContainerHighest,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                  ),
-                ),
+            StandardTextFormField(
+              controller: TextEditingController(
+                text: DateFormat('MMMM dd, yyyy').format(_selectedDate),
               ),
+              labelText: 'Date',
+              prefixIcon: Icons.calendar_today_rounded,
+              readOnly: true,
+              onTap: _pickDate,
             ),
             const SizedBox(height: 32),
 
