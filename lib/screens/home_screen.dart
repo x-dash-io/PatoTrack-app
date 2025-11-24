@@ -45,7 +45,14 @@ class _HomeScreenState extends State<HomeScreen> {
     await _requestSmsPermission();
     if (!mounted) return;
     if (_currentUser != null) {
-      // Sync M-Pesa messages first, then refresh data once
+      // Restore bills and other data from Firestore first
+      try {
+        await dbHelper.restoreFromFirestore(_currentUser!.uid);
+      } catch (e) {
+        print('Error restoring from Firestore: $e');
+        // Continue even if restore fails
+      }
+      // Sync M-Pesa messages, then refresh data once
       await _smsService.syncMpesaMessages(_currentUser!.uid);
       if (mounted) {
         _refreshData();
@@ -182,6 +189,16 @@ class _HomeScreenState extends State<HomeScreen> {
       return bill.dueDate.add(const Duration(days: 7));
     }
     return bill.dueDate;
+  }
+
+  IconData _getStatusIcon(String statusText) {
+    if (statusText.contains('Overdue')) {
+      return Icons.warning_rounded;
+    } else if (statusText.contains('Today')) {
+      return Icons.event_available_rounded;
+    } else {
+      return Icons.calendar_today_rounded;
+    }
   }
 
   @override
@@ -520,7 +537,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               )
             : SizedBox(
-                height: 180,
+                height: 220,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -531,166 +548,215 @@ class _HomeScreenState extends State<HomeScreen> {
                     final status = _getBillStatus(bill.dueDate);
 
                     return Container(
-                      width: MediaQuery.of(context).size.width * 0.75,
-                      constraints: const BoxConstraints(minWidth: 160, maxWidth: 180),
-                      margin: const EdgeInsets.only(right: 12),
+                      width: MediaQuery.of(context).size.width * 0.8,
+                      constraints: const BoxConstraints(minWidth: 220, maxWidth: 240),
+                      margin: const EdgeInsets.only(right: 16),
                       child: Card(
-                        elevation: 0,
+                        elevation: 3,
                         shape: RoundedRectangleBorder(
                           side: BorderSide(
-                            color: status.color.withOpacity(0.3),
-                            width: 1.5,
+                            color: status.color.withOpacity(0.2),
+                            width: 1,
                           ),
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(24),
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: styling.color.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                                colorScheme.surface,
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                          colors: [
+                                            styling.color,
+                                            styling.color.withOpacity(0.7),
+                                          ],
+                                        ),
+                                        borderRadius: BorderRadius.circular(14),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: styling.color.withOpacity(0.3),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Icon(
+                                        styling.icon,
+                                        size: 24,
+                                        color: Colors.white,
+                                      ),
                                     ),
-                                    child: Icon(
-                                      styling.icon,
-                                      size: 24,
-                                      color: styling.color,
-                                    ),
-                                  ),
-                                  const Spacer(),
-                                  if (bill.isRecurring)
-                                    Icon(
-                                      Icons.sync_rounded,
-                                      size: 18,
-                                      color: colorScheme.onSurfaceVariant,
-                                    ),
-                                ],
-                              ),
-                              const Spacer(),
-                              Flexible(
-                                child: Text(
+                                    const Spacer(),
+                                    if (bill.isRecurring)
+                                      Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: colorScheme.primaryContainer.withOpacity(0.5),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(
+                                          Icons.sync_rounded,
+                                          size: 16,
+                                          color: colorScheme.onPrimaryContainer,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                // Bill name - always visible, no Flexible
+                                Text(
                                   bill.name,
                                   style: GoogleFonts.inter(
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 16,
+                                    fontSize: 18,
+                                    color: colorScheme.onSurface,
+                                    height: 1.2,
                                   ),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              Flexible(
-                                child: Text(
+                                const SizedBox(height: 12),
+                                // Amount
+                                Text(
                                   '$_currencySymbol${bill.amount.toStringAsFixed(0)}',
                                   style: GoogleFonts.inter(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w700,
+                                    color: colorScheme.onSurface,
                                   ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: status.color.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  status.text,
-                                  style: GoogleFonts.inter(
-                                    color: status.color,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
+                                const SizedBox(height: 12),
+                                // Status badge
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
                                   ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                ),
-                              ),
-                              const Spacer(),
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: FilledButton.tonal(
-                                  onPressed: () async {
-                                    if (currentUser == null) return;
-                                    
-                                    final billTransaction = model.Transaction(
-                                      type: 'expense',
-                                      amount: bill.amount,
-                                      description: 'Paid bill: ${bill.name}',
-                                      date: DateTime.now().toIso8601String(),
-                                      categoryId: await dbHelper.getOrCreateCategory(
-                                        'Bills',
-                                        currentUser.uid,
-                                        type: 'expense',
+                                  decoration: BoxDecoration(
+                                    color: status.color.withOpacity(0.15),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: status.color.withOpacity(0.3),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        _getStatusIcon(status.text),
+                                        size: 14,
+                                        color: status.color,
                                       ),
-                                    );
-                                    await dbHelper.addTransaction(
-                                      billTransaction,
-                                      currentUser.uid,
-                                    );
-
-                                    if (bill.isRecurring) {
-                                      final nextDueDate = _calculateNextDueDate(bill);
-                                      final updatedBill = bill.copyWith(
-                                        dueDate: nextDueDate,
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        status.text,
+                                        style: GoogleFonts.inter(
+                                          color: status.color,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                // Pay button
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: FilledButton.tonal(
+                                    onPressed: () async {
+                                      if (currentUser == null) return;
+                                      
+                                      final billTransaction = model.Transaction(
+                                        type: 'expense',
+                                        amount: bill.amount,
+                                        description: 'Paid bill: ${bill.name}',
+                                        date: DateTime.now().toIso8601String(),
+                                        categoryId: await dbHelper.getOrCreateCategory(
+                                          'Bills',
+                                          currentUser.uid,
+                                          type: 'expense',
+                                        ),
                                       );
-                                      await dbHelper.updateBill(
-                                        updatedBill,
+                                      await dbHelper.addTransaction(
+                                        billTransaction,
                                         currentUser.uid,
                                       );
-                                      if (mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              'Recurring bill "${bill.name}" paid. Next due date set.',
-                                              style: GoogleFonts.inter(),
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                    } else {
-                                      await dbHelper.deleteBill(bill.id!, currentUser.uid);
-                                      if (mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              'Bill "${bill.name}" marked as paid.',
-                                              style: GoogleFonts.inter(),
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                    }
 
-                                    _refreshData();
-                                  },
-                                  style: FilledButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 8,
+                                      if (bill.isRecurring) {
+                                        final nextDueDate = _calculateNextDueDate(bill);
+                                        final updatedBill = bill.copyWith(
+                                          dueDate: nextDueDate,
+                                        );
+                                        await dbHelper.updateBill(
+                                          updatedBill,
+                                          currentUser.uid,
+                                        );
+                                        if (mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                'Recurring bill "${bill.name}" paid. Next due date set.',
+                                                style: GoogleFonts.inter(),
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      } else {
+                                        await dbHelper.deleteBill(bill.id!, currentUser.uid);
+                                        if (mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                'Bill "${bill.name}" marked as paid.',
+                                                style: GoogleFonts.inter(),
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      }
+
+                                      _refreshData();
+                                    },
+                                    style: FilledButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                      minimumSize: const Size(0, 32),
                                     ),
-                                    minimumSize: const Size(0, 32),
-                                  ),
-                                  child: Text(
-                                    'Pay Bill',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
+                                    child: Text(
+                                      'Pay Bill',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),

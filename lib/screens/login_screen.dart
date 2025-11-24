@@ -60,6 +60,19 @@ class _LoginScreenState extends State<LoginScreen> {
         throw Exception('Login failed - user not authenticated');
       }
 
+      // Reload user profile data to ensure photoURL and other fields are up-to-date
+      try {
+        await currentUser.reload();
+        // Get the refreshed user data
+        final refreshedUser = FirebaseAuth.instance.currentUser;
+        if (refreshedUser == null) {
+          throw Exception('Failed to reload user data');
+        }
+      } catch (e) {
+        print('Warning: Failed to reload user data: $e');
+        // Continue even if reload fails
+      }
+
       // Show success feedback
       if (mounted) {
         final theme = Theme.of(context);
@@ -132,6 +145,19 @@ class _LoginScreenState extends State<LoginScreen> {
         // Verify user is authenticated
         final currentUser = FirebaseAuth.instance.currentUser;
         if (currentUser != null) {
+          // Reload user profile data to ensure photoURL and other fields are up-to-date
+          try {
+            await currentUser.reload();
+            // Get the refreshed user data
+            final refreshedUser = FirebaseAuth.instance.currentUser;
+            if (refreshedUser == null) {
+              throw Exception('Failed to reload user data');
+            }
+          } catch (e) {
+            print('Warning: Failed to reload user data: $e');
+            // Continue even if reload fails
+          }
+          
           // Show success message
           if (mounted) {
             final theme = Theme.of(context);

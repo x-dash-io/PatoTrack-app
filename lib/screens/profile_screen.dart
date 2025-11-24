@@ -49,6 +49,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _loadPreferences();
+    _reloadUserData();
+  }
+
+  Future<void> _reloadUserData() async {
+    // Reload user profile data to ensure photoURL and other fields are up-to-date
+    final user = currentUser;
+    if (user != null) {
+      try {
+        await user.reload();
+        // Get the refreshed user data
+        final refreshedUser = _auth.currentUser;
+        if (refreshedUser != null && mounted) {
+          setState(() {
+            // Force rebuild to show updated photoURL
+          });
+        }
+      } catch (e) {
+        print('Warning: Failed to reload user data: $e');
+        // Continue even if reload fails
+      }
+    }
   }
 
   @override
@@ -90,6 +111,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final imageUrl = responseJson['secure_url'];
 
         await currentUser!.updatePhotoURL(imageUrl);
+        
+        // Reload user data to ensure photoURL is immediately available
+        try {
+          await currentUser!.reload();
+          // Get the refreshed user data
+          final refreshedUser = _auth.currentUser;
+          if (refreshedUser != null && mounted) {
+            setState(() {
+              // Force rebuild to show updated photoURL
+            });
+          }
+        } catch (e) {
+          print('Warning: Failed to reload user data after photo update: $e');
+        }
+        
         Fluttertoast.showToast(msg: 'Profile picture updated!');
       } else {
         final errorData = await response.stream.bytesToString();

@@ -76,6 +76,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
         throw Exception('User authentication failed');
       }
 
+      // Reload user profile data to ensure photoURL and other fields are up-to-date
+      try {
+        await currentUser.reload();
+        // Get the refreshed user data
+        final refreshedUser = FirebaseAuth.instance.currentUser;
+        if (refreshedUser == null) {
+          throw Exception('Failed to reload user data');
+        }
+      } catch (e) {
+        print('Warning: Failed to reload user data: $e');
+        // Continue even if reload fails
+      }
+
       // Show success feedback immediately
       if (mounted) {
         final theme = Theme.of(context);
@@ -163,9 +176,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
         // Verify user is authenticated
         final currentUser = FirebaseAuth.instance.currentUser;
         if (currentUser != null) {
-          // Success - AuthGate will automatically detect the auth state change via StreamBuilder
-          // and navigate to the dashboard
-          // Clear loading state after a brief delay to allow StreamBuilder to react
+          // Reload user profile data to ensure photoURL and other fields are up-to-date
+          try {
+            await currentUser.reload();
+            // Get the refreshed user data
+            final refreshedUser = FirebaseAuth.instance.currentUser;
+            if (refreshedUser == null) {
+              throw Exception('Failed to reload user data');
+            }
+          } catch (e) {
+            print('Warning: Failed to reload user data: $e');
+            // Continue even if reload fails
+          }
+          
           // Show success message
           if (mounted) {
             final theme = Theme.of(context);
