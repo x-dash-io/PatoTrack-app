@@ -19,6 +19,7 @@ import '../models/category.dart';
 import '../theme_provider.dart';
 import '../widgets/dialog_helpers.dart';
 import '../widgets/input_fields.dart';
+import '../services/google_sign_in_service.dart';
 import 'passcode_screen.dart';
 import 'help_screen.dart';
 import 'faq_screen.dart';
@@ -255,9 +256,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
       isDestructive: true,
     );
 
-    if (confirm == true) {
+    if (confirm == true && mounted) {
       setState(() => _isLoggingOut = true);
-      await _auth.signOut();
+      try {
+        // Import and use GoogleSignInService for proper sign out
+        // Check if user signed in with Google
+        final user = currentUser;
+        if (user != null) {
+          // Check if user has a Google provider
+          final isGoogleUser = user.providerData
+              .any((provider) => provider.providerId == 'google.com');
+          
+          if (isGoogleUser) {
+            // Sign out from Google Sign-In service
+            await GoogleSignInService.signOut();
+          } else {
+            // Sign out from Firebase Auth only
+            await _auth.signOut();
+          }
+        } else {
+          await _auth.signOut();
+        }
+        
+        // Small delay to ensure auth state change propagates
+        await Future.delayed(const Duration(milliseconds: 200));
+        
+        // AuthGate's StreamBuilder will automatically detect the sign out
+        // and navigate to LoginScreen. No manual navigation needed.
+        // Clear loading state after delay
+        if (mounted) {
+          setState(() => _isLoggingOut = false);
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isLoggingOut = false);
+          final theme = Theme.of(context);
+          Fluttertoast.showToast(
+            msg: 'Error signing out: ${e.toString()}',
+            backgroundColor: theme.colorScheme.error,
+            textColor: theme.colorScheme.onError,
+            toastLength: Toast.LENGTH_LONG,
+            gravity: ToastGravity.BOTTOM,
+          );
+        }
+      }
     }
   }
 
