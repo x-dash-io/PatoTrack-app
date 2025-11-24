@@ -196,12 +196,17 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
         elevation: 0,
         actions: [
           _isDeleting
-              ? const Padding(
-                  padding: EdgeInsets.all(16.0),
+              ? Padding(
+                  padding: const EdgeInsets.all(16.0),
                   child: SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        colorScheme.error,
+                      ),
+                    ),
                   ),
                 )
               : IconButton(

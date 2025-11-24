@@ -299,7 +299,13 @@ class _AddBillScreenState extends State<AddBillScreen> {
             if (_isRecurring) ...[
               const SizedBox(height: 16),
               _isLoadingFrequencies
-                  ? const Center(child: CircularProgressIndicator())
+                  ? Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          colorScheme.primary,
+                        ),
+                      ),
+                    )
                   : Row(
                       children: [
                         Expanded(

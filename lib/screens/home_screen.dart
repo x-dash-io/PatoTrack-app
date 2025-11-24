@@ -393,7 +393,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     height: 16,
                     width: 120,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: isDark ? Colors.grey[800] : Colors.grey[300],
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
@@ -402,7 +402,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     height: 32,
                     width: 200,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: isDark ? Colors.grey[800] : Colors.grey[300],
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
@@ -999,11 +999,16 @@ class _ShimmerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: height,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Shimmer(
+      baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+      highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+      child: Container(
+        height: height,
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey[800] : Colors.grey[300],
+          borderRadius: BorderRadius.circular(20),
+        ),
       ),
     );
   }

@@ -40,6 +40,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoggingOut = false;
   bool _isUploading = false;
   bool _isRestoring = false;
+  bool _isSendingPasswordReset = false;
+  bool _isDeletingAccount = false;
   String _selectedCurrency = 'KSh';
   bool _isPasscodeEnabled = false;
 
@@ -160,15 +162,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _sendPasswordResetEmail() async {
     if (currentUser?.email == null) return;
+    if (_isSendingPasswordReset) return;
+    
+    setState(() => _isSendingPasswordReset = true);
     try {
       await _auth.sendPasswordResetEmail(email: currentUser!.email!);
-      Fluttertoast.showToast(msg: 'Password reset link sent to your email.');
+      if (mounted) {
+        Fluttertoast.showToast(msg: 'Password reset link sent to your email.');
+      }
     } on FirebaseAuthException catch (e) {
-      Fluttertoast.showToast(msg: e.message ?? 'An error occurred.');
+      if (mounted) {
+        Fluttertoast.showToast(msg: e.message ?? 'An error occurred.');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSendingPasswordReset = false);
+      }
     }
   }
 
   Future<void> _deleteAccount() async {
+    if (_isDeletingAccount) return;
+    
     final bool? confirm = await showModernConfirmDialog(
       context: context,
       title: 'DELETE ACCOUNT',
@@ -178,12 +193,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
       isDestructive: true,
     );
 
-    if (confirm == true) {
+    if (confirm == true && mounted) {
+      setState(() => _isDeletingAccount = true);
       try {
         await currentUser?.delete();
-        Fluttertoast.showToast(msg: 'Account deleted successfully.');
+        if (mounted) {
+          Fluttertoast.showToast(msg: 'Account deleted successfully.');
+        }
       } on FirebaseAuthException catch (e) {
-        Fluttertoast.showToast(msg: e.message ?? 'Failed to delete account.');
+        if (mounted) {
+          setState(() => _isDeletingAccount = false);
+          Fluttertoast.showToast(msg: e.message ?? 'Failed to delete account.');
+        }
       }
     }
   }
@@ -343,9 +364,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   shape: BoxShape.circle,
                                   color: Colors.black.withOpacity(0.5),
                                 ),
-                                child: const CircularProgressIndicator(
+                                child: CircularProgressIndicator(
                                   strokeWidth: 3,
-                                  color: Colors.white,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
                                 ),
                               ),
                           ],
@@ -486,15 +509,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         trailing: DropdownButton<String>(
                           value: _selectedCurrency,
                           underline: const SizedBox(),
+                          dropdownColor: theme.brightness == Brightness.dark
+                              ? colorScheme.surfaceContainerHighest
+                              : Colors.white,
+                          icon: Icon(
+                            Icons.arrow_drop_down_rounded,
+                            color: colorScheme.onSurfaceVariant,
+                            size: 24,
+                          ),
+                          iconSize: 24,
+                          borderRadius: BorderRadius.circular(12),
+                          menuMaxHeight: 200,
                           items: <String>['KSh', 'USD', 'EUR', 'GBP']
                               .map<DropdownMenuItem<String>>((String value) =>
                                   DropdownMenuItem<String>(
                                       value: value,
                                       child: Text(
                                         value,
-                                        style: GoogleFonts.inter(),
+                                        style: GoogleFonts.inter(
+                                          fontWeight: FontWeight.w500,
+                                          color: colorScheme.onSurface,
+                                        ),
                                       )))
                               .toList(),
+                          selectedItemBuilder: (BuildContext context) {
+                            return <String>['KSh', 'USD', 'EUR', 'GBP']
+                                .map<Widget>((String value) {
+                              return Text(
+                                value,
+                                style: GoogleFonts.inter(
+                                  fontWeight: FontWeight.w600,
+                                  color: colorScheme.primary,
+                                ),
+                              );
+                            }).toList();
+                          },
                           onChanged: (String? newValue) {
                             if (newValue != null && mounted) {
                               _saveCurrencyPreference(newValue);
@@ -537,7 +586,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         context: context,
                         icon: Icons.password_rounded,
                         title: 'Change Password',
-                        onTap: _sendPasswordResetEmail,
+                        trailing: _isSendingPasswordReset
+                            ? SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    colorScheme.primary,
+                                  ),
+                                ),
+                              )
+                            : null,
+                        onTap: _isSendingPasswordReset ? null : _sendPasswordResetEmail,
                       ),
                       Divider(height: 1, indent: 60, color: colorScheme.outline.withOpacity(0.1)),
                       _buildModernListTile(
@@ -546,7 +607,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         title: 'Delete Account',
                         titleColor: Colors.red,
                         iconColor: Colors.red,
-                        onTap: _deleteAccount,
+                        trailing: _isDeletingAccount
+                            ? SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.red,
+                                  ),
+                                ),
+                              )
+                            : null,
+                        onTap: _isDeletingAccount ? null : _deleteAccount,
                       ),
                     ],
                   ),
@@ -576,10 +649,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     title: 'Restore from Cloud',
                     subtitle: 'Download your backup on a new device',
                     trailing: _isRestoring
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 24,
                             height: 24,
-                            child: CircularProgressIndicator(strokeWidth: 3))
+                            child: CircularProgressIndicator(
+                              strokeWidth: 3,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                colorScheme.primary,
+                              ),
+                            ),
+                          )
                         : const Icon(Icons.chevron_right_rounded, size: 24),
                     onTap: _isRestoring ? null : _handleRestore,
                   ),
@@ -640,11 +719,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: FilledButton.icon(
                     onPressed: _isLoggingOut ? null : _logout,
                     icon: _isLoggingOut
-                        ? const SizedBox(
+                        ? SizedBox(
                             height: 20,
                             width: 20,
                             child: CircularProgressIndicator(
-                                strokeWidth: 3, color: Colors.white))
+                              strokeWidth: 3,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                colorScheme.onPrimary,
+                              ),
+                            ),
+                          )
                         : const Icon(Icons.logout_rounded),
                     label: Text(
                       'Logout',

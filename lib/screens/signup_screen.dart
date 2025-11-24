@@ -58,31 +58,74 @@ class _SignUpScreenState extends State<SignUpScreen> {
         password: _passwordController.text.trim(),
       );
 
-      // Update the user's display name
-      await userCredential.user?.updateDisplayName(_nameController.text.trim());
+      if (userCredential.user == null) {
+        throw Exception('Failed to create user account');
+      }
 
-      // AuthGate will automatically detect the auth state change via StreamBuilder
-      // and navigate to the dashboard
-      // Clear loading state after a brief delay to allow StreamBuilder to react
+      // Update the user's display name
+      try {
+        await userCredential.user?.updateDisplayName(_nameController.text.trim());
+      } catch (e) {
+        print('Warning: Failed to update display name: $e');
+        // Continue even if display name update fails
+      }
+
+      // Verify user is actually authenticated
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        throw Exception('User authentication failed');
+      }
+
+      // Show success feedback immediately
       if (mounted) {
-        await Future.delayed(const Duration(milliseconds: 500));
-        if (mounted) {
+        final theme = Theme.of(context);
+        Fluttertoast.showToast(
+          msg: "Account Created Successfully!",
+          backgroundColor: theme.colorScheme.primary,
+          textColor: theme.colorScheme.onPrimary,
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+        );
+      }
+
+      // Wait for AuthGate's StreamBuilder to detect the auth state change
+      // Then pop this screen so AuthGate can navigate to MainScreen
+      if (mounted) {
+        await Future.delayed(const Duration(milliseconds: 800));
+        
+        // Verify auth state one more time before popping
+        final verifyUser = FirebaseAuth.instance.currentUser;
+        if (verifyUser != null && mounted) {
           setState(() {
             _isLoading = false;
           });
-          final theme = Theme.of(context);
-          Fluttertoast.showToast(
-            msg: "Account Created Successfully!",
-            backgroundColor: theme.colorScheme.primary,
-            textColor: theme.colorScheme.onPrimary,
-          );
+          // Pop this screen - AuthGate will automatically navigate to MainScreen
+          // The delay allows StreamBuilder to react to the auth state change
+          Navigator.of(context).pop();
+        } else {
+          // Auth state lost - shouldn't happen but handle gracefully
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+            final theme = Theme.of(context);
+            Fluttertoast.showToast(
+              msg: 'Authentication failed. Please try again.',
+              backgroundColor: theme.colorScheme.error,
+              textColor: theme.colorScheme.onError,
+              toastLength: Toast.LENGTH_LONG,
+            );
+          }
         }
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
         final theme = Theme.of(context);
         Fluttertoast.showToast(
-          msg: e.message ?? 'Sign up failed',
+          msg: e.message ?? 'Sign up failed. Please try again.',
           toastLength: Toast.LENGTH_LONG,
           gravity: ToastGravity.BOTTOM,
           backgroundColor: theme.colorScheme.error,
@@ -91,11 +134,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
         );
       }
     } catch (e) {
-      // Only clear loading state on error
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
+        final theme = Theme.of(context);
+        Fluttertoast.showToast(
+          msg: 'Error: ${e.toString().replaceAll('Exception: ', '')}',
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: theme.colorScheme.error,
+          textColor: theme.colorScheme.onError,
+          fontSize: 16.0,
+        );
       }
     }
   }
@@ -115,20 +166,27 @@ class _SignUpScreenState extends State<SignUpScreen> {
           // Success - AuthGate will automatically detect the auth state change via StreamBuilder
           // and navigate to the dashboard
           // Clear loading state after a brief delay to allow StreamBuilder to react
-          await Future.delayed(const Duration(milliseconds: 500));
+          // Show success message
           if (mounted) {
-            setState(() {
-              _isLoading = false;
-            });
-            
-            // Show success message briefly (AuthGate will handle navigation)
+            final theme = Theme.of(context);
             Fluttertoast.showToast(
               msg: 'Account created with Google successfully!',
               toastLength: Toast.LENGTH_SHORT,
               gravity: ToastGravity.BOTTOM,
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              textColor: Theme.of(context).colorScheme.onPrimary,
+              backgroundColor: theme.colorScheme.primary,
+              textColor: theme.colorScheme.onPrimary,
             );
+          }
+          
+          // Wait for AuthGate's StreamBuilder to detect the auth state change
+          await Future.delayed(const Duration(milliseconds: 800));
+          
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+            // Pop this screen - AuthGate will automatically navigate to MainScreen
+            Navigator.of(context).pop();
           }
         } else {
           // User not properly authenticated
@@ -352,13 +410,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                               ),
-                              child: Text(
-                                'Create Account',
-                                style: GoogleFonts.inter(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                              child: _isLoading
+                                  ? SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(
+                                          colorScheme.onPrimary,
+                                        ),
+                                      ),
+                                    )
+                                  : Text(
+                                      'Create Account',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
                             ),
 
                             const SizedBox(height: 24),

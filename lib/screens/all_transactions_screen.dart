@@ -7,6 +7,7 @@ import '../models/category.dart';
 import '../models/transaction.dart' as model;
 import '../widgets/loading_widgets.dart';
 import '../widgets/modern_date_picker.dart';
+import '../widgets/input_fields.dart';
 import 'transaction_detail_screen.dart';
 
 class AllTransactionsScreen extends StatefulWidget {
@@ -110,10 +111,10 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                   const SizedBox(height: 20),
 
                   // Filter by Type
-                  DropdownButtonFormField<String>(
+                  StandardDropdownFormField<String>(
                     value: _filterType,
-                    hint: const Text('Filter by Type'),
-                    decoration: const InputDecoration(border: OutlineInputBorder()),
+                    labelText: 'Filter by Type',
+                    prefixIcon: Icons.category_rounded,
                     items: const [
                       DropdownMenuItem(value: 'income', child: Text('Income')),
                       DropdownMenuItem(value: 'expense', child: Text('Expense')),
@@ -123,10 +124,10 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                   const SizedBox(height: 16),
 
                   // Filter by Category
-                  DropdownButtonFormField<int>(
+                  StandardDropdownFormField<int>(
                     value: _filterCategoryId,
-                    hint: const Text('Filter by Category'),
-                    decoration: const InputDecoration(border: OutlineInputBorder()),
+                    labelText: 'Filter by Category',
+                    prefixIcon: Icons.label_rounded,
                     items: _allCategories.map((cat) => DropdownMenuItem(value: cat.id, child: Text(cat.name))).toList(),
                     onChanged: (value) => setModalState(() => _filterCategoryId = value),
                   ),

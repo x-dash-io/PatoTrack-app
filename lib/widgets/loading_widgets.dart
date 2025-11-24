@@ -85,14 +85,14 @@ class TransactionShimmerCard extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDark ? Colors.grey[800] : Colors.grey[300],
               borderRadius: BorderRadius.circular(8),
             ),
           ),
           title: Container(
             height: 16,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDark ? Colors.grey[800] : Colors.grey[300],
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -102,7 +102,7 @@ class TransactionShimmerCard extends StatelessWidget {
               height: 12,
               width: 100,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isDark ? Colors.grey[800] : Colors.grey[300],
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -111,7 +111,7 @@ class TransactionShimmerCard extends StatelessWidget {
             height: 16,
             width: 80,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDark ? Colors.grey[800] : Colors.grey[300],
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -138,7 +138,7 @@ class SummaryCardShimmer extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDark ? Colors.grey[800] : Colors.grey[300],
               borderRadius: BorderRadius.circular(8),
             ),
           ),
@@ -146,7 +146,7 @@ class SummaryCardShimmer extends StatelessWidget {
             height: 16,
             width: 100,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDark ? Colors.grey[800] : Colors.grey[300],
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -154,7 +154,7 @@ class SummaryCardShimmer extends StatelessWidget {
             height: 20,
             width: 120,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDark ? Colors.grey[800] : Colors.grey[300],
               borderRadius: BorderRadius.circular(4),
             ),
           ),

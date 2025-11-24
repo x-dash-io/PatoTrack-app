@@ -158,7 +158,21 @@ class StandardDropdownFormField<T> extends StatelessWidget {
       items: items,
       onChanged: enabled ? onChanged : null,
       validator: validator,
-      style: GoogleFonts.inter(),
+      style: GoogleFonts.inter(
+        color: colorScheme.onSurface,
+      ),
+      dropdownColor: theme.brightness == Brightness.dark
+          ? colorScheme.surfaceContainerHighest
+          : Colors.white,
+      icon: Icon(
+        Icons.arrow_drop_down_rounded,
+        color: colorScheme.onSurfaceVariant,
+        size: 28,
+      ),
+      iconSize: 28,
+      borderRadius: BorderRadius.circular(16),
+      menuMaxHeight: 300,
+      isExpanded: true,
       decoration: InputDecoration(
         labelText: labelText,
         labelStyle: GoogleFonts.inter(),

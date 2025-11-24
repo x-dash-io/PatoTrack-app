@@ -258,7 +258,13 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  colorScheme.primary,
+                ),
+              ),
+            )
           : _frequencies.isEmpty
               ? Center(
                   child: Column(

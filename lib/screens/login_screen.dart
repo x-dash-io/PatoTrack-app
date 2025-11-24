@@ -54,15 +54,51 @@ class _LoginScreenState extends State<LoginScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
-      // AuthGate will automatically detect the auth state change via StreamBuilder
-      // and navigate to the dashboard
-      // Clear loading state after a brief delay to allow StreamBuilder to react
+      // Verify user is authenticated
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        throw Exception('Login failed - user not authenticated');
+      }
+
+      // Show success feedback
       if (mounted) {
-        await Future.delayed(const Duration(milliseconds: 500));
-        if (mounted) {
+        final theme = Theme.of(context);
+        Fluttertoast.showToast(
+          msg: "Login Successful!",
+          backgroundColor: theme.colorScheme.primary,
+          textColor: theme.colorScheme.onPrimary,
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+        );
+      }
+
+      // Wait for AuthGate's StreamBuilder to detect the auth state change
+      // Then pop this screen so AuthGate can navigate to MainScreen
+      if (mounted) {
+        await Future.delayed(const Duration(milliseconds: 800));
+        
+        // Verify auth state one more time before popping
+        final verifyUser = FirebaseAuth.instance.currentUser;
+        if (verifyUser != null && mounted) {
           setState(() {
             _isLoading = false;
           });
+          // Pop this screen - AuthGate will automatically navigate to MainScreen
+          Navigator.of(context).pop();
+        } else {
+          // Auth state lost - shouldn't happen but handle gracefully
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+            final theme = Theme.of(context);
+            Fluttertoast.showToast(
+              msg: 'Authentication failed. Please try again.',
+              backgroundColor: theme.colorScheme.error,
+              textColor: theme.colorScheme.onError,
+              toastLength: Toast.LENGTH_LONG,
+            );
+          }
         }
       }
     } on FirebaseAuthException catch (e) {
@@ -96,23 +132,27 @@ class _LoginScreenState extends State<LoginScreen> {
         // Verify user is authenticated
         final currentUser = FirebaseAuth.instance.currentUser;
         if (currentUser != null) {
-          // Success - AuthGate will automatically detect the auth state change via StreamBuilder
-          // and navigate to the dashboard
-          // Clear loading state after a brief delay to allow StreamBuilder to react
-          await Future.delayed(const Duration(milliseconds: 500));
+          // Show success message
           if (mounted) {
-            setState(() {
-              _isLoading = false;
-            });
-            
-            // Show success message briefly (AuthGate will handle navigation)
+            final theme = Theme.of(context);
             Fluttertoast.showToast(
               msg: 'Signed in with Google successfully!',
               toastLength: Toast.LENGTH_SHORT,
               gravity: ToastGravity.BOTTOM,
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              textColor: Theme.of(context).colorScheme.onPrimary,
+              backgroundColor: theme.colorScheme.primary,
+              textColor: theme.colorScheme.onPrimary,
             );
+          }
+          
+          // Wait for AuthGate's StreamBuilder to detect the auth state change
+          await Future.delayed(const Duration(milliseconds: 800));
+          
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+            // Pop this screen - AuthGate will automatically navigate to MainScreen
+            Navigator.of(context).pop();
           }
         } else {
           // User not properly authenticated
@@ -320,13 +360,24 @@ class _LoginScreenState extends State<LoginScreen> {
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                               ),
-                              child: Text(
-                                'Sign In',
-                                style: GoogleFonts.inter(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                              child: _isLoading
+                                  ? SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(
+                                          colorScheme.onPrimary,
+                                        ),
+                                      ),
+                                    )
+                                  : Text(
+                                      'Sign In',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
                             ),
 
                             const SizedBox(height: 24),
