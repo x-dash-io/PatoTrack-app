@@ -22,7 +22,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _isPasswordVisible = false;
   bool _isLoading = false;
-  bool _isSendingResetEmail = false;
 
   @override
   void dispose() {
@@ -106,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
           _isLoading = false;
         });
         final theme = Theme.of(context);
-      Fluttertoast.showToast(
+        Fluttertoast.showToast(
           msg: e.message ?? 'Login failed',
           toastLength: Toast.LENGTH_LONG,
           gravity: ToastGravity.BOTTOM,
@@ -219,37 +218,19 @@ class _LoginScreenState extends State<LoginScreen> {
     final resetFormKey = GlobalKey<FormState>();
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    bool isDialogOpen = true;
 
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) {
-            return PopScope(
-              canPop: true,
-              onPopInvoked: (didPop) {
-                if (didPop) {
-                  // Dispose controller when dialog closes
-                  if (resetEmailController.hasListeners) {
-                    resetEmailController.dispose();
-                  }
-                  isDialogOpen = false;
-                }
-              },
-              child: WillPopScope(
-            onWillPop: () async {
-              // Dispose controller when dialog closes
-              if (resetEmailController.hasListeners) {
-                resetEmailController.dispose();
-              }
-              isDialogOpen = false;
-              return true;
-            },
-            child: Container(
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            bool isSendingReset = false;
+            
+            return Container(
               padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
+                bottom: MediaQuery.of(dialogContext).viewInsets.bottom,
                 left: 24,
                 right: 24,
                 top: 24,
@@ -264,204 +245,193 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Handle bar
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        margin: const EdgeInsets.only(bottom: 24),
-                        decoration: BoxDecoration(
-                          color: colorScheme.onSurfaceVariant.withOpacity(0.4),
-                          borderRadius: BorderRadius.circular(2),
+                      // Handle bar
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          margin: const EdgeInsets.only(bottom: 24),
+                          decoration: BoxDecoration(
+                            color: colorScheme.onSurfaceVariant.withOpacity(0.4),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
                         ),
                       ),
-                    ),
-                    
-                    // Title
-                    Text(
-                      'Reset Password',
-                      style: GoogleFonts.inter(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
+                      
+                      // Title
+                      Text(
+                        'Reset Password',
+                        style: GoogleFonts.inter(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
+                        ),
                       ),
-                    ),
-                    
-                    const SizedBox(height: 8),
-                    
-                    // Description
-                    Text(
-                      'Enter your email address and we\'ll send you a link to reset your password.',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: colorScheme.onSurfaceVariant,
-                        height: 1.4,
+                      
+                      const SizedBox(height: 8),
+                      
+                      // Description
+                      Text(
+                        'Enter your email address and we\'ll send you a link to reset your password.',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: colorScheme.onSurfaceVariant,
+                          height: 1.4,
+                        ),
                       ),
-                    ),
-                    
-                    const SizedBox(height: 24),
-                    
-                    // Email input
-                    StandardTextFormField(
-                      controller: resetEmailController,
-                      labelText: 'Email',
-                      keyboardType: TextInputType.emailAddress,
-                      prefixIcon: Icons.email_outlined,
-                      enabled: !_isSendingResetEmail,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your email';
-                        }
-                        if (!value.contains('@')) {
-                          return 'Please enter a valid email';
-                        }
-                        return null;
-                      },
-                    ),
-                    
-                    const SizedBox(height: 24),
-                    
-                    // Send reset email button
-                    FilledButton(
-                      onPressed: _isSendingResetEmail
-                          ? null
-                          : () async {
-                              if (resetFormKey.currentState?.validate() ?? false) {
-                                setDialogState(() {
-                                  _isSendingResetEmail = true;
-                                });
+                      
+                      const SizedBox(height: 24),
+                      
+                      // Email input
+                      StandardTextFormField(
+                        controller: resetEmailController,
+                        labelText: 'Email',
+                        keyboardType: TextInputType.emailAddress,
+                        prefixIcon: Icons.email_outlined,
+                        enabled: !isSendingReset,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your email';
+                          }
+                          if (!value.contains('@')) {
+                            return 'Please enter a valid email';
+                          }
+                          return null;
+                        },
+                      ),
+                      
+                      const SizedBox(height: 24),
+                      
+                      // Send reset email button
+                      FilledButton(
+                        onPressed: isSendingReset
+                            ? null
+                            : () async {
+                                if (resetFormKey.currentState?.validate() ?? false) {
+                                  setDialogState(() {
+                                    isSendingReset = true;
+                                  });
 
-                                try {
-                                  await _auth.sendPasswordResetEmail(
-                                    email: resetEmailController.text.trim(),
-                                  );
+                                  try {
+                                    await _auth.sendPasswordResetEmail(
+                                      email: resetEmailController.text.trim(),
+                                    );
 
-                                  if (mounted && isDialogOpen) {
-                                    Navigator.of(context).pop();
-                                    isDialogOpen = false;
-                                    // Dispose controller after dialog closes
-                                    if (resetEmailController.hasListeners) {
-                                      resetEmailController.dispose();
+                                    if (mounted) {
+                                      Navigator.of(dialogContext).pop();
+                                      Fluttertoast.showToast(
+                                        msg: 'Password reset email sent! Please check your inbox.',
+                                        backgroundColor: colorScheme.primary,
+                                        textColor: colorScheme.onPrimary,
+                                        toastLength: Toast.LENGTH_LONG,
+                                        gravity: ToastGravity.BOTTOM,
+                                        fontSize: 16.0,
+                                      );
                                     }
-                                    Fluttertoast.showToast(
-                                      msg: 'Password reset email sent! Please check your inbox.',
-                                      backgroundColor: colorScheme.primary,
-                                      textColor: colorScheme.onPrimary,
-                                      toastLength: Toast.LENGTH_LONG,
-                                      gravity: ToastGravity.BOTTOM,
-                                      fontSize: 16.0,
-                                    );
-                                  }
-                                } on FirebaseAuthException catch (e) {
-                                  if (mounted && isDialogOpen) {
-                                    String errorMessage = 'Failed to send reset email';
-                                    if (e.code == 'user-not-found') {
-                                      errorMessage = 'No account found with this email address.';
-                                    } else if (e.code == 'invalid-email') {
-                                      errorMessage = 'Invalid email address.';
-                                    } else if (e.code == 'too-many-requests') {
-                                      errorMessage = 'Too many requests. Please try again later.';
-                                    } else {
-                                      errorMessage = e.message ?? errorMessage;
+                                  } on FirebaseAuthException catch (e) {
+                                    if (mounted) {
+                                      String errorMessage = 'Failed to send reset email';
+                                      if (e.code == 'user-not-found') {
+                                        errorMessage = 'No account found with this email address.';
+                                      } else if (e.code == 'invalid-email') {
+                                        errorMessage = 'Invalid email address.';
+                                      } else if (e.code == 'too-many-requests') {
+                                        errorMessage = 'Too many requests. Please try again later.';
+                                      } else {
+                                        errorMessage = e.message ?? errorMessage;
+                                      }
+                                      
+                                      setDialogState(() {
+                                        isSendingReset = false;
+                                      });
+                                      
+                                      Fluttertoast.showToast(
+                                        msg: errorMessage,
+                                        backgroundColor: colorScheme.error,
+                                        textColor: colorScheme.onError,
+                                        toastLength: Toast.LENGTH_LONG,
+                                        gravity: ToastGravity.BOTTOM,
+                                        fontSize: 16.0,
+                                      );
                                     }
-                                    
-                                    setDialogState(() {
-                                      _isSendingResetEmail = false;
-                                    });
-                                    
-                                    Fluttertoast.showToast(
-                                      msg: errorMessage,
-                                      backgroundColor: colorScheme.error,
-                                      textColor: colorScheme.onError,
-                                      toastLength: Toast.LENGTH_LONG,
-                                      gravity: ToastGravity.BOTTOM,
-                                      fontSize: 16.0,
-                                    );
-                                  }
-                                } catch (e) {
-                                  if (mounted && isDialogOpen) {
-                                    setDialogState(() {
-                                      _isSendingResetEmail = false;
-                                    });
-                                    Fluttertoast.showToast(
-                                      msg: 'An error occurred. Please try again.',
-                                      backgroundColor: colorScheme.error,
-                                      textColor: colorScheme.onError,
-                                      toastLength: Toast.LENGTH_LONG,
-                                      gravity: ToastGravity.BOTTOM,
-                                      fontSize: 16.0,
-                                    );
-                                  }
-                                } finally {
-                                  if (mounted && isDialogOpen && _isSendingResetEmail) {
-                                    setDialogState(() {
-                                      _isSendingResetEmail = false;
-                                    });
+                                  } catch (e) {
+                                    if (mounted) {
+                                      setDialogState(() {
+                                        isSendingReset = false;
+                                      });
+                                      Fluttertoast.showToast(
+                                        msg: 'An error occurred. Please try again.',
+                                        backgroundColor: colorScheme.error,
+                                        textColor: colorScheme.onError,
+                                        toastLength: Toast.LENGTH_LONG,
+                                        gravity: ToastGravity.BOTTOM,
+                                        fontSize: 16.0,
+                                      );
+                                    }
                                   }
                                 }
-                              }
-                            },
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                              },
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                         ),
-                      ),
-                      child: _isSendingResetEmail
-                          ? SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  colorScheme.onPrimary,
+                        child: isSendingReset
+                            ? SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    colorScheme.onPrimary,
+                                  ),
+                                ),
+                              )
+                            : Text(
+                                'Send Reset Link',
+                                style: GoogleFonts.inter(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
-                            )
-                          : Text(
-                              'Send Reset Link',
-                              style: GoogleFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                    ),
-                    
-                    const SizedBox(height: 12),
-                    
-                    // Cancel button
-                    TextButton(
-                      onPressed: _isSendingResetEmail
-                          ? null
-                          : () {
-                              Navigator.of(context).pop();
-                              isDialogOpen = false;
-                              // Dispose controller when dialog closes
-                              if (resetEmailController.hasListeners) {
-                                resetEmailController.dispose();
-                              }
-                            },
-                      child: Text(
-                        'Cancel',
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                      ),
+                      
+                      const SizedBox(height: 12),
+                      
+                      // Cancel button
+                      TextButton(
+                        onPressed: isSendingReset
+                            ? null
+                            : () => Navigator.of(dialogContext).pop(),
+                        child: Text(
+                          'Cancel',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
-                    ),
-                    
-                    SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
+                      
+                    SizedBox(height: MediaQuery.of(dialogContext).padding.bottom + 8),
                   ],
                 ),
               ),
-            ),
-          );
-        },
-      ),
+            );
+          },
+        );
+      },
     ).then((_) {
-      // Dispose controller when dialog is dismissed
-      if (resetEmailController.hasListeners) {
+      // Dispose controller after dialog closes completely
+      if (!resetEmailController.hasListeners) {
         resetEmailController.dispose();
+      } else {
+        // Delay disposal if controller is still attached
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (!resetEmailController.hasListeners) {
+            resetEmailController.dispose();
+          }
+        });
       }
     });
   }
@@ -565,14 +535,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(24),
-        child: Column(
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+                          children: [
                             // Email field
                             StandardTextFormField(
-              controller: _emailController,
-                labelText: 'Email',
-              keyboardType: TextInputType.emailAddress,
+                              controller: _emailController,
+                              labelText: 'Email',
+                              keyboardType: TextInputType.emailAddress,
                               prefixIcon: Icons.email_outlined,
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
@@ -649,16 +619,16 @@ class _LoginScreenState extends State<LoginScreen> {
                             FilledButton(
                               onPressed: _isLoading ? null : _login,
                               style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: _isLoading
+                                ),
+                              ),
+                              child: _isLoading
                                   ? SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
                                         strokeWidth: 2,
                                         valueColor: AlwaysStoppedAnimation<Color>(
                                           colorScheme.onPrimary,

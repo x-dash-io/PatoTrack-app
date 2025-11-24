@@ -3,20 +3,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_pin_code_fields/flutter_pin_code_fields.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../main.dart'; // Import MainScreen to navigate to it
+import '../main.dart';
 
 class PasscodeScreen extends StatefulWidget {
   final bool isSettingPasscode;
-  // NEW: Flag to check if we're unlocking the app on startup
   final bool isAppUnlock;
 
   const PasscodeScreen({
     super.key,
     required this.isSettingPasscode,
-    this.isAppUnlock = false, // Default to false for existing calls
+    this.isAppUnlock = false,
   });
 
   @override
@@ -25,97 +23,124 @@ class PasscodeScreen extends StatefulWidget {
 
 class _PasscodeScreenState extends State<PasscodeScreen>
     with SingleTickerProviderStateMixin {
-  final _pinController = TextEditingController();
+  final List<TextEditingController> _pinControllers = List.generate(4, (_) => TextEditingController());
+  final List<FocusNode> _focusNodes = List.generate(4, (_) => FocusNode());
   String? _pinToConfirm;
-  late String _title;
-  late String _subtitle;
+  String _title = '';
+  String _subtitle = '';
   bool _hasError = false;
+  bool _isDisposed = false;
+  
   late AnimationController _shakeController;
   late Animation<double> _shakeAnimation;
 
   @override
   void initState() {
     super.initState();
-    _title = widget.isSettingPasscode ? 'Create a New Passcode' : 'Enter Passcode';
-    _subtitle = widget.isSettingPasscode
-        ? 'Enter a 4-digit passcode to secure your app'
-        : 'Enter your passcode to continue';
+    _updateUI();
     
-    // Initialize shake animation for error feedback
     _shakeController = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
     _shakeAnimation = Tween<double>(begin: 0, end: 10).animate(
-      CurvedAnimation(parent: _shakeController, curve: Curves.elasticIn),
+      CurvedAnimation(
+        parent: _shakeController,
+        curve: Curves.elasticIn,
+      ),
     );
+  }
+
+  void _updateUI() {
+    if (widget.isSettingPasscode) {
+      if (_pinToConfirm == null) {
+        _title = 'Create a New Passcode';
+        _subtitle = 'Enter a 4-digit passcode to secure your app';
+      } else {
+        _title = 'Confirm your Passcode';
+        _subtitle = 'Re-enter your passcode to confirm';
+      }
+    } else {
+      _title = 'Enter Passcode';
+      _subtitle = 'Enter your passcode to continue';
+    }
   }
 
   @override
   void dispose() {
-    _pinController.dispose();
+    _isDisposed = true;
+    for (var controller in _pinControllers) {
+      controller.dispose();
+    }
+    for (var node in _focusNodes) {
+      node.dispose();
+    }
     _shakeController.dispose();
     super.dispose();
   }
 
-  void _triggerShake() {
-    _shakeController.forward(from: 0);
+  void _onPinChanged() {
+    String pin = _pinControllers.map((c) => c.text).join();
+    if (pin.length == 4) {
+      _onPinCompleted(pin);
+    }
   }
 
-  void _onPinCompleted(String pin) async {
-    if (!mounted) return;
+  void _clearPin() {
+    for (var controller in _pinControllers) {
+      controller.clear();
+    }
+    _focusNodes[0].requestFocus();
+  }
+
+  void _triggerShake() {
+    if (_isDisposed) return;
+    _shakeController.forward(from: 0).then((_) {
+      if (!_isDisposed) {
+        _shakeController.reverse();
+      }
+    });
+  }
+
+  Future<void> _onPinCompleted(String pin) async {
+    if (_isDisposed || !mounted) return;
+
     final prefs = await SharedPreferences.getInstance();
     final savedPin = prefs.getString('passcode');
-    if (!mounted) return;
-    final navigator = Navigator.of(context);
+    
+    if (_isDisposed || !mounted) return;
+    
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    // This block is for SETTING a new passcode
+    // Setting a new passcode
     if (widget.isSettingPasscode) {
+      // Check if new passcode is same as old one
       if (savedPin != null && savedPin == pin) {
-        setState(() {
-          _hasError = true;
-        });
-        _triggerShake();
-        Fluttertoast.showToast(
-          msg: 'New passcode cannot be the same as the old one.',
-          backgroundColor: colorScheme.error,
-          textColor: colorScheme.onError,
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-        );
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (mounted && _pinController.hasListeners) {
-            setState(() {
-              _pinToConfirm = null;
-              _title = 'Create a New Passcode';
-              _subtitle = 'Enter a 4-digit passcode to secure your app';
-              _hasError = false;
-            });
-            if (_pinController.hasListeners) {
-              _pinController.clear();
-            }
-          }
-        });
+        _showError('New passcode cannot be the same as the old one.');
         return;
       }
 
+      // First entry
       if (_pinToConfirm == null) {
-        if (mounted) {
-          setState(() {
-            _pinToConfirm = pin;
-            _title = 'Confirm your Passcode';
-            _subtitle = 'Re-enter your passcode to confirm';
-            _hasError = false;
-          });
-          if (_pinController.hasListeners) {
-            _pinController.clear();
-          }
+        if (!mounted || _isDisposed) return;
+        setState(() {
+          _pinToConfirm = pin;
+          _hasError = false;
+          _updateUI();
+        });
+        if (!_isDisposed) {
+          _clearPin();
         }
-      } else {
+      }
+      // Confirmation entry
+      else {
         if (_pinToConfirm == pin) {
           await prefs.setString('passcode', pin);
+          
+          if (!mounted || _isDisposed) return;
+          
+          final navigator = Navigator.of(context);
           Fluttertoast.showToast(
             msg: 'Passcode Set Successfully',
             backgroundColor: colorScheme.primary,
@@ -125,70 +150,60 @@ class _PasscodeScreenState extends State<PasscodeScreen>
           );
           navigator.pop(true);
         } else {
-          setState(() {
-            _hasError = true;
-          });
-          _triggerShake();
-          Fluttertoast.showToast(
-            msg: 'Passcodes do not match. Please try again.',
-            backgroundColor: colorScheme.error,
-            textColor: colorScheme.onError,
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-          );
-          Future.delayed(const Duration(milliseconds: 500), () {
-            if (mounted && _pinController.hasListeners) {
-              setState(() {
-                _pinToConfirm = null;
-                _title = 'Create a New Passcode';
-                _subtitle = 'Enter a 4-digit passcode to secure your app';
-                _hasError = false;
-              });
-              if (_pinController.hasListeners) {
-                _pinController.clear();
-              }
-            }
-          });
+          _showError('Passcodes do not match. Please try again.');
         }
       }
     }
-    // This block is for VERIFYING an existing passcode
+    // Verifying existing passcode
     else {
       if (savedPin == pin) {
-        // UPDATED: Check if we are unlocking the app
         if (widget.isAppUnlock) {
-          // If yes, replace the current screen with the MainScreen
-          navigator.pushReplacement(
+          if (!mounted || _isDisposed) return;
+          Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (context) => const MainScreen()),
           );
         } else {
-          // If no (e.g., just verifying from settings), just pop back
-          navigator.pop(true);
+          if (!mounted || _isDisposed) return;
+          Navigator.of(context).pop(true);
         }
       } else {
-        setState(() {
-          _hasError = true;
-        });
-        _triggerShake();
-        Fluttertoast.showToast(
-          msg: 'Incorrect Passcode',
-          backgroundColor: colorScheme.error,
-          textColor: colorScheme.onError,
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-        );
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (mounted && _pinController.hasListeners) {
-            setState(() {
-              _hasError = false;
-            });
-            if (_pinController.hasListeners) {
-              _pinController.clear();
-            }
-          }
-        });
+        _showError('Incorrect Passcode');
       }
     }
+  }
+
+  void _showError(String message) {
+    if (_isDisposed || !mounted) return;
+    
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
+    setState(() {
+      _hasError = true;
+      if (widget.isSettingPasscode && _pinToConfirm != null) {
+        _pinToConfirm = null;
+        _updateUI();
+      }
+    });
+    
+    _triggerShake();
+    
+    Fluttertoast.showToast(
+      msg: message,
+      backgroundColor: colorScheme.error,
+      textColor: colorScheme.onError,
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM,
+    );
+
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (!_isDisposed && mounted) {
+        setState(() {
+          _hasError = false;
+        });
+        _clearPin();
+      }
+    });
   }
 
   @override
@@ -198,207 +213,257 @@ class _PasscodeScreenState extends State<PasscodeScreen>
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      resizeToAvoidBottomInset: false, // Prevent layout resize when keyboard appears
-      appBar: AppBar(
-        title: Text(
-          _title,
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-        ),
-        // UPDATED: Hide the back button only when unlocking the app on startup
-        automaticallyImplyLeading: !widget.isAppUnlock,
-        elevation: 0,
-        systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-          statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
-        ),
-      ),
+      resizeToAvoidBottomInset: false,
+      appBar: widget.isAppUnlock
+          ? null
+          : AppBar(
+              title: Text(
+                _title,
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+              ),
+              elevation: 0,
+              systemOverlayStyle: SystemUiOverlayStyle(
+                statusBarColor: Colors.transparent,
+                statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+                statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+              ),
+            ),
       body: GestureDetector(
-        onTap: () {
-          // Dismiss keyboard when tapping outside
-          FocusScope.of(context).unfocus();
-        },
+        onTap: () => FocusScope.of(context).unfocus(),
         child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.primaryContainer.withOpacity(0.3),
-              colorScheme.surface,
-              colorScheme.surface,
-            ],
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                colorScheme.primaryContainer.withValues(alpha: 0.3),
+                colorScheme.surface,
+                colorScheme.surface,
+              ],
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(32.0),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: MediaQuery.of(context).size.height -
-                      MediaQuery.of(context).padding.top -
-                      MediaQuery.of(context).padding.bottom -
-                      kToolbarHeight -
-                      64,
-                ),
+          child: SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                  // Modern gradient lock icon container
-                  AnimatedBuilder(
-                    animation: _shakeAnimation,
-                    builder: (context, child) {
-                      return Transform.translate(
-                        offset: Offset(_shakeAnimation.value, 0),
-                        child: Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                colorScheme.primary,
-                                colorScheme.primary.withOpacity(0.7),
+                    const SizedBox(height: 40),
+
+                    // Lock Icon
+                    AnimatedBuilder(
+                      animation: _shakeAnimation,
+                      builder: (context, child) {
+                        return Transform.translate(
+                          offset: Offset(_shakeAnimation.value, 0),
+                          child: Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  colorScheme.primary,
+                                  colorScheme.primary.withValues(alpha: 0.7),
+                                ],
+                              ),
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: colorScheme.primary.withValues(alpha: 0.3),
+                                  blurRadius: 20,
+                                  spreadRadius: 2,
+                                  offset: const Offset(0, 8),
+                                ),
                               ],
                             ),
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: colorScheme.primary.withOpacity(0.3),
-                                blurRadius: 24,
-                                spreadRadius: 2,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: Icon(
-                            Icons.lock_outline_rounded,
-                            size: 60,
-                            color: colorScheme.onPrimary,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-
-                  const SizedBox(height: 48),
-
-                  // Title
-                  Text(
-                    _title,
-                    style: GoogleFonts.inter(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurface,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // Subtitle
-                  Text(
-                    _subtitle,
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      color: colorScheme.onSurfaceVariant,
-                      height: 1.4,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 48),
-
-                  // PIN Input Fields with modern styling
-                  AnimatedBuilder(
-                    animation: _shakeAnimation,
-                    builder: (context, child) {
-                      return Transform.translate(
-                        offset: Offset(_shakeAnimation.value, 0),
-                        child: Center(
-                          child: PinCodeFields(
-                            controller: _pinController,
-                            length: 4,
-                            fieldBorderStyle: FieldBorderStyle.square,
-                            responsive: false,
-                            fieldHeight: 64.0,
-                            fieldWidth: 64.0,
-                            borderWidth: 2.5,
-                            activeBorderColor: _hasError
-                                ? colorScheme.error
-                                : colorScheme.primary,
-                            borderRadius: BorderRadius.circular(16.0),
-                            keyboardType: TextInputType.number,
-                            autoHideKeyboard: true,
-                            obscureText: true,
-                            obscureCharacter: '●',
-                            onComplete: _onPinCompleted,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                              LengthLimitingTextInputFormatter(4),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-
-                  if (widget.isSettingPasscode && _pinToConfirm != null) ...[
-                    const SizedBox(height: 24),
-                    // Progress indicator showing we're on step 2
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primaryContainer.withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.check_circle_rounded,
-                            size: 16,
-                            color: colorScheme.primary,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Step 2 of 2',
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: colorScheme.onPrimaryContainer,
+                            child: Icon(
+                              Icons.lock_outline_rounded,
+                              size: 50,
+                              color: colorScheme.onPrimary,
                             ),
                           ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
-                  ],
 
-                  const SizedBox(height: 32),
+                    const SizedBox(height: 48),
 
-                  // Helper text
-                  if (!_hasError)
+                    // Title
                     Text(
-                      widget.isSettingPasscode
-                          ? 'Remember this passcode. You\'ll need it to unlock your app.'
-                          : 'Enter your 4-digit passcode',
+                      _title,
                       style: GoogleFonts.inter(
-                        fontSize: 13,
-                        color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
                       ),
                       textAlign: TextAlign.center,
                     ),
+
+                    const SizedBox(height: 12),
+
+                    // Subtitle
+                    Text(
+                      _subtitle,
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        color: colorScheme.onSurfaceVariant,
+                        height: 1.4,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+
+                    const SizedBox(height: 48),
+
+                    // PIN Input Fields - Individual fields without wrapper container
+                    AnimatedBuilder(
+                      animation: _shakeAnimation,
+                      builder: (context, child) {
+                        return Transform.translate(
+                          offset: Offset(_shakeAnimation.value, 0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(4, (index) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                child: SizedBox(
+                                  width: 68,
+                                  height: 68,
+                                  child: TextField(
+                                    controller: _pinControllers[index],
+                                    focusNode: _focusNodes[index],
+                                    textAlign: TextAlign.center,
+                                    keyboardType: TextInputType.number,
+                                    obscureText: true,
+                                    maxLength: 1,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                      color: colorScheme.onSurface,
+                                    ),
+                                    decoration: InputDecoration(
+                                      counterText: '',
+                                      contentPadding: EdgeInsets.zero,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                        borderSide: BorderSide(
+                                          color: _hasError
+                                              ? colorScheme.error
+                                              : colorScheme.outline.withValues(alpha: 0.3),
+                                          width: 2.5,
+                                        ),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                        borderSide: BorderSide(
+                                          color: _hasError
+                                              ? colorScheme.error.withValues(alpha: 0.5)
+                                              : colorScheme.outline.withValues(alpha: 0.3),
+                                          width: 2.5,
+                                        ),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                        borderSide: BorderSide(
+                                          color: _hasError
+                                              ? colorScheme.error
+                                              : colorScheme.primary,
+                                          width: 2.5,
+                                        ),
+                                      ),
+                                      filled: false,
+                                    ),
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.digitsOnly,
+                                    ],
+                                    onChanged: (value) {
+                                      if (value.isNotEmpty && index < 3) {
+                                        _focusNodes[index + 1].requestFocus();
+                                      }
+                                      _onPinChanged();
+                                    },
+                                    onTap: () {
+                                      _pinControllers[index].selection = TextSelection.fromPosition(
+                                        TextPosition(offset: _pinControllers[index].text.length),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              );
+                            }),
+                          ),
+                        );
+                      },
+                    ),
+
+                    // Progress Indicator
+                    if (widget.isSettingPasscode && _pinToConfirm != null) ...[
+                      const SizedBox(height: 32),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer.withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.check_circle_rounded,
+                              size: 16,
+                              color: colorScheme.primary,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Step 2 of 2',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: colorScheme.onPrimaryContainer,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+
+                    const SizedBox(height: 48),
+
+                    // Helper Text
+                    if (!_hasError)
+                      Text(
+                        widget.isSettingPasscode
+                            ? 'Remember this passcode. You\'ll need it to unlock your app.'
+                            : 'Enter your 4-digit passcode',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+
+                    if (_hasError)
+                      Text(
+                        'Please try again',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: colorScheme.error,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+
+                    const SizedBox(height: 40),
                   ],
                 ),
               ),
             ),
           ),
-        ),
         ),
       ),
     );
