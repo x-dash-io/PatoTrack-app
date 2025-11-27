@@ -291,9 +291,10 @@ class DatabaseHelper {
 
   Future<int> updateBill(Bill bill, String userId) async {
     final db = await database;
-    final result = await db.update('bills', bill.toMap(), where: 'id = ? AND userId = ?', whereArgs: [bill.id, userId]);
+    final billMap = bill.toMap()..['userId'] = userId; // Ensure userId is included
+    final result = await db.update('bills', billMap, where: 'id = ? AND userId = ?', whereArgs: [bill.id, userId]);
     try {
-      await _firestore.collection('users').doc(userId).collection('bills').doc(bill.id.toString()).update(bill.toMap());
+      await _firestore.collection('users').doc(userId).collection('bills').doc(bill.id.toString()).update(billMap);
     } catch (e) {
       print('Firestore sync failed for updateBill: $e');
     }

@@ -15,6 +15,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../helpers/config.dart';
 import '../helpers/database_helper.dart';
+import '../helpers/responsive_helper.dart';
 import '../models/category.dart';
 import '../theme_provider.dart';
 import '../widgets/dialog_helpers.dart';
@@ -402,42 +403,72 @@ class _ProfileScreenState extends State<ProfileScreen> {
               if (currentUser != null)
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+                  padding: ResponsiveHelper.edgeInsets(context, 32, 24, 32, 24),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
                         colorScheme.primaryContainer,
-                        colorScheme.primaryContainer.withOpacity(0.7),
+                        colorScheme.primaryContainer.withOpacity(0.8),
+                        colorScheme.primaryContainer.withOpacity(0.6),
                       ],
+                      stops: const [0.0, 0.5, 1.0],
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: colorScheme.primary.withOpacity(0.2),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                        spreadRadius: 0,
+                      ),
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Column(
                     children: [
-                      const SizedBox(height: 16),
+                      SizedBox(height: ResponsiveHelper.spacing(context, 8)),
+                      // Modern Profile Image with Edit Badge
                       GestureDetector(
                         onTap: _pickAndUploadImage,
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
+                            // Outer ring with gradient
                             Container(
+                              width: ResponsiveHelper.width(context, 120),
+                              height: ResponsiveHelper.width(context, 120),
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 3,
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Colors.white.withOpacity(0.9),
+                                    Colors.white.withOpacity(0.7),
+                                  ],
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 10,
+                                    color: Colors.black.withOpacity(0.15),
+                                    blurRadius: 20,
                                     spreadRadius: 2,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                  BoxShadow(
+                                    color: colorScheme.primary.withOpacity(0.3),
+                                    blurRadius: 15,
+                                    spreadRadius: 1,
                                   ),
                                 ],
                               ),
+                              padding: const EdgeInsets.all(4),
                               child: CircleAvatar(
-                                radius: 50,
+                                radius: ResponsiveHelper.width(context, 56),
                                 backgroundImage: (currentUser!.photoURL != null)
                                     ? NetworkImage(currentUser!.photoURL!)
                                     : null,
@@ -445,19 +476,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 child: (currentUser!.photoURL == null)
                                     ? Icon(
                                         Icons.person_rounded,
-                                        size: 50,
+                                        size: ResponsiveHelper.iconSize(context, 60),
                                         color: colorScheme.onPrimary,
                                       )
                                     : null,
                               ),
                             ),
+                            // Camera icon badge
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Container(
+                                padding: ResponsiveHelper.edgeInsetsAll(context, 8),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.primary,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 3,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.2),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(
+                                  Icons.camera_alt_rounded,
+                                  size: ResponsiveHelper.iconSize(context, 18),
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            // Uploading overlay
                             if (_isUploading)
                               Container(
-                                width: 100,
-                                height: 100,
+                                width: ResponsiveHelper.width(context, 120),
+                                height: ResponsiveHelper.width(context, 120),
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: Colors.black.withOpacity(0.5),
+                                  color: Colors.black.withOpacity(0.6),
                                 ),
                                 child: CircularProgressIndicator(
                                   strokeWidth: 3,
@@ -469,50 +529,85 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      SizedBox(height: ResponsiveHelper.spacing(context, 24)),
+                      // Name with Edit Button
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Flexible(
                             child: Text(
                               currentUser!.displayName ?? 'User',
                               style: GoogleFonts.inter(
-                                fontSize: 26,
+                                fontSize: ResponsiveHelper.fontSize(context, 28),
                                 fontWeight: FontWeight.bold,
                                 color: colorScheme.onPrimaryContainer,
+                                letterSpacing: -0.5,
+                                height: 1.2,
                               ),
                               textAlign: TextAlign.center,
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          InkWell(
-                            onTap: _showUpdateNameDialog,
-                            borderRadius: BorderRadius.circular(20),
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.edit_rounded,
-                                size: 18,
-                                color: colorScheme.onPrimaryContainer,
+                          SizedBox(width: ResponsiveHelper.spacing(context, 10)),
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: _showUpdateNameDialog,
+                              borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
+                              child: Container(
+                                padding: ResponsiveHelper.edgeInsetsAll(context, 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.25),
+                                  borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.4),
+                                    width: 1.5,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(
+                                  Icons.edit_rounded,
+                                  size: ResponsiveHelper.iconSize(context, 18),
+                                  color: colorScheme.onPrimaryContainer,
+                                ),
                               ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        currentUser!.email ?? 'No email',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: colorScheme.onPrimaryContainer.withOpacity(0.8),
-                        ),
-                        textAlign: TextAlign.center,
+                      SizedBox(height: ResponsiveHelper.spacing(context, 10)),
+                      // Email with icon
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.email_outlined,
+                            size: ResponsiveHelper.iconSize(context, 16),
+                            color: colorScheme.onPrimaryContainer.withOpacity(0.7),
+                          ),
+                          SizedBox(width: ResponsiveHelper.spacing(context, 6)),
+                          Flexible(
+                            child: Text(
+                              currentUser!.email ?? 'No email',
+                              style: GoogleFonts.inter(
+                                fontSize: ResponsiveHelper.fontSize(context, 14),
+                                color: colorScheme.onPrimaryContainer.withOpacity(0.85),
+                                fontWeight: FontWeight.w500,
+                              ),
+                              textAlign: TextAlign.center,
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

@@ -15,7 +15,9 @@ import '../widgets/input_fields.dart';
 import 'manage_frequencies_screen.dart';
 
 class AddBillScreen extends StatefulWidget {
-  const AddBillScreen({super.key});
+  final Bill? billToEdit;
+  
+  const AddBillScreen({super.key, this.billToEdit});
 
   @override
   State<AddBillScreen> createState() => _AddBillScreenState();
@@ -39,6 +41,18 @@ class _AddBillScreenState extends State<AddBillScreen> {
   void initState() {
     super.initState();
     _loadFrequencies();
+    _initializeFromBill();
+  }
+
+  void _initializeFromBill() {
+    if (widget.billToEdit != null) {
+      final bill = widget.billToEdit!;
+      _nameController.text = bill.name;
+      _amountController.text = bill.amount.toStringAsFixed(2);
+      _selectedDate = bill.dueDate;
+      _isRecurring = bill.isRecurring;
+      // We'll set the frequency after frequencies are loaded
+    }
   }
 
   @override
@@ -58,10 +72,18 @@ class _AddBillScreenState extends State<AddBillScreen> {
       if (mounted) {
         setState(() {
           _frequencies = frequencies;
-          _selectedFrequency = frequencies.isNotEmpty ? frequencies.firstWhere(
-            (f) => f.type == 'monthly',
-            orElse: () => frequencies.first,
-          ) : null;
+          // Set frequency from bill if editing, otherwise default to monthly
+          if (widget.billToEdit != null && widget.billToEdit!.recurrenceType != null) {
+            _selectedFrequency = frequencies.firstWhere(
+              (f) => f.type == widget.billToEdit!.recurrenceType,
+              orElse: () => frequencies.isNotEmpty ? frequencies.first : Frequency(id: 1, name: 'Monthly', type: 'monthly', displayName: 'Monthly'),
+            );
+          } else {
+            _selectedFrequency = frequencies.isNotEmpty ? frequencies.firstWhere(
+              (f) => f.type == 'monthly',
+              orElse: () => frequencies.first,
+            ) : null;
+          }
           _isLoadingFrequencies = false;
         });
       }
@@ -85,9 +107,12 @@ class _AddBillScreenState extends State<AddBillScreen> {
       final dbHelper = DatabaseHelper();
       final billName = _nameController.text.trim();
 
-      // Check for duplicate bill names
+      // Check for duplicate bill names (excluding current bill if editing)
       final existingBills = await dbHelper.getBills(_currentUser!.uid);
-      final isDuplicate = existingBills.any((bill) => bill.name.toLowerCase() == billName.toLowerCase());
+      final isDuplicate = existingBills.any((bill) => 
+        bill.name.toLowerCase() == billName.toLowerCase() && 
+        bill.id != widget.billToEdit?.id
+      );
 
       if (isDuplicate && mounted) {
         setState(() => _isSaving = false);
@@ -95,8 +120,9 @@ class _AddBillScreenState extends State<AddBillScreen> {
         return;
       }
 
-      // UPDATED: Create a Bill object with the new recurring properties
-      final newBill = Bill(
+      // Create or update Bill object
+      final bill = Bill(
+        id: widget.billToEdit?.id,
         name: billName,
         amount: double.parse(_amountController.text),
         dueDate: _selectedDate,
@@ -107,11 +133,21 @@ class _AddBillScreenState extends State<AddBillScreen> {
             : null,
       );
 
-      final newBillId = await dbHelper.addBill(newBill, _currentUser!.uid);
-
-      // Schedule notification for the new bill
       final notificationService = NotificationService();
-      await notificationService.scheduleBillNotification(newBill.copyWith(id: newBillId));
+      
+      if (widget.billToEdit != null) {
+        // Updating existing bill
+        await dbHelper.updateBill(bill, _currentUser!.uid);
+        // Reschedule notification - cancel old one if it had an ID
+        if (widget.billToEdit!.id != null) {
+          await notificationService.cancelNotification(widget.billToEdit!.id!);
+        }
+        await notificationService.scheduleBillNotification(bill);
+      } else {
+        // Adding new bill
+        final newBillId = await dbHelper.addBill(bill, _currentUser!.uid);
+        await notificationService.scheduleBillNotification(bill.copyWith(id: newBillId));
+      }
 
       if (mounted) {
         Navigator.of(context).pop();
@@ -161,7 +197,7 @@ class _AddBillScreenState extends State<AddBillScreen> {
         ),
         elevation: 0,
         title: Text(
-          'Add New Bill',
+          widget.billToEdit != null ? 'Edit Bill' : 'Add New Bill',
           style: GoogleFonts.inter(fontWeight: FontWeight.w600),
         ),
       ),
@@ -375,7 +411,7 @@ class _AddBillScreenState extends State<AddBillScreen> {
                       ),
                     )
                   : Text(
-                      'Save Bill',
+                      widget.billToEdit != null ? 'Update Bill' : 'Save Bill',
                       style: GoogleFonts.inter(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,

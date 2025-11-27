@@ -617,125 +617,92 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                 ],
                               ),
                               SizedBox(height: ResponsiveHelper.spacing(context, 20)),
+                              // Pie Chart - smaller and better contained
                               LayoutBuilder(
                                 builder: (context, constraints) {
-                                  // Make pie chart responsive based on available width
                                   final screenWidth = MediaQuery.of(context).size.width;
                                   final isSmallScreen = screenWidth <= 400;
                                   final isVerySmall = screenWidth <= 380;
                                   
-                                  // Better chart height for all screen sizes
-                                  final chartHeight = isVerySmall 
-                                      ? screenWidth * 0.60  // ~228px for 380px screen
+                                  // Smaller, more compact chart dimensions
+                                  final chartSize = isVerySmall 
+                                      ? screenWidth * 0.50  // ~190px for 380px screen
                                       : isSmallScreen 
-                                          ? screenWidth * 0.65  // ~260px for 400px screen
-                                          : ResponsiveHelper.height(context, 320);
+                                          ? screenWidth * 0.55  // ~220px for 400px screen
+                                          : ResponsiveHelper.width(context, 220); // Smaller fixed size for larger screens
                                   
-                                  // Better pie chart dimensions
-                                  final centerSpaceRadius = isVerySmall 
-                                      ? screenWidth * 0.08  // ~30px for 380px screen
-                                      : isSmallScreen 
-                                          ? screenWidth * 0.10  // ~40px for 400px screen
-                                          : ResponsiveHelper.width(context, 60);
-                                  final radius = isVerySmall 
-                                      ? screenWidth * 0.22  // ~84px for 380px screen
-                                      : isSmallScreen 
-                                          ? screenWidth * 0.26  // ~104px for 400px screen
-                                          : ResponsiveHelper.width(context, 110);
+                                  // Proportional pie chart dimensions
+                                  final centerSpaceRadius = chartSize * 0.15; // 15% of chart size
+                                  final radius = chartSize * 0.35; // 35% of chart size
                                   
-                                  return SizedBox(
-                                    height: chartHeight,
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          flex: isSmallScreen ? 1 : 2,
-                                          child: PieChart(
-                                            PieChartData(
-                                              sectionsSpace: 3,
-                                              centerSpaceRadius: centerSpaceRadius,
-                                              sections: expenseData.entries.map((entry) {
-                                                final percentage =
-                                                    (entry.value / totalExpenses) * 100;
-                                                return PieChartSectionData(
-                                                  color: _getModernColorForCategory(entry.key, theme),
-                                                  value: entry.value,
-                                                  title: percentage > 5
-                                                      ? '${percentage.toStringAsFixed(1)}%'
-                                                      : '',
-                                                  radius: radius,
-                                                  titleStyle: GoogleFonts.inter(
-                                                    fontSize: ResponsiveHelper.fontSize(context, 14),
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.white,
-                                                  ),
-                                                  badgeWidget: percentage > 5
-                                                      ? null
-                                                      : Container(
-                                                          padding: ResponsiveHelper.edgeInsetsAll(context, 4),
-                                                          decoration: BoxDecoration(
-                                                            color: theme.colorScheme.surface,
-                                                            shape: BoxShape.circle,
-                                                          ),
-                                                          child: Text(
-                                                            '${percentage.toStringAsFixed(0)}%',
-                                                            style: GoogleFonts.inter(
-                                                              fontSize: ResponsiveHelper.fontSize(context, 10),
-                                                              fontWeight: FontWeight.bold,
-                                                              color: theme.colorScheme.onSurface,
-                                                            ),
+                                  return Column(
+                                    children: [
+                                      // Centered pie chart
+                                      SizedBox(
+                                        height: chartSize,
+                                        width: chartSize,
+                                        child: PieChart(
+                                          PieChartData(
+                                            sectionsSpace: 2,
+                                            centerSpaceRadius: centerSpaceRadius,
+                                            sections: expenseData.entries.map((entry) {
+                                              final percentage = (entry.value / totalExpenses) * 100;
+                                              return PieChartSectionData(
+                                                color: _getModernColorForCategory(entry.key, theme),
+                                                value: entry.value,
+                                                title: percentage > 5
+                                                    ? '${percentage.toStringAsFixed(1)}%'
+                                                    : '',
+                                                radius: radius,
+                                                titleStyle: GoogleFonts.inter(
+                                                  fontSize: ResponsiveHelper.fontSize(context, 11),
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white,
+                                                ),
+                                                badgeWidget: percentage <= 5
+                                                    ? Container(
+                                                        padding: ResponsiveHelper.edgeInsetsAll(context, 3),
+                                                        decoration: BoxDecoration(
+                                                          color: theme.colorScheme.surface,
+                                                          shape: BoxShape.circle,
+                                                        ),
+                                                        child: Text(
+                                                          '${percentage.toStringAsFixed(0)}%',
+                                                          style: GoogleFonts.inter(
+                                                            fontSize: ResponsiveHelper.fontSize(context, 9),
+                                                            fontWeight: FontWeight.bold,
+                                                            color: theme.colorScheme.onSurface,
                                                           ),
                                                         ),
-                                                  badgePositionPercentageOffset: isSmallScreen ? 1.1 : 1.3,
-                                                );
-                                              }).toList(),
-                                              pieTouchData: PieTouchData(
-                                                touchCallback: (FlTouchEvent event, pieTouchResponse) {},
-                                                enabled: true,
-                                              ),
+                                                      )
+                                                    : null,
+                                                badgePositionPercentageOffset: 1.2,
+                                              );
+                                            }).toList(),
+                                            pieTouchData: PieTouchData(
+                                              touchCallback: (FlTouchEvent event, pieTouchResponse) {},
+                                              enabled: true,
                                             ),
                                           ),
                                         ),
-                                        if (!isSmallScreen) SizedBox(width: ResponsiveHelper.spacing(context, 16)),
-                                        if (!isSmallScreen)
-                                          Expanded(
-                                            flex: 1,
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              mainAxisAlignment: MainAxisAlignment.center,
-                                              children: expenseData.entries
-                                                  .map((entry) => Padding(
-                                                        padding: EdgeInsets.only(bottom: ResponsiveHelper.spacing(context, 12)),
-                                                        child: _buildCategoryLegendItem(
-                                                          entry.key,
-                                                          _getModernColorForCategory(entry.key, theme),
-                                                          entry.value,
-                                                          totalExpenses,
-                                                          theme,
-                                                        ),
-                                                      ))
-                                                  .toList(),
-                                            ),
-                                          ),
-                                        if (isSmallScreen)
-                                          Padding(
-                                            padding: EdgeInsets.only(top: ResponsiveHelper.spacing(context, 16)),
-                                            child: Wrap(
-                                              spacing: ResponsiveHelper.spacing(context, 12),
-                                              runSpacing: ResponsiveHelper.spacing(context, 8),
-                                              alignment: WrapAlignment.center,
-                                              children: expenseData.entries
-                                                  .map((entry) => _buildCategoryLegendItem(
-                                                        entry.key,
-                                                        _getModernColorForCategory(entry.key, theme),
-                                                        entry.value,
-                                                        totalExpenses,
-                                                        theme,
-                                                      ))
-                                                  .toList(),
-                                            ),
-                                          ),
-                                      ],
-                                    ),
+                                      ),
+                                      SizedBox(height: ResponsiveHelper.spacing(context, 24)),
+                                      // Legend below chart - properly spaced
+                                      Wrap(
+                                        spacing: ResponsiveHelper.spacing(context, 12),
+                                        runSpacing: ResponsiveHelper.spacing(context, 10),
+                                        alignment: WrapAlignment.center,
+                                        children: expenseData.entries
+                                            .map((entry) => _buildCategoryLegendItem(
+                                                  entry.key,
+                                                  _getModernColorForCategory(entry.key, theme),
+                                                  entry.value,
+                                                  totalExpenses,
+                                                  theme,
+                                                ))
+                                            .toList(),
+                                      ),
+                                    ],
                                   );
                                 },
                               ),
@@ -1041,43 +1008,63 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final percentage = (value / total) * 100;
     return Builder(
       builder: (context) {
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: ResponsiveHelper.width(context, 14),
-              height: ResponsiveHelper.width(context, 14),
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 4)),
-              ),
+        return Container(
+          padding: ResponsiveHelper.edgeInsetsSymmetric(context, 12, 10),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
+            border: Border.all(
+              color: color.withOpacity(0.3),
+              width: 1,
             ),
-            SizedBox(width: ResponsiveHelper.spacing(context, 8)),
-            Flexible(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    category,
-                    style: GoogleFonts.inter(
-                      fontSize: ResponsiveHelper.fontSize(context, 13),
-                      fontWeight: FontWeight.w600,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withOpacity(0.4),
+                      blurRadius: 3,
+                      offset: const Offset(0, 1),
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    '${percentage.toStringAsFixed(1)}% · $_currencySymbol${value.toStringAsFixed(0)}',
-                    style: GoogleFonts.inter(
-                      fontSize: ResponsiveHelper.fontSize(context, 11),
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+              SizedBox(width: ResponsiveHelper.spacing(context, 10)),
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      category,
+                      style: GoogleFonts.inter(
+                        fontSize: ResponsiveHelper.fontSize(context, 13),
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: ResponsiveHelper.spacing(context, 2)),
+                    Text(
+                      '${percentage.toStringAsFixed(1)}% · $_currencySymbol${value.toStringAsFixed(0)}',
+                      style: GoogleFonts.inter(
+                        fontSize: ResponsiveHelper.fontSize(context, 11),
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         );
       },
     );

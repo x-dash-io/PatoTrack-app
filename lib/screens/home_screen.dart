@@ -197,6 +197,185 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
   
+  void _showBillOptions(BuildContext context, Bill bill, User? currentUser) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(ResponsiveHelper.radius(context, 28)),
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Container(
+                margin: EdgeInsets.only(top: ResponsiveHelper.spacing(context, 12)),
+                width: ResponsiveHelper.width(context, 40),
+                height: 4,
+                decoration: BoxDecoration(
+                  color: colorScheme.onSurfaceVariant.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 2)),
+                ),
+              ),
+              SizedBox(height: ResponsiveHelper.spacing(context, 20)),
+              // Bill info
+              Padding(
+                padding: ResponsiveHelper.edgeInsetsSymmetric(context, 20, 0),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: ResponsiveHelper.edgeInsetsAll(context, 12),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
+                      ),
+                      child: Icon(
+                        Icons.receipt_long_rounded,
+                        color: colorScheme.onPrimaryContainer,
+                        size: ResponsiveHelper.iconSize(context, 24),
+                      ),
+                    ),
+                    SizedBox(width: ResponsiveHelper.spacing(context, 16)),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            bill.name,
+                            style: GoogleFonts.inter(
+                              fontSize: ResponsiveHelper.fontSize(context, 18),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: ResponsiveHelper.spacing(context, 4)),
+                          Text(
+                            '$_currencySymbol${bill.amount.toStringAsFixed(0)}',
+                            style: GoogleFonts.inter(
+                              fontSize: ResponsiveHelper.fontSize(context, 16),
+                              color: colorScheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: ResponsiveHelper.spacing(context, 24)),
+              // Action buttons
+              ListTile(
+                leading: Container(
+                  padding: ResponsiveHelper.edgeInsetsAll(context, 10),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 10)),
+                  ),
+                  child: Icon(
+                    Icons.edit_rounded,
+                    color: colorScheme.onPrimaryContainer,
+                    size: ResponsiveHelper.iconSize(context, 22),
+                  ),
+                ),
+                title: Text(
+                  'Edit Bill',
+                  style: GoogleFonts.inter(
+                    fontSize: ResponsiveHelper.fontSize(context, 16),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AddBillScreen(billToEdit: bill),
+                    ),
+                  ).then((_) {
+                    if (currentUser != null) {
+                      _refreshData();
+                    }
+                  });
+                },
+              ),
+              Divider(height: 1, indent: 70, endIndent: 20),
+              ListTile(
+                leading: Container(
+                  padding: ResponsiveHelper.edgeInsetsAll(context, 10),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 10)),
+                  ),
+                  child: Icon(
+                    Icons.delete_outline_rounded,
+                    color: Colors.red,
+                    size: ResponsiveHelper.iconSize(context, 22),
+                  ),
+                ),
+                title: Text(
+                  'Delete Bill',
+                  style: GoogleFonts.inter(
+                    fontSize: ResponsiveHelper.fontSize(context, 16),
+                    fontWeight: FontWeight.w600,
+                    color: Colors.red,
+                  ),
+                ),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final confirm = await showModernConfirmDialog(
+                    context: context,
+                    title: 'Delete Bill',
+                    message: 'Are you sure you want to delete "${bill.name}"?',
+                    confirmText: 'Delete',
+                    cancelText: 'Cancel',
+                    isDestructive: true,
+                  );
+                  
+                  if (confirm == true && currentUser != null && mounted) {
+                    try {
+                      await dbHelper.deleteBill(bill.id!, currentUser.uid);
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Bill "${bill.name}" deleted.',
+                              style: GoogleFonts.inter(),
+                            ),
+                          ),
+                        );
+                        _refreshData();
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Error deleting bill: $e',
+                              style: GoogleFonts.inter(),
+                            ),
+                          ),
+                        );
+                      }
+                    }
+                  }
+                },
+              ),
+              SizedBox(height: ResponsiveHelper.spacing(context, 20)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   DateTime _calculateNextDueDate(Bill bill) {
     if (bill.recurrenceType == 'monthly') {
       return DateTime(bill.dueDate.year, bill.dueDate.month + 1, bill.dueDate.day);
@@ -594,28 +773,29 @@ class _HomeScreenState extends State<HomeScreen> {
                           width: cardWidthClamped,
                           margin: EdgeInsets.only(right: ResponsiveHelper.spacing(context, 16)),
                           child: Card(
-                            elevation: 2,
-                            shape: RoundedRectangleBorder(
-                              side: BorderSide(
-                                color: status.color.withOpacity(0.2),
-                                width: 1,
-                              ),
-                              borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 20)),
-                            ),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    colorScheme.surfaceContainerHighest.withOpacity(0.5),
-                                    colorScheme.surface,
-                                  ],
+                            margin: EdgeInsets.zero,
+                                elevation: 2,
+                                shape: RoundedRectangleBorder(
+                                  side: BorderSide(
+                                    color: status.color.withOpacity(0.2),
+                                    width: 1,
+                                  ),
+                                  borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 20)),
                                 ),
-                                borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 20)),
-                              ),
-                              child: Padding(
-                                padding: EdgeInsets.all(ResponsiveHelper.padding(context, (cardWidth * 0.05).clamp(6.0, 10.0))),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                                        colorScheme.surface,
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 20)),
+                                  ),
+                                  child: Padding(
+                                    padding: EdgeInsets.all(ResponsiveHelper.padding(context, (cardWidth * 0.05).clamp(6.0, 10.0))),
                                 child: LayoutBuilder(
                                   builder: (context, cardConstraints) {
                                     // Calculate responsive sizes based on card width - VERY compact
@@ -801,6 +981,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                               foregroundColor: Colors.white,
                                             ),
                                             onPressed: () async {
+                                              // Stop event propagation to prevent card tap
                                               if (currentUser == null) return;
                                               
                                               final billTransaction = model.Transaction(
@@ -870,6 +1051,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                   },
                                 ),
                               ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                             ),
                           ),
                         );
