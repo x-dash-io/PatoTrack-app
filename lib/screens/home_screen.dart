@@ -208,11 +208,12 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showBillOptions(BuildContext context, Bill bill, User? currentUser) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final parentContext = context; // Store parent context
     
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
+      builder: (bottomSheetContext) => Container(
         decoration: BoxDecoration(
           color: colorScheme.surface,
           borderRadius: BorderRadius.vertical(
@@ -301,9 +302,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 onTap: () {
-                  Navigator.pop(context);
+                  Navigator.pop(bottomSheetContext);
                   Navigator.push(
-                    context,
+                    parentContext,
                     MaterialPageRoute(
                       builder: (context) => AddBillScreen(billToEdit: bill),
                     ),
@@ -337,9 +338,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 onTap: () async {
-                  Navigator.pop(context);
+                  Navigator.pop(bottomSheetContext);
+                  
+                  // Wait a bit for bottom sheet to close
+                  await Future.delayed(const Duration(milliseconds: 200));
+                  
+                  if (!parentContext.mounted) return;
+                  
                   final confirm = await showModernConfirmDialog(
-                    context: context,
+                    context: parentContext,
                     title: 'Delete Bill',
                     message: 'Are you sure you want to delete "${bill.name}"?',
                     confirmText: 'Delete',
@@ -347,25 +354,27 @@ class _HomeScreenState extends State<HomeScreen> {
                     isDestructive: true,
                   );
                   
-                  if (confirm == true && currentUser != null && mounted) {
+                  if (confirm == true && currentUser != null) {
+                    if (!parentContext.mounted) return;
+                    
                     // Show loading dialog
                     showDialog(
-                      context: context,
+                      context: parentContext,
                       barrierDismissible: false,
-                      builder: (context) => WillPopScope(
+                      builder: (dialogContext) => WillPopScope(
                         onWillPop: () async => false,
                         child: Dialog(
                           backgroundColor: Colors.transparent,
                           child: Container(
-                            padding: ResponsiveHelper.edgeInsetsAll(context, 24),
+                            padding: ResponsiveHelper.edgeInsetsAll(parentContext, 24),
                             decoration: BoxDecoration(
                               color: colorScheme.surface,
-                              borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 20)),
+                              borderRadius: BorderRadius.circular(ResponsiveHelper.radius(parentContext, 20)),
                             ),
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const ModernLoadingIndicator(
+                                ModernLoadingIndicator(
                                   message: 'Deleting bill...',
                                   size: 40,
                                 ),
@@ -377,71 +386,82 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                     
                     try {
-                      await dbHelper.deleteBill(bill.id!, currentUser.uid);
+                      // Delete from database
+                      final result = await dbHelper.deleteBill(bill.id!, currentUser.uid);
                       
-                      // Cancel notification if it exists
-                      final notificationService = NotificationService();
-                      await notificationService.cancelNotification(bill.id!);
-                      
-                      if (mounted) {
-                        // Close loading dialog
-                        Navigator.of(context).pop();
+                      if (result > 0) {
+                        // Cancel notification if it exists
+                        try {
+                          final notificationService = NotificationService();
+                          await notificationService.cancelNotification(bill.id!);
+                        } catch (e) {
+                          print('Error canceling notification: $e');
+                        }
                         
-                        // Show success message
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Row(
-                              children: [
-                                Icon(
-                                  Icons.check_circle_rounded,
-                                  color: Colors.white,
-                                  size: ResponsiveHelper.iconSize(context, 20),
-                                ),
-                                SizedBox(width: ResponsiveHelper.spacing(context, 12)),
-                                Expanded(
-                                  child: Text(
-                                    'Bill "${bill.name}" deleted successfully',
-                                    style: GoogleFonts.inter(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: ResponsiveHelper.fontSize(context, 15),
+                        if (parentContext.mounted) {
+                          // Close loading dialog
+                          Navigator.of(parentContext).pop();
+                          
+                          // Refresh data
+                          _refreshData();
+                          
+                          // Show success message
+                          ScaffoldMessenger.of(parentContext).showSnackBar(
+                            SnackBar(
+                              content: Row(
+                                children: [
+                                  Icon(
+                                    Icons.check_circle_rounded,
+                                    color: Colors.white,
+                                    size: ResponsiveHelper.iconSize(parentContext, 20),
+                                  ),
+                                  SizedBox(width: ResponsiveHelper.spacing(parentContext, 12)),
+                                  Expanded(
+                                    child: Text(
+                                      'Bill "${bill.name}" deleted successfully',
+                                      style: GoogleFonts.inter(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: ResponsiveHelper.fontSize(parentContext, 15),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
+                              backgroundColor: Colors.green,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(ResponsiveHelper.radius(parentContext, 12)),
+                              ),
+                              margin: ResponsiveHelper.edgeInsets(parentContext, 16, 16, 16, 16),
+                              duration: const Duration(seconds: 3),
                             ),
-                            backgroundColor: Colors.green,
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
-                            ),
-                            margin: ResponsiveHelper.edgeInsets(context, 16, 16, 16, 16),
-                            duration: const Duration(seconds: 3),
-                          ),
-                        );
-                        _refreshData();
+                          );
+                        }
+                      } else {
+                        throw Exception('Bill not found or already deleted');
                       }
                     } catch (e) {
-                      if (mounted) {
+                      if (parentContext.mounted) {
                         // Close loading dialog
-                        Navigator.of(context).pop();
+                        Navigator.of(parentContext).pop();
                         
                         // Show error message
-                        ScaffoldMessenger.of(context).showSnackBar(
+                        ScaffoldMessenger.of(parentContext).showSnackBar(
                           SnackBar(
                             content: Row(
                               children: [
                                 Icon(
                                   Icons.error_rounded,
                                   color: Colors.white,
-                                  size: ResponsiveHelper.iconSize(context, 20),
+                                  size: ResponsiveHelper.iconSize(parentContext, 20),
                                 ),
-                                SizedBox(width: ResponsiveHelper.spacing(context, 12)),
+                                SizedBox(width: ResponsiveHelper.spacing(parentContext, 12)),
                                 Expanded(
                                   child: Text(
                                     'Error deleting bill: ${e.toString()}',
                                     style: GoogleFonts.inter(
                                       fontWeight: FontWeight.w600,
-                                      fontSize: ResponsiveHelper.fontSize(context, 15),
+                                      fontSize: ResponsiveHelper.fontSize(parentContext, 15),
                                     ),
                                   ),
                                 ),
@@ -450,9 +470,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             backgroundColor: Colors.red,
                             behavior: SnackBarBehavior.floating,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
+                              borderRadius: BorderRadius.circular(ResponsiveHelper.radius(parentContext, 12)),
                             ),
-                            margin: ResponsiveHelper.edgeInsets(context, 16, 16, 16, 16),
+                            margin: ResponsiveHelper.edgeInsets(parentContext, 16, 16, 16, 16),
                             duration: const Duration(seconds: 4),
                           ),
                         );
