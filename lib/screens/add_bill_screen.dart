@@ -73,10 +73,17 @@ class _AddBillScreenState extends State<AddBillScreen> {
         setState(() {
           _frequencies = frequencies;
           // Set frequency from bill if editing, otherwise default to monthly
-          if (widget.billToEdit != null && widget.billToEdit!.recurrenceType != null) {
+          if (widget.billToEdit != null && widget.billToEdit!.recurrenceType != null && _currentUser != null) {
             _selectedFrequency = frequencies.firstWhere(
               (f) => f.type == widget.billToEdit!.recurrenceType,
-              orElse: () => frequencies.isNotEmpty ? frequencies.first : Frequency(id: 1, name: 'Monthly', type: 'monthly', displayName: 'Monthly'),
+              orElse: () => frequencies.isNotEmpty ? frequencies.first : Frequency(
+                id: 1,
+                name: 'Monthly',
+                type: 'monthly',
+                value: 30,
+                displayName: 'Monthly',
+                userId: _currentUser!.uid,
+              ),
             );
           } else {
             _selectedFrequency = frequencies.isNotEmpty ? frequencies.firstWhere(

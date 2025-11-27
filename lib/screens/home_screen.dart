@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../helpers/database_helper.dart';
 import '../helpers/sms_service.dart';
 import '../helpers/responsive_helper.dart';
+import '../helpers/notification_service.dart';
 import '../models/bill.dart';
 import '../models/transaction.dart' as model;
 import '../widgets/dialog_helpers.dart';
@@ -15,6 +16,13 @@ import 'add_transaction_screen.dart';
 import 'all_transactions_screen.dart';
 import 'add_bill_screen.dart';
 import 'transaction_detail_screen.dart';
+
+extension StringExtension on String {
+  String capitalize() {
+    if (isEmpty) return this;
+    return "${this[0].toUpperCase()}${substring(1).toLowerCase()}";
+  }
+}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -340,27 +348,112 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                   
                   if (confirm == true && currentUser != null && mounted) {
+                    // Show loading dialog
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => WillPopScope(
+                        onWillPop: () async => false,
+                        child: Dialog(
+                          backgroundColor: Colors.transparent,
+                          child: Container(
+                            padding: ResponsiveHelper.edgeInsetsAll(context, 24),
+                            decoration: BoxDecoration(
+                              color: colorScheme.surface,
+                              borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 20)),
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const ModernLoadingIndicator(
+                                  message: 'Deleting bill...',
+                                  size: 40,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                    
                     try {
                       await dbHelper.deleteBill(bill.id!, currentUser.uid);
+                      
+                      // Cancel notification if it exists
+                      final notificationService = NotificationService();
+                      await notificationService.cancelNotification(bill.id!);
+                      
                       if (mounted) {
+                        // Close loading dialog
+                        Navigator.of(context).pop();
+                        
+                        // Show success message
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(
-                              'Bill "${bill.name}" deleted.',
-                              style: GoogleFonts.inter(),
+                            content: Row(
+                              children: [
+                                Icon(
+                                  Icons.check_circle_rounded,
+                                  color: Colors.white,
+                                  size: ResponsiveHelper.iconSize(context, 20),
+                                ),
+                                SizedBox(width: ResponsiveHelper.spacing(context, 12)),
+                                Expanded(
+                                  child: Text(
+                                    'Bill "${bill.name}" deleted successfully',
+                                    style: GoogleFonts.inter(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: ResponsiveHelper.fontSize(context, 15),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
+                            backgroundColor: Colors.green,
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
+                            ),
+                            margin: ResponsiveHelper.edgeInsets(context, 16, 16, 16, 16),
+                            duration: const Duration(seconds: 3),
                           ),
                         );
                         _refreshData();
                       }
                     } catch (e) {
                       if (mounted) {
+                        // Close loading dialog
+                        Navigator.of(context).pop();
+                        
+                        // Show error message
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(
-                              'Error deleting bill: $e',
-                              style: GoogleFonts.inter(),
+                            content: Row(
+                              children: [
+                                Icon(
+                                  Icons.error_rounded,
+                                  color: Colors.white,
+                                  size: ResponsiveHelper.iconSize(context, 20),
+                                ),
+                                SizedBox(width: ResponsiveHelper.spacing(context, 12)),
+                                Expanded(
+                                  child: Text(
+                                    'Error deleting bill: ${e.toString()}',
+                                    style: GoogleFonts.inter(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: ResponsiveHelper.fontSize(context, 15),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
+                            backgroundColor: Colors.red,
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
+                            ),
+                            margin: ResponsiveHelper.edgeInsets(context, 16, 16, 16, 16),
+                            duration: const Duration(seconds: 4),
                           ),
                         );
                       }
@@ -566,25 +659,54 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
           ),
-          floatingActionButton: FloatingActionButton.extended(
-            onPressed: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AddTransactionScreen(),
+          floatingActionButton: Container(
+            margin: ResponsiveHelper.edgeInsets(context, 0, 20, 16, 20),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 20)),
+              boxShadow: [
+                BoxShadow(
+                  color: colorScheme.primary.withOpacity(0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
+                  spreadRadius: 0,
                 ),
-              );
-              if (currentUser != null) {
-                _refreshData();
-              }
-            },
-            icon: const Icon(Icons.add_rounded),
-            label: Text(
-              'Add Transaction',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+            child: FloatingActionButton.extended(
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AddTransactionScreen(),
+                  ),
+                );
+                if (currentUser != null) {
+                  _refreshData();
+                }
+              },
+              icon: Icon(
+                Icons.add_rounded,
+                size: ResponsiveHelper.iconSize(context, 26),
+              ),
+              label: Text(
+                'Add Transaction',
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w700,
+                  fontSize: ResponsiveHelper.fontSize(context, 16),
+                  letterSpacing: 0.3,
+                ),
+              ),
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 20)),
+              ),
             ),
           ),
         );
@@ -772,8 +894,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         return Container(
                           width: cardWidthClamped,
                           margin: EdgeInsets.only(right: ResponsiveHelper.spacing(context, 16)),
-                          child: Card(
-                            margin: EdgeInsets.zero,
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => _showBillOptions(context, bill, currentUser),
+                              borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 20)),
+                              child: Card(
+                                margin: EdgeInsets.zero,
                                 elevation: 2,
                                 shape: RoundedRectangleBorder(
                                   side: BorderSide(
@@ -796,7 +923,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                   child: Padding(
                                     padding: EdgeInsets.all(ResponsiveHelper.padding(context, (cardWidth * 0.05).clamp(6.0, 10.0))),
-                                child: LayoutBuilder(
+                                    child: LayoutBuilder(
                                   builder: (context, cardConstraints) {
                                     // Calculate responsive sizes based on card width - VERY compact
                                     final cardW = cardConstraints.maxWidth;
@@ -1049,14 +1176,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                     );
                                   },
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
                             ),
                           ),
                         );
@@ -1065,8 +1188,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
               ),
-      ],
-    );
+            ],
+          );
   }
 
   Widget _buildTransactionList(User? currentUser) {
@@ -1571,11 +1694,3 @@ class _ShimmerCard extends StatelessWidget {
     );
   }
 }
-
-extension StringExtension on String {
-  String capitalize() {
-    if (isEmpty) return this;
-    return "${this[0].toUpperCase()}${substring(1).toLowerCase()}";
-  }
-}
-
