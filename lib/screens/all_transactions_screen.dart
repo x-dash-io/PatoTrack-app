@@ -21,10 +21,18 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
   final dbHelper = DatabaseHelper();
   List<model.Transaction> _allTransactions = [];
   List<model.Transaction> _filteredTransactions = [];
+  List<model.Transaction> _paginatedTransactions = []; // Paginated subset to display
   List<Category> _allCategories = []; // NEW: To hold categories for the filter
   bool _isLoading = true;
+  bool _isLoadingMore = false; // For pagination loading indicator
   final _searchController = TextEditingController();
   final User? _currentUser = FirebaseAuth.instance.currentUser;
+  final ScrollController _scrollController = ScrollController();
+  
+  // Pagination constants
+  static const int _itemsPerPage = 20;
+  int _currentPage = 0;
+  bool _hasMoreItems = true;
 
   // NEW: State variables to hold the current filter values
   int? _filterCategoryId;
@@ -36,6 +44,15 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
     super.initState();
     _loadInitialData();
     _searchController.addListener(_applyAllFilters);
+    _scrollController.addListener(_onScroll);
+  }
+  
+  void _onScroll() {
+    // Load more when user scrolls near the bottom (80% of scroll extent)
+    if (_scrollController.position.pixels >= 
+        _scrollController.position.maxScrollExtent * 0.8) {
+      _loadMoreTransactions();
+    }
   }
 
   Future<void> _loadInitialData() async {
@@ -56,6 +73,8 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
           _allTransactions = transactions;
           _allCategories = categories;
           _isLoading = false;
+          _currentPage = 0; // Reset pagination
+          _hasMoreItems = true;
           _applyAllFilters(); // Apply initial (empty) filters
         });
       }
@@ -97,12 +116,66 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
 
         return searchMatch && categoryMatch && typeMatch && dateMatch;
       }).toList();
+      
+      // Reset pagination when filters change
+      _currentPage = 0;
+      _hasMoreItems = true;
+      _loadPaginatedTransactions();
     });
+  }
+  
+  // Load paginated transactions based on current page
+  void _loadPaginatedTransactions() {
+    final startIndex = _currentPage * _itemsPerPage;
+    final endIndex = startIndex + _itemsPerPage;
+    
+    if (startIndex >= _filteredTransactions.length) {
+      _hasMoreItems = false;
+      return;
+    }
+    
+    final nextPageItems = _filteredTransactions.sublist(
+      startIndex,
+      endIndex > _filteredTransactions.length ? _filteredTransactions.length : endIndex,
+    );
+    
+    setState(() {
+      if (_currentPage == 0) {
+        // First page - replace existing items
+        _paginatedTransactions = nextPageItems;
+      } else {
+        // Subsequent pages - append items
+        _paginatedTransactions.addAll(nextPageItems);
+      }
+      _hasMoreItems = endIndex < _filteredTransactions.length;
+    });
+  }
+  
+  // Load more transactions when scrolling
+  Future<void> _loadMoreTransactions() async {
+    if (_isLoadingMore || !_hasMoreItems) return;
+    
+    setState(() {
+      _isLoadingMore = true;
+    });
+    
+    // Simulate slight delay for smooth UX
+    await Future.delayed(const Duration(milliseconds: 300));
+    
+    _currentPage++;
+    _loadPaginatedTransactions();
+    
+    if (mounted) {
+      setState(() {
+        _isLoadingMore = false;
+      });
+    }
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -285,10 +358,39 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                             ),
                           ),
                         )
-                      : ListView.builder(
-                          itemCount: _filteredTransactions.length,
+                          : ListView.builder(
+                          controller: _scrollController,
+                          itemCount: _paginatedTransactions.length + (_hasMoreItems || _isLoadingMore ? 1 : 0),
                           itemBuilder: (context, index) {
-                            final transaction = _filteredTransactions[index];
+                            // Show loading indicator at the bottom
+                            if (index >= _paginatedTransactions.length) {
+                              if (_isLoadingMore) {
+                                return Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      color: Theme.of(context).colorScheme.primary,
+                                    ),
+                                  ),
+                                );
+                              } else if (!_hasMoreItems && _paginatedTransactions.isNotEmpty) {
+                                return Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Center(
+                                    child: Text(
+                                      'No more transactions',
+                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }
+                              // Return empty container if somehow we get here
+                              return const SizedBox.shrink();
+                            }
+                            
+                            final transaction = _paginatedTransactions[index];
                             final isIncome = transaction.type == 'income';
                             final amountColor = isIncome ? Colors.green : Colors.red;
                             final amountPrefix = isIncome ? '+' : '-';
@@ -308,7 +410,10 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                                   overflow: TextOverflow.ellipsis,
                                   maxLines: 1,
                                 ),
-                                trailing: Flexible(
+                                trailing: ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    maxWidth: MediaQuery.of(context).size.width * 0.35,
+                                  ),
                                   child: Text(
                                     '$amountPrefix${currencyFormatter.format(transaction.amount)}',
                                     style: TextStyle(color: amountColor, fontWeight: FontWeight.bold),

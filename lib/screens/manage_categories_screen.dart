@@ -386,12 +386,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
 
   Widget _buildCategoryList(List<Category> categories, String type) {
     if (_isLoading) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(32),
-          child: ModernLoadingIndicator(),
-        ),
-      );
+      return const CategoryShimmerList(itemCount: 8);
     }
     if (categories.isEmpty) {
       final colorScheme = Theme.of(context).colorScheme;

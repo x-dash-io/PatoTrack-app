@@ -291,4 +291,289 @@ class SummaryCardShimmerList extends StatelessWidget {
   }
 }
 
+/// Shimmer card widget (reusable)
+class ShimmerCard extends StatelessWidget {
+  final double height;
+  final double? width;
+  final double borderRadius;
+
+  const ShimmerCard({
+    super.key,
+    required this.height,
+    this.width,
+    this.borderRadius = 20.0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Shimmer(
+      baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+      highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+      child: Container(
+        height: height,
+        width: width,
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey[800] : Colors.grey[300],
+          borderRadius: BorderRadius.circular(borderRadius),
+        ),
+      ),
+    );
+  }
+}
+
+/// Shimmer for category cards/list
+class CategoryShimmerCard extends StatelessWidget {
+  const CategoryShimmerCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Shimmer(
+      baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+      highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+      child: Card(
+        margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: ListTile(
+          leading: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: isDark ? Colors.grey[800] : Colors.grey[300],
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          title: Container(
+            height: 16,
+            width: 150,
+            decoration: BoxDecoration(
+              color: isDark ? Colors.grey[800] : Colors.grey[300],
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          trailing: Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: isDark ? Colors.grey[800] : Colors.grey[300],
+              shape: BoxShape.circle,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Shimmer list for categories
+class CategoryShimmerList extends StatelessWidget {
+  final int itemCount;
+
+  const CategoryShimmerList({
+    super.key,
+    this.itemCount = 5,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: itemCount,
+      itemBuilder: (context, index) => const CategoryShimmerCard(),
+    );
+  }
+}
+
+/// Shimmer for reports screen - profit/loss card
+class ReportsProfitLossShimmer extends StatelessWidget {
+  const ReportsProfitLossShimmer({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Shimmer(
+      baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+      highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+      child: Card(
+        margin: const EdgeInsets.all(16.0),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                height: 16,
+                width: 120,
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.grey[800] : Colors.grey[300],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                height: 32,
+                width: 200,
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.grey[800] : Colors.grey[300],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                height: 14,
+                width: 250,
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.grey[800] : Colors.grey[300],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Shimmer for charts
+class ChartShimmer extends StatelessWidget {
+  final double height;
+  final double? width;
+
+  const ChartShimmer({
+    super.key,
+    required this.height,
+    this.width,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Shimmer(
+      baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+      highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+      child: Container(
+        height: height,
+        width: width ?? double.infinity,
+        margin: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey[800] : Colors.grey[300],
+          borderRadius: BorderRadius.circular(16),
+        ),
+      ),
+    );
+  }
+}
+
+/// Shimmer for frequency/bill frequency items
+class FrequencyShimmerCard extends StatelessWidget {
+  const FrequencyShimmerCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Shimmer(
+      baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+      highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+      child: Card(
+        margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: ListTile(
+          leading: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: isDark ? Colors.grey[800] : Colors.grey[300],
+              shape: BoxShape.circle,
+            ),
+          ),
+          title: Container(
+            height: 16,
+            width: 120,
+            decoration: BoxDecoration(
+              color: isDark ? Colors.grey[800] : Colors.grey[300],
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Container(
+              height: 12,
+              width: 100,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.grey[800] : Colors.grey[300],
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Shimmer list for frequencies
+class FrequencyShimmerList extends StatelessWidget {
+  final int itemCount;
+
+  const FrequencyShimmerList({
+    super.key,
+    this.itemCount = 5,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: itemCount,
+      itemBuilder: (context, index) => const FrequencyShimmerCard(),
+    );
+  }
+}
+
+/// Shimmer for transaction detail screen
+class TransactionDetailShimmer extends StatelessWidget {
+  const TransactionDetailShimmer({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Shimmer(
+      baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+      highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Amount shimmer
+            Container(
+              height: 48,
+              width: 200,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.grey[800] : Colors.grey[300],
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Details shimmer
+            for (int i = 0; i < 4; i++) ...[
+              Container(
+                height: 14,
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.grey[800] : Colors.grey[300],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 

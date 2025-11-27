@@ -7,6 +7,7 @@ import '../helpers/database_helper.dart';
 import '../models/frequency.dart';
 import '../widgets/input_fields.dart';
 import '../widgets/dialog_helpers.dart';
+import '../widgets/loading_widgets.dart';
 
 class ManageFrequenciesScreen extends StatefulWidget {
   const ManageFrequenciesScreen({super.key});
@@ -258,13 +259,7 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
         ],
       ),
       body: _isLoading
-          ? Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  colorScheme.primary,
-                ),
-              ),
-            )
+          ? const FrequencyShimmerList(itemCount: 8)
           : _frequencies.isEmpty
               ? Center(
                   child: Column(

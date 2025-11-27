@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 /// Responsive helper class to handle dynamic sizing based on screen dimensions
 class ResponsiveHelper {
   // Base screen dimensions (design reference - typically for a standard phone)
-  static const double _baseWidth = 360.0;
+  // Increased base to make smaller screens scale down more aggressively
+  static const double _baseWidth = 420.0;
   static const double _baseHeight = 800.0;
   
   // Get screen dimensions
@@ -19,12 +20,19 @@ class ResponsiveHelper {
     return MediaQuery.of(context).textScaleFactor.clamp(0.8, 1.2);
   }
   
-  // Calculate responsive width factor (0.8 to 1.2 range for most screens)
+  // Calculate responsive width factor (much more aggressive scaling for small screens)
   static double _getWidthFactor(BuildContext context) {
     final width = _getWidth(context);
-    final factor = width / _baseWidth;
-    // Clamp between 0.8 and 1.3 for reasonable scaling
-    return factor.clamp(0.8, 1.3);
+    // Very aggressive scaling for small screens (400 DPI typically has logical width ~360-400)
+    if (width <= 400) {
+      // For 400px and below, scale much more aggressively
+      return (width / _baseWidth) * 0.75; // This will give ~0.71 for 400px screen
+    } else if (width <= 480) {
+      return (width / _baseWidth) * 0.85;
+    } else if (width <= 600) {
+      return (width / _baseWidth) * 0.95;
+    }
+    return (width / _baseWidth).clamp(0.9, 1.15);
   }
   
   // Calculate responsive height factor
@@ -37,32 +45,85 @@ class ResponsiveHelper {
   
   // Get responsive font size
   static double fontSize(BuildContext context, double baseSize) {
-    final widthFactor = _getWidthFactor(context);
+    final width = _getWidth(context);
     final textScale = _getTextScaleFactor(context);
-    // Use the smaller factor to prevent oversized text
-    final factor = (widthFactor < 1.0) ? widthFactor : 1.0 + (widthFactor - 1.0) * 0.5;
-    return (baseSize * factor * textScale).clamp(baseSize * 0.85, baseSize * 1.15);
+    
+    // Balanced scaling - keep text readable while still being responsive
+    double factor;
+    if (width <= 380) {
+      // Very small screens - scale down moderately
+      factor = 0.80; // 20% reduction
+    } else if (width <= 400) {
+      // 400 DPI screens - scale down moderately  
+      factor = 0.82; // 18% reduction
+    } else if (width <= 480) {
+      factor = 0.88; // 12% reduction
+    } else if (width <= 600) {
+      factor = 0.94; // 6% reduction
+    } else {
+      factor = 1.0;
+    }
+    return (baseSize * factor * textScale).clamp(baseSize * 0.7, baseSize * 1.0);
   }
   
   // Get responsive icon size
   static double iconSize(BuildContext context, double baseSize) {
-    final widthFactor = _getWidthFactor(context);
-    final factor = (widthFactor < 1.0) ? widthFactor : 1.0 + (widthFactor - 1.0) * 0.6;
-    return (baseSize * factor).clamp(baseSize * 0.8, baseSize * 1.2);
+    final width = _getWidth(context);
+    
+    // Fixed scaling factors for more predictable behavior
+    double factor;
+    if (width <= 380) {
+      factor = 0.70; // 30% smaller
+    } else if (width <= 400) {
+      factor = 0.75; // 25% smaller
+    } else if (width <= 480) {
+      factor = 0.85; // 15% smaller
+    } else if (width <= 600) {
+      factor = 0.92; // 8% smaller
+    } else {
+      factor = 1.0;
+    }
+    return (baseSize * factor).clamp(baseSize * 0.65, baseSize * 1.05);
   }
   
   // Get responsive padding
   static double padding(BuildContext context, double basePadding) {
-    final widthFactor = _getWidthFactor(context);
-    final factor = (widthFactor < 1.0) ? widthFactor : 1.0 + (widthFactor - 1.0) * 0.5;
-    return (basePadding * factor).clamp(basePadding * 0.75, basePadding * 1.25);
+    final width = _getWidth(context);
+    
+    // MUCH more aggressive scaling - use fixed factors
+    double factor;
+    if (width <= 380) {
+      factor = 0.65; // 35% reduction
+    } else if (width <= 400) {
+      factor = 0.70; // 30% reduction
+    } else if (width <= 480) {
+      factor = 0.80; // 20% reduction
+    } else if (width <= 600) {
+      factor = 0.88; // 12% reduction
+    } else {
+      factor = 1.0;
+    }
+    return (basePadding * factor).clamp(basePadding * 0.55, basePadding * 1.05);
   }
   
   // Get responsive spacing
   static double spacing(BuildContext context, double baseSpacing) {
-    final widthFactor = _getWidthFactor(context);
-    final factor = (widthFactor < 1.0) ? widthFactor : 1.0 + (widthFactor - 1.0) * 0.5;
-    return (baseSpacing * factor).clamp(baseSpacing * 0.8, baseSpacing * 1.2);
+    final width = _getWidth(context);
+    
+    // Fixed scaling factors
+    double factor;
+    if (width <= 380) {
+      factor = 0.65;
+    } else if (width <= 400) {
+      factor = 0.70;
+    } else if (width <= 480) {
+      factor = 0.80;
+    } else if (width <= 600) {
+      factor = 0.88;
+    } else {
+      factor = 1.0;
+    }
+    return (baseSpacing * factor).clamp(baseSpacing * 0.6, baseSpacing * 1.05);
   }
   
   // Get responsive width
@@ -79,16 +140,30 @@ class ResponsiveHelper {
   
   // Get responsive border radius
   static double radius(BuildContext context, double baseRadius) {
-    final widthFactor = _getWidthFactor(context);
-    final factor = (widthFactor < 1.0) ? widthFactor : 1.0 + (widthFactor - 1.0) * 0.3;
-    return (baseRadius * factor).clamp(baseRadius * 0.85, baseRadius * 1.15);
+    final width = _getWidth(context);
+    double factor;
+    if (width <= 400) {
+      factor = 0.85;
+    } else if (width <= 480) {
+      factor = 0.92;
+    } else {
+      factor = 1.0;
+    }
+    return (baseRadius * factor).clamp(baseRadius * 0.8, baseRadius * 1.1);
   }
   
   // Get responsive button height
   static double buttonHeight(BuildContext context, double baseHeight) {
-    final widthFactor = _getWidthFactor(context);
-    final factor = (widthFactor < 1.0) ? widthFactor : 1.0 + (widthFactor - 1.0) * 0.4;
-    return (baseHeight * factor).clamp(baseHeight * 0.85, baseHeight * 1.15);
+    final width = _getWidth(context);
+    double factor;
+    if (width <= 400) {
+      factor = 0.85;
+    } else if (width <= 480) {
+      factor = 0.92;
+    } else {
+      factor = 1.0;
+    }
+    return (baseHeight * factor).clamp(baseHeight * 0.8, baseHeight * 1.1);
   }
   
   // Check if screen is small

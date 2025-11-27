@@ -292,7 +292,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                     future: _categoriesFuture,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const ModernLoadingIndicator();
+                        return const TransactionDetailShimmer();
                       }
 
                       final categories = snapshot.data ?? [];

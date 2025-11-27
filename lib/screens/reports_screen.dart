@@ -6,8 +6,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../helpers/database_helper.dart';
 import '../helpers/pdf_helper.dart';
+import '../helpers/responsive_helper.dart';
 import '../models/category.dart';
 import '../models/transaction.dart' as model;
+import '../widgets/loading_widgets.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -145,13 +147,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           future: _reportDataFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    theme.colorScheme.primary,
-                  ),
-                ),
-              );
+              return _buildReportsLoadingState();
             } else if (snapshot.hasError) {
               return Center(child: Text('Error: ${snapshot.error}'));
             } else if (!snapshot.hasData || (snapshot.data!['transactions'] as List).isEmpty) {
@@ -192,7 +188,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             return Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  padding: ResponsiveHelper.edgeInsets(context, 8, 16, 8, 16),
                   child: Row(
                     children: [
                       Expanded(
@@ -212,100 +208,151 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 // Tag filter removed - only business transactions now
                 Expanded(
                   child: ListView(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: ResponsiveHelper.edgeInsets(context, 12, 20, 20, 20),
                     children: [
+                      // Modernized Profit/Loss Card
                       Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              profitLossData.color.withOpacity(0.2),
+                              profitLossData.color.withOpacity(0.25),
+                              profitLossData.color.withOpacity(0.12),
                               profitLossData.color.withOpacity(0.05),
                             ],
+                            stops: const [0.0, 0.5, 1.0],
                           ),
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 28)),
                           border: Border.all(
-                            color: profitLossData.color.withOpacity(0.3),
-                            width: 1,
+                            color: profitLossData.color.withOpacity(0.4),
+                            width: 1.5,
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: profitLossData.color.withOpacity(0.2),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
+                              spreadRadius: 0,
+                            ),
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                        padding: const EdgeInsets.all(24),
+                        padding: ResponsiveHelper.edgeInsets(context, 24, 20, 20, 20),
                         child: Column(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(
-                                  profitLossData.profitLoss >= 0
-                                      ? Icons.trending_up_rounded
-                                      : Icons.trending_down_rounded,
-                                  color: profitLossData.color,
-                                  size: 28,
+                                Container(
+                                  padding: ResponsiveHelper.edgeInsetsAll(context, 8),
+                                  decoration: BoxDecoration(
+                                    color: profitLossData.color.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 10)),
+                                  ),
+                                  child: Icon(
+                                    profitLossData.profitLoss >= 0
+                                        ? Icons.trending_up_rounded
+                                        : Icons.trending_down_rounded,
+                                    color: profitLossData.color,
+                                    size: ResponsiveHelper.iconSize(context, 22),
+                                  ),
                                 ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Business Profit/Loss',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: theme.colorScheme.onSurfaceVariant,
+                                SizedBox(width: ResponsiveHelper.spacing(context, 10)),
+                                Flexible(
+                                  child: Text(
+                                    'Business Profit/Loss',
+                                    style: GoogleFonts.inter(
+                                      fontSize: ResponsiveHelper.fontSize(context, 15),
+                                      fontWeight: FontWeight.w600,
+                                      color: theme.colorScheme.onSurface,
+                                      letterSpacing: 0.3,
+                                    ),
+                                    textAlign: TextAlign.center,
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 16),
-                            Text(
-                              '$_currencySymbol ${NumberFormat.currency(locale: 'en_US', symbol: '').format(profitLossData.profitLoss.abs())}',
-                              style: GoogleFonts.inter(
-                                fontSize: 42,
-                                fontWeight: FontWeight.bold,
-                                color: profitLossData.color,
-                                letterSpacing: -1,
+                            SizedBox(height: ResponsiveHelper.spacing(context, 16)),
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                '$_currencySymbol ${NumberFormat.currency(locale: 'en_US', symbol: '').format(profitLossData.profitLoss.abs())}',
+                                style: GoogleFonts.inter(
+                                  fontSize: ResponsiveHelper.fontSize(context, 32),
+                                  fontWeight: FontWeight.bold,
+                                  color: profitLossData.color,
+                                  letterSpacing: -1,
+                                  height: 1.1,
+                                ),
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
                               ),
                             ),
-                            const SizedBox(height: 8),
+                            SizedBox(height: ResponsiveHelper.spacing(context, 12)),
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
+                              padding: ResponsiveHelper.edgeInsetsSymmetric(context, 14, 10),
                               decoration: BoxDecoration(
-                                color: profitLossData.color.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(20),
+                                color: profitLossData.color.withOpacity(0.18),
+                                borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
+                                border: Border.all(
+                                  color: profitLossData.color.withOpacity(0.3),
+                                  width: 1,
+                                ),
                               ),
                               child: Text(
                                 _selectedTimeFilter.toUpperCase(),
                                 style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
+                                  fontSize: ResponsiveHelper.fontSize(context, 11),
+                                  fontWeight: FontWeight.w700,
                                   color: profitLossData.color,
+                                  letterSpacing: 1.2,
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            SizedBox(height: ResponsiveHelper.spacing(context, 16)),
                             Container(
-                              padding: const EdgeInsets.all(12),
+                              padding: ResponsiveHelper.edgeInsets(context, 14, 12, 12, 12),
                               decoration: BoxDecoration(
-                                color: theme.colorScheme.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(12),
+                                color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.8),
+                                borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 14)),
+                                border: Border.all(
+                                  color: theme.colorScheme.outline.withOpacity(0.1),
+                                  width: 1,
+                                ),
                               ),
                               child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(
-                                    Icons.info_outline_rounded,
-                                    size: 18,
-                                    color: theme.colorScheme.primary,
+                                  Container(
+                                    padding: ResponsiveHelper.edgeInsetsAll(context, 6),
+                                    decoration: BoxDecoration(
+                                      color: theme.colorScheme.primaryContainer.withOpacity(0.5),
+                                      borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 8)),
+                                    ),
+                                    child: Icon(
+                                      Icons.info_outline_rounded,
+                                      size: ResponsiveHelper.iconSize(context, 16),
+                                      color: theme.colorScheme.primary,
+                                    ),
                                   ),
-                                  const SizedBox(width: 8),
+                                  SizedBox(width: ResponsiveHelper.spacing(context, 10)),
                                   Expanded(
                                     child: Text(
                                       profitLossData.tip,
                                       style: GoogleFonts.inter(
-                                        fontSize: 13,
+                                        fontSize: ResponsiveHelper.fontSize(context, 12.5),
                                         color: theme.colorScheme.onSurfaceVariant,
+                                        height: 1.4,
                                       ),
-                                      textAlign: TextAlign.center,
+                                      textAlign: TextAlign.left,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                 ],
@@ -314,46 +361,63 @@ class _ReportsScreenState extends State<ReportsScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 32),
-                      // Modern Income vs Expenses Card
+                      SizedBox(height: ResponsiveHelper.spacing(context, 24)),
+                      // Modernized Income vs Expenses Card
                       Container(
                         decoration: BoxDecoration(
                           color: theme.colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 28)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 15,
+                              offset: const Offset(0, 5),
+                              spreadRadius: 0,
+                            ),
+                          ],
                         ),
-                        padding: const EdgeInsets.all(20),
+                        padding: ResponsiveHelper.edgeInsets(context, 22, 20, 20, 20),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.all(10),
+                                  padding: ResponsiveHelper.edgeInsetsAll(context, 10),
                                   decoration: BoxDecoration(
                                     color: theme.colorScheme.primaryContainer,
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
                                   ),
                                   child: Icon(
                                     Icons.analytics_rounded,
                                     color: theme.colorScheme.onPrimaryContainer,
-                                    size: 24,
+                                    size: ResponsiveHelper.iconSize(context, 24),
                                   ),
                                 ),
-                                const SizedBox(width: 12),
+                                SizedBox(width: ResponsiveHelper.spacing(context, 12)),
                                 Expanded(
                                   child: Text(
                                     'Income vs Expenses',
                                     style: GoogleFonts.inter(
-                                      fontSize: 20,
+                                      fontSize: ResponsiveHelper.fontSize(context, 20),
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 24),
-                            SizedBox(
-                              height: 280,
+                            SizedBox(height: ResponsiveHelper.spacing(context, 16)),
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                final screenWidth = MediaQuery.of(context).size.width;
+                                final isSmallScreen = screenWidth <= 400;
+                                // Much smaller bar chart for small screens
+                                final chartHeight = isSmallScreen 
+                                    ? screenWidth * 0.55  // ~220px for 400px screen
+                                    : ResponsiveHelper.height(context, 250);
+                                
+                                return SizedBox(
+                                  height: chartHeight,
                               child: Builder(
                                 builder: (context) {
                                   final maxValue = (barChartData['Income']! > barChartData['Expenses']!
@@ -393,11 +457,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                               if (value.toInt() == 0) text = 'Income';
                                               if (value.toInt() == 1) text = 'Expenses';
                                               return Padding(
-                                                padding: const EdgeInsets.only(top: 8.0),
+                                                padding: EdgeInsets.only(top: ResponsiveHelper.spacing(context, 8.0)),
                                                 child: Text(
                                                   text,
                                                   style: GoogleFonts.inter(
-                                                    fontSize: 13,
+                                                    fontSize: ResponsiveHelper.fontSize(context, 13),
                                                     fontWeight: FontWeight.w600,
                                                   ),
                                                 ),
@@ -408,15 +472,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                         leftTitles: AxisTitles(
                                           sideTitles: SideTitles(
                                             showTitles: true,
-                                            reservedSize: 60,
+                                            reservedSize: ResponsiveHelper.width(context, 60),
                                             getTitlesWidget: (value, meta) {
                                               if (value == 0) return const Text('');
                                               return Padding(
-                                                padding: const EdgeInsets.only(right: 8.0),
+                                                padding: EdgeInsets.only(right: ResponsiveHelper.spacing(context, 8.0)),
                                                 child: Text(
                                                   compactFormatter.format(value),
                                                   style: GoogleFonts.inter(
-                                                    fontSize: 11,
+                                                    fontSize: ResponsiveHelper.fontSize(context, 11),
                                                     color: theme.colorScheme.onSurfaceVariant,
                                                   ),
                                                 ),
@@ -468,7 +532,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                           GoogleFonts.inter(
                                             color: theme.colorScheme.onSurface,
                                             fontWeight: FontWeight.bold,
-                                            fontSize: 12,
+                                            fontSize: ResponsiveHelper.fontSize(context, 12),
                                           ),
                                         );
                                       },
@@ -478,18 +542,22 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                   );
                                 },
                               ),
+                                );
+                              },
                             ),
-                            const SizedBox(height: 20),
+                            SizedBox(height: ResponsiveHelper.spacing(context, 20)),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
                                 _buildLegendItem(
+                                  context,
                                   'Income',
                                   Colors.green.shade600,
                                   barChartData['Income'] ?? 0,
                                   theme,
                                 ),
                                 _buildLegendItem(
+                                  context,
                                   'Expenses',
                                   Colors.red.shade600,
                                   barChartData['Expenses'] ?? 0,
@@ -503,150 +571,213 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       const SizedBox(height: 24),
                       
                       if (expenseData.isNotEmpty) ...[
-                        const SizedBox(height: 32),
-                        // Modern Expense Breakdown Card
+                        SizedBox(height: ResponsiveHelper.spacing(context, 24)),
+                        // Modernized Expense Breakdown Card
                         Container(
                           decoration: BoxDecoration(
                             color: theme.colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 28)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 15,
+                                offset: const Offset(0, 5),
+                                spreadRadius: 0,
+                              ),
+                            ],
                           ),
-                          padding: const EdgeInsets.all(20),
+                          padding: ResponsiveHelper.edgeInsets(context, 22, 20, 20, 20),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.all(10),
+                                    padding: ResponsiveHelper.edgeInsetsAll(context, 10),
                                     decoration: BoxDecoration(
                                       color: theme.colorScheme.primaryContainer,
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
                                     ),
                                     child: Icon(
                                       Icons.pie_chart_rounded,
                                       color: theme.colorScheme.onPrimaryContainer,
-                                      size: 24,
+                                      size: ResponsiveHelper.iconSize(context, 24),
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
+                                  SizedBox(width: ResponsiveHelper.spacing(context, 12)),
                                   Expanded(
                                     child: Text(
                                       'Expense Breakdown',
                                       style: GoogleFonts.inter(
-                                        fontSize: 20,
+                                        fontSize: ResponsiveHelper.fontSize(context, 20),
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 24),
-                              SizedBox(
-                                height: 320,
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      flex: 2,
-                                      child: PieChart(
-                                        PieChartData(
-                                          sectionsSpace: 3,
-                                          centerSpaceRadius: 60,
-                                          sections: expenseData.entries.map((entry) {
-                                            final percentage =
-                                                (entry.value / totalExpenses) * 100;
-                                            return PieChartSectionData(
-                                              color: _getModernColorForCategory(entry.key, theme),
-                                              value: entry.value,
-                                              title: percentage > 5
-                                                  ? '${percentage.toStringAsFixed(1)}%'
-                                                  : '',
-                                              radius: 110,
-                                              titleStyle: GoogleFonts.inter(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.white,
-                                              ),
-                                              badgeWidget: percentage > 5
-                                                  ? null
-                                                  : Container(
-                                                      padding: const EdgeInsets.all(4),
-                                                      decoration: BoxDecoration(
-                                                        color: theme.colorScheme.surface,
-                                                        shape: BoxShape.circle,
-                                                      ),
-                                                      child: Text(
-                                                        '${percentage.toStringAsFixed(0)}%',
-                                                        style: GoogleFonts.inter(
-                                                          fontSize: 10,
-                                                          fontWeight: FontWeight.bold,
-                                                          color: theme.colorScheme.onSurface,
+                              SizedBox(height: ResponsiveHelper.spacing(context, 20)),
+                              LayoutBuilder(
+                                builder: (context, constraints) {
+                                  // Make pie chart responsive based on available width
+                                  final screenWidth = MediaQuery.of(context).size.width;
+                                  final isSmallScreen = screenWidth <= 400;
+                                  final isVerySmall = screenWidth <= 380;
+                                  
+                                  // Better chart height for all screen sizes
+                                  final chartHeight = isVerySmall 
+                                      ? screenWidth * 0.60  // ~228px for 380px screen
+                                      : isSmallScreen 
+                                          ? screenWidth * 0.65  // ~260px for 400px screen
+                                          : ResponsiveHelper.height(context, 320);
+                                  
+                                  // Better pie chart dimensions
+                                  final centerSpaceRadius = isVerySmall 
+                                      ? screenWidth * 0.08  // ~30px for 380px screen
+                                      : isSmallScreen 
+                                          ? screenWidth * 0.10  // ~40px for 400px screen
+                                          : ResponsiveHelper.width(context, 60);
+                                  final radius = isVerySmall 
+                                      ? screenWidth * 0.22  // ~84px for 380px screen
+                                      : isSmallScreen 
+                                          ? screenWidth * 0.26  // ~104px for 400px screen
+                                          : ResponsiveHelper.width(context, 110);
+                                  
+                                  return SizedBox(
+                                    height: chartHeight,
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          flex: isSmallScreen ? 1 : 2,
+                                          child: PieChart(
+                                            PieChartData(
+                                              sectionsSpace: 3,
+                                              centerSpaceRadius: centerSpaceRadius,
+                                              sections: expenseData.entries.map((entry) {
+                                                final percentage =
+                                                    (entry.value / totalExpenses) * 100;
+                                                return PieChartSectionData(
+                                                  color: _getModernColorForCategory(entry.key, theme),
+                                                  value: entry.value,
+                                                  title: percentage > 5
+                                                      ? '${percentage.toStringAsFixed(1)}%'
+                                                      : '',
+                                                  radius: radius,
+                                                  titleStyle: GoogleFonts.inter(
+                                                    fontSize: ResponsiveHelper.fontSize(context, 14),
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.white,
+                                                  ),
+                                                  badgeWidget: percentage > 5
+                                                      ? null
+                                                      : Container(
+                                                          padding: ResponsiveHelper.edgeInsetsAll(context, 4),
+                                                          decoration: BoxDecoration(
+                                                            color: theme.colorScheme.surface,
+                                                            shape: BoxShape.circle,
+                                                          ),
+                                                          child: Text(
+                                                            '${percentage.toStringAsFixed(0)}%',
+                                                            style: GoogleFonts.inter(
+                                                              fontSize: ResponsiveHelper.fontSize(context, 10),
+                                                              fontWeight: FontWeight.bold,
+                                                              color: theme.colorScheme.onSurface,
+                                                            ),
+                                                          ),
                                                         ),
-                                                      ),
-                                                    ),
-                                              badgePositionPercentageOffset: 1.3,
-                                            );
-                                          }).toList(),
-                                          pieTouchData: PieTouchData(
-                                            touchCallback: (FlTouchEvent event, pieTouchResponse) {},
-                                            enabled: true,
+                                                  badgePositionPercentageOffset: isSmallScreen ? 1.1 : 1.3,
+                                                );
+                                              }).toList(),
+                                              pieTouchData: PieTouchData(
+                                                touchCallback: (FlTouchEvent event, pieTouchResponse) {},
+                                                enabled: true,
+                                              ),
+                                            ),
                                           ),
                                         ),
-                                      ),
+                                        if (!isSmallScreen) SizedBox(width: ResponsiveHelper.spacing(context, 16)),
+                                        if (!isSmallScreen)
+                                          Expanded(
+                                            flex: 1,
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: expenseData.entries
+                                                  .map((entry) => Padding(
+                                                        padding: EdgeInsets.only(bottom: ResponsiveHelper.spacing(context, 12)),
+                                                        child: _buildCategoryLegendItem(
+                                                          entry.key,
+                                                          _getModernColorForCategory(entry.key, theme),
+                                                          entry.value,
+                                                          totalExpenses,
+                                                          theme,
+                                                        ),
+                                                      ))
+                                                  .toList(),
+                                            ),
+                                          ),
+                                        if (isSmallScreen)
+                                          Padding(
+                                            padding: EdgeInsets.only(top: ResponsiveHelper.spacing(context, 16)),
+                                            child: Wrap(
+                                              spacing: ResponsiveHelper.spacing(context, 12),
+                                              runSpacing: ResponsiveHelper.spacing(context, 8),
+                                              alignment: WrapAlignment.center,
+                                              children: expenseData.entries
+                                                  .map((entry) => _buildCategoryLegendItem(
+                                                        entry.key,
+                                                        _getModernColorForCategory(entry.key, theme),
+                                                        entry.value,
+                                                        totalExpenses,
+                                                        theme,
+                                                      ))
+                                                  .toList(),
+                                            ),
+                                          ),
+                                      ],
                                     ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      flex: 1,
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: expenseData.entries
-                                            .map((entry) => Padding(
-                                                  padding: const EdgeInsets.only(bottom: 12),
-                                                  child: _buildCategoryLegendItem(
-                                                    entry.key,
-                                                    _getModernColorForCategory(entry.key, theme),
-                                                    entry.value,
-                                                    totalExpenses,
-                                                    theme,
-                                                  ),
-                                                ))
-                                            .toList(),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                  );
+                                },
                               ),
                             ],
                           ),
                         ),
                       ] else
                         Container(
-                          padding: const EdgeInsets.all(40),
+                          padding: ResponsiveHelper.edgeInsetsAll(context, 40),
                           decoration: BoxDecoration(
                             color: theme.colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 28)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 15,
+                                offset: const Offset(0, 5),
+                                spreadRadius: 0,
+                              ),
+                            ],
                           ),
                           child: Column(
                             children: [
                               Icon(
                                 Icons.bar_chart_rounded,
-                                size: 64,
+                                size: ResponsiveHelper.iconSize(context, 64),
                                 color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
                               ),
-                              const SizedBox(height: 16),
+                              SizedBox(height: ResponsiveHelper.spacing(context, 16)),
                               Text(
                                 'No Business Expense Data',
                                 style: GoogleFonts.inter(
-                                  fontSize: 18,
+                                  fontSize: ResponsiveHelper.fontSize(context, 18),
                                   fontWeight: FontWeight.w600,
                                   color: theme.colorScheme.onSurfaceVariant,
                                 ),
                               ),
-                              const SizedBox(height: 8),
+                              SizedBox(height: ResponsiveHelper.spacing(context, 8)),
                               Text(
                                 'Add transactions to see your expense breakdown',
                                 style: GoogleFonts.inter(
-                                  fontSize: 14,
+                                  fontSize: ResponsiveHelper.fontSize(context, 14),
                                   color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7),
                                 ),
                                 textAlign: TextAlign.center,
@@ -661,24 +792,34 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     children: [
-                      // Modern PDF Export Card
+                      // Modernized PDF Export Card
                       Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              theme.colorScheme.primaryContainer.withOpacity(0.6),
+                              theme.colorScheme.primaryContainer.withOpacity(0.7),
+                              theme.colorScheme.primaryContainer.withOpacity(0.4),
                               theme.colorScheme.primaryContainer.withOpacity(0.3),
                             ],
+                            stops: const [0.0, 0.5, 1.0],
                           ),
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 24)),
                           border: Border.all(
-                            color: theme.colorScheme.primary.withOpacity(0.3),
-                            width: 1,
+                            color: theme.colorScheme.primaryContainer.withOpacity(0.5),
+                            width: 1.5,
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: theme.colorScheme.primary.withOpacity(0.15),
+                              blurRadius: 15,
+                              offset: const Offset(0, 5),
+                              spreadRadius: 0,
+                            ),
+                          ],
                         ),
-                        padding: const EdgeInsets.all(20),
+                        padding: ResponsiveHelper.edgeInsetsAll(context, 22),
                         child: Column(
                           children: [
                             Row(
@@ -783,18 +924,18 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                           ),
                                         ),
                                       )
-                                    : const Icon(Icons.picture_as_pdf_rounded, size: 22),
+                                    : Icon(Icons.picture_as_pdf_rounded, size: ResponsiveHelper.iconSize(context, 22)),
                                 label: Text(
                                   _isExportingPDF ? 'Generating...' : 'Generate PDF Report',
                                   style: GoogleFonts.inter(
-                                    fontSize: 16,
+                                    fontSize: ResponsiveHelper.fontSize(context, 16),
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
                                 style: FilledButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  padding: EdgeInsets.symmetric(vertical: ResponsiveHelper.buttonHeight(context, 16)),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 16)),
                                   ),
                                 ),
                               ),
@@ -849,42 +990,43 @@ class _ReportsScreenState extends State<ReportsScreen> {
     return colors[hash % colors.length];
   }
 
-  Widget _buildLegendItem(String label, Color color, double value, ThemeData theme) {
+  Widget _buildLegendItem(BuildContext context, String label, Color color, double value, ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: ResponsiveHelper.edgeInsetsSymmetric(context, 16, 10),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
         border: Border.all(color: color.withOpacity(0.3), width: 1),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 12,
-                height: 12,
+                width: ResponsiveHelper.width(context, 12),
+                height: ResponsiveHelper.width(context, 12),
                 decoration: BoxDecoration(
                   color: color,
                   shape: BoxShape.circle,
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: ResponsiveHelper.spacing(context, 8)),
               Text(
                 label,
                 style: GoogleFonts.inter(
-                  fontSize: 13,
+                  fontSize: ResponsiveHelper.fontSize(context, 13),
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: ResponsiveHelper.spacing(context, 4)),
           Text(
             '$_currencySymbol${NumberFormat.currency(locale: 'en_US', symbol: '').format(value)}',
             style: GoogleFonts.inter(
-              fontSize: 14,
+              fontSize: ResponsiveHelper.fontSize(context, 14),
               fontWeight: FontWeight.bold,
               color: color,
             ),
@@ -897,41 +1039,59 @@ class _ReportsScreenState extends State<ReportsScreen> {
   Widget _buildCategoryLegendItem(
       String category, Color color, double value, double total, ThemeData theme) {
     final percentage = (value / total) * 100;
-    return Row(
-      children: [
-        Container(
-          width: 14,
-          height: 14,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                category,
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+    return Builder(
+      builder: (context) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: ResponsiveHelper.width(context, 14),
+              height: ResponsiveHelper.width(context, 14),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 4)),
               ),
-              Text(
-                '${percentage.toStringAsFixed(1)}% · $_currencySymbol${value.toStringAsFixed(0)}',
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+            ),
+            SizedBox(width: ResponsiveHelper.spacing(context, 8)),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    category,
+                    style: GoogleFonts.inter(
+                      fontSize: ResponsiveHelper.fontSize(context, 13),
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    '${percentage.toStringAsFixed(1)}% · $_currencySymbol${value.toStringAsFixed(0)}',
+                    style: GoogleFonts.inter(
+                      fontSize: ResponsiveHelper.fontSize(context, 11),
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-      ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildReportsLoadingState() {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          const ReportsProfitLossShimmer(),
+          const ChartShimmer(height: 320),
+          const ChartShimmer(height: 320),
+        ],
+      ),
     );
   }
 }
