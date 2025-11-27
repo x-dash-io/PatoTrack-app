@@ -8,8 +8,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../helpers/notification_helper.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_fonts/google_fonts.dart';
 
@@ -128,16 +128,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
           print('Warning: Failed to reload user data after photo update: $e');
         }
         
-        Fluttertoast.showToast(msg: 'Profile picture updated!');
+        NotificationHelper.showSuccess(context, message: 'Profile picture updated!');
       } else {
         final errorData = await response.stream.bytesToString();
         print('Cloudinary Error: $errorData');
-        Fluttertoast.showToast(
-            msg: 'Failed to upload image. Status code: ${response.statusCode}');
+        NotificationHelper.showError(context, message: 'Failed to upload image. Status code: ${response.statusCode}');
       }
     } catch (e) {
       print('Error uploading to Cloudinary: $e');
-      Fluttertoast.showToast(msg: 'Failed to upload image: $e');
+      NotificationHelper.showError(context, message: 'Failed to upload image: $e');
     } finally {
       if (mounted) setState(() => _isUploading = false);
     }
@@ -184,9 +183,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 await currentUser?.updateDisplayName(_nameController.text.trim());
                 Navigator.pop(context);
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Name updated successfully!')),
-                  );
+                  NotificationHelper.showSuccess(context, message: 'Name updated successfully!');
                   setState(() {});
                 }
               }
@@ -206,11 +203,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       await _auth.sendPasswordResetEmail(email: currentUser!.email!);
       if (mounted) {
-        Fluttertoast.showToast(msg: 'Password reset link sent to your email.');
+        NotificationHelper.showSuccess(context, message: 'Password reset link sent to your email.');
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
-        Fluttertoast.showToast(msg: e.message ?? 'An error occurred.');
+        NotificationHelper.showError(context, message: e.message ?? 'An error occurred.');
       }
     } finally {
       if (mounted) {
@@ -236,12 +233,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       try {
         await currentUser?.delete();
         if (mounted) {
-          Fluttertoast.showToast(msg: 'Account deleted successfully.');
+          NotificationHelper.showSuccess(context, message: 'Account deleted successfully.');
         }
       } on FirebaseAuthException catch (e) {
         if (mounted) {
           setState(() => _isDeletingAccount = false);
-          Fluttertoast.showToast(msg: e.message ?? 'Failed to delete account.');
+          NotificationHelper.showError(context, message: e.message ?? 'Failed to delete account.');
         }
       }
     }
@@ -309,13 +306,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           }
           
           final theme = Theme.of(context);
-          Fluttertoast.showToast(
-            msg: 'Signed out successfully',
-            backgroundColor: theme.colorScheme.primary,
-            textColor: theme.colorScheme.onPrimary,
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-          );
+          NotificationHelper.showSuccess(context, message: 'Signed out successfully');
         }
       }
     }
@@ -331,11 +322,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (await canLaunchUrl(whatsappUrl)) {
         await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
       } else {
-        Fluttertoast.showToast(
-            msg: 'Could not launch WhatsApp. Is it installed?');
+        NotificationHelper.showWarning(context, message: 'Could not launch WhatsApp. Is it installed?');
       }
     } catch (e) {
-      Fluttertoast.showToast(msg: 'An error occurred.');
+      NotificationHelper.showError(context, message: 'An error occurred.');
     }
   }
 
@@ -361,15 +351,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() => _isRestoring = true);
       try {
         await dbHelper.restoreFromFirestore(currentUser!.uid);
-        Fluttertoast.showToast(
-            msg:
-                "Data restored successfully! Please restart the app to see all changes.",
-            toastLength: Toast.LENGTH_LONG);
+        NotificationHelper.showSuccess(context, message: "Data restored successfully! Please restart the app to see all changes.", duration: const Duration(seconds: 5));
       } catch (e) {
-        Fluttertoast.showToast(
-            msg: "Error restoring data: $e",
-            backgroundColor: Colors.red,
-            toastLength: Toast.LENGTH_LONG);
+        NotificationHelper.showError(context, message: "Error restoring data: $e");
       } finally {
         if (mounted) setState(() => _isRestoring = false);
       }
@@ -737,13 +721,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           onChanged: (String? newValue) {
                             if (newValue != null && mounted) {
                               _saveCurrencyPreference(newValue);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'Currency updated!',
-                                      style: GoogleFonts.inter(),
-                                    ),
-                                  ));
+                              NotificationHelper.showSuccess(context, message: 'Currency updated!');
                             }
                           },
                         ),

@@ -11,6 +11,7 @@ import '../widgets/modern_date_picker.dart';
 import '../widgets/loading_widgets.dart';
 import '../widgets/input_fields.dart';
 import 'manage_categories_screen.dart';
+import '../helpers/notification_helper.dart';
 
 class TransactionDetailScreen extends StatefulWidget {
   final model.Transaction transaction;
@@ -73,7 +74,6 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
 
     try {
       final navigator = Navigator.of(context);
-      final messenger = ScaffoldMessenger.of(context);
 
       final updatedTransaction = widget.transaction.copyWith(
         type: _transactionType,
@@ -87,28 +87,13 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
       await dbHelper.updateTransaction(updatedTransaction, _currentUser!.uid);
 
       if (mounted) {
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(
-              'Transaction Updated',
-              style: GoogleFonts.inter(),
-            ),
-          ),
-        );
+        NotificationHelper.showSuccess(context, message: 'Transaction Updated');
         navigator.pop(true);
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isUpdating = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Error updating transaction: $e',
-              style: GoogleFonts.inter(),
-            ),
-            backgroundColor: Colors.red,
-          ),
-        );
+        NotificationHelper.showError(context, message: 'Error updating transaction: $e');
       }
     }
   }
@@ -133,28 +118,13 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
       try {
         await dbHelper.deleteTransaction(widget.transaction.id!, _currentUser!.uid);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Transaction Deleted',
-                style: GoogleFonts.inter(),
-              ),
-            ),
-          );
+          NotificationHelper.showSuccess(context, message: 'Transaction Deleted');
           Navigator.of(context).pop(true);
         }
       } catch (e) {
         if (mounted) {
           setState(() => _isDeleting = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Error deleting transaction: $e',
-                style: GoogleFonts.inter(),
-              ),
-              backgroundColor: Colors.red,
-            ),
-          );
+          NotificationHelper.showError(context, message: 'Error deleting transaction: $e');
         }
       }
     }

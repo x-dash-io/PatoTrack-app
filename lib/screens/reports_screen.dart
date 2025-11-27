@@ -10,6 +10,7 @@ import '../helpers/responsive_helper.dart';
 import '../models/category.dart';
 import '../models/transaction.dart' as model;
 import '../widgets/loading_widgets.dart';
+import '../helpers/notification_helper.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -846,12 +847,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                             if (businessTransactions.isEmpty) {
                                               if (mounted) {
                                                 setState(() => _isExportingPDF = false);
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text('No business transactions found in the selected period. Cannot generate report.'),
-                                                    duration: Duration(seconds: 3),
-                                                  ),
-                                                );
+                                                NotificationHelper.showWarning(context, message: 'No business transactions found in the selected period. Cannot generate report.');
                                               }
                                               return;
                                             }
@@ -870,12 +866,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                           } catch (e) {
                                             if (mounted) {
                                               setState(() => _isExportingPDF = false);
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(
-                                                  content: Text('Error generating report: $e'),
-                                                  duration: const Duration(seconds: 3),
-                                                ),
-                                              );
+                                              NotificationHelper.showError(context, message: 'Error generating report: $e');
                                             }
                                           }
                                         }

@@ -3,9 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
+import '../helpers/notification_helper.dart';
 
 class PasscodeScreen extends StatefulWidget {
   final bool isSettingPasscode;
@@ -148,13 +148,7 @@ class _PasscodeScreenState extends State<PasscodeScreen>
           if (!mounted || _isDisposed) return;
           
           final navigator = Navigator.of(context);
-          Fluttertoast.showToast(
-            msg: 'Passcode Set Successfully',
-            backgroundColor: colorScheme.primary,
-            textColor: colorScheme.onPrimary,
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-          );
+          NotificationHelper.showSuccess(context, message: 'Passcode Set Successfully');
           navigator.pop(true);
         } else {
           _showError('Passcodes do not match. Please try again.');
@@ -195,13 +189,7 @@ class _PasscodeScreenState extends State<PasscodeScreen>
     
     _triggerShake();
     
-    Fluttertoast.showToast(
-      msg: message,
-      backgroundColor: colorScheme.error,
-      textColor: colorScheme.onError,
-      toastLength: Toast.LENGTH_SHORT,
-      gravity: ToastGravity.BOTTOM,
-    );
+    NotificationHelper.showError(context, message: message);
 
     Future.delayed(const Duration(milliseconds: 500), () {
       if (!_isDisposed && mounted) {

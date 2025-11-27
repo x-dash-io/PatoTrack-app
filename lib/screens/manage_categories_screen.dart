@@ -7,6 +7,7 @@ import '../models/category.dart';
 import '../widgets/dialog_helpers.dart';
 import '../widgets/loading_widgets.dart';
 import '../widgets/input_fields.dart';
+import '../helpers/notification_helper.dart';
 
 class ManageCategoriesScreen extends StatefulWidget {
   const ManageCategoriesScreen({super.key});
@@ -268,15 +269,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                                       if (mounted) {
                                         setDialogState(() => _isSavingCategory = false);
                                         final theme = Theme.of(context);
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              'Category saved successfully. Will sync when online.',
-                                              style: GoogleFonts.inter(),
-                                            ),
-                                            backgroundColor: theme.colorScheme.primary,
-                                          ),
-                                        );
+                                        NotificationHelper.showSuccess(context, message: 'Category saved successfully. Will sync when online.');
                                       }
                                     }
                                   }

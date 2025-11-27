@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'login_screen.dart';
 import '../widgets/loading_widgets.dart';
 import '../widgets/input_fields.dart';
 import '../services/google_sign_in_service.dart';
+import '../helpers/notification_helper.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -107,13 +107,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         
         // Show success feedback
         final theme = Theme.of(context);
-        Fluttertoast.showToast(
-          msg: "Account Created Successfully!",
-          backgroundColor: theme.colorScheme.primary,
-          textColor: theme.colorScheme.onPrimary,
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-        );
+        NotificationHelper.showSuccess(context, message: "Account Created Successfully!");
         
         // Pop SignUpScreen to return to AuthGate
         // AuthGate's StreamBuilder will automatically detect the auth state change
@@ -127,14 +121,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           _isLoading = false;
         });
         final theme = Theme.of(context);
-        Fluttertoast.showToast(
-          msg: e.message ?? 'Sign up failed. Please try again.',
-          toastLength: Toast.LENGTH_LONG,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: theme.colorScheme.error,
-          textColor: theme.colorScheme.onError,
-          fontSize: 16.0,
-        );
+        NotificationHelper.showError(context, message: e.message ?? 'Sign up failed. Please try again.');
       }
     } catch (e) {
       if (mounted) {
@@ -142,14 +129,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           _isLoading = false;
         });
         final theme = Theme.of(context);
-        Fluttertoast.showToast(
-          msg: 'Error: ${e.toString().replaceAll('Exception: ', '')}',
-          toastLength: Toast.LENGTH_LONG,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: theme.colorScheme.error,
-          textColor: theme.colorScheme.onError,
-          fontSize: 16.0,
-        );
+        NotificationHelper.showError(context, message: 'Error: ${e.toString().replaceAll('Exception: ', '')}');
       }
     }
   }
@@ -197,13 +177,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             
             // Show success message
             final theme = Theme.of(context);
-            Fluttertoast.showToast(
-              msg: 'Account created with Google successfully!',
-              toastLength: Toast.LENGTH_SHORT,
-              gravity: ToastGravity.BOTTOM,
-              backgroundColor: theme.colorScheme.primary,
-              textColor: theme.colorScheme.onPrimary,
-            );
+            NotificationHelper.showSuccess(context, message: 'Account created with Google successfully!');
             
             // Pop SignUpScreen to return to AuthGate
             // AuthGate's StreamBuilder will automatically detect the auth state change
@@ -218,14 +192,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               _isLoading = false;
             });
             final theme = Theme.of(context);
-            Fluttertoast.showToast(
-              msg: 'Authentication failed. Please try again.',
-              toastLength: Toast.LENGTH_LONG,
-              gravity: ToastGravity.BOTTOM,
-              backgroundColor: theme.colorScheme.error,
-              textColor: theme.colorScheme.onError,
-              fontSize: 16.0,
-            );
+            NotificationHelper.showError(context, message: 'Authentication failed. Please try again.');
           }
         }
       } else {
@@ -243,14 +210,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           _isLoading = false;
         });
         final theme = Theme.of(context);
-        Fluttertoast.showToast(
-          msg: e.toString().replaceAll('Exception: ', ''),
-          toastLength: Toast.LENGTH_LONG,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: theme.colorScheme.error,
-          textColor: theme.colorScheme.onError,
-          fontSize: 16.0,
-        );
+        NotificationHelper.showError(context, message: e.toString().replaceAll('Exception: ', ''));
       }
     }
   }

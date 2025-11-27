@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'signup_screen.dart';
 import '../widgets/loading_widgets.dart';
 import '../widgets/input_fields.dart';
 import '../services/google_sign_in_service.dart';
 import '../helpers/responsive_helper.dart';
+import '../helpers/notification_helper.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -118,14 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
             errorMessage = 'Incorrect email or password. Please try again.';
         }
         
-        Fluttertoast.showToast(
-          msg: errorMessage,
-          toastLength: Toast.LENGTH_LONG,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: theme.colorScheme.error,
-          textColor: theme.colorScheme.onError,
-          fontSize: 16.0,
-        );
+        NotificationHelper.showError(context, message: errorMessage);
       }
     }
     // Don't clear loading state in finally - let AuthGate handle it on success
@@ -175,14 +168,7 @@ class _LoginScreenState extends State<LoginScreen> {
               _isLoading = false;
             });
             final theme = Theme.of(context);
-            Fluttertoast.showToast(
-              msg: 'Authentication failed. Please try again.',
-              toastLength: Toast.LENGTH_LONG,
-              gravity: ToastGravity.BOTTOM,
-              backgroundColor: theme.colorScheme.error,
-              textColor: theme.colorScheme.onError,
-              fontSize: 16.0,
-            );
+            NotificationHelper.showError(context, message: 'Authentication failed. Please try again.');
           }
         }
       } else {
@@ -200,14 +186,7 @@ class _LoginScreenState extends State<LoginScreen> {
           _isLoading = false;
         });
         final theme = Theme.of(context);
-        Fluttertoast.showToast(
-          msg: e.toString().replaceAll('Exception: ', ''),
-          toastLength: Toast.LENGTH_LONG,
-          gravity: ToastGravity.BOTTOM,
-          backgroundColor: theme.colorScheme.error,
-          textColor: theme.colorScheme.onError,
-          fontSize: 16.0,
-        );
+        NotificationHelper.showError(context, message: e.toString().replaceAll('Exception: ', ''));
       }
     }
   }
@@ -318,14 +297,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                                     if (mounted) {
                                       Navigator.of(dialogContext).pop();
-                                      Fluttertoast.showToast(
-                                        msg: 'Password reset email sent! Please check your inbox.',
-                                        backgroundColor: colorScheme.primary,
-                                        textColor: colorScheme.onPrimary,
-                                        toastLength: Toast.LENGTH_LONG,
-                                        gravity: ToastGravity.BOTTOM,
-                                        fontSize: 16.0,
-                                      );
+                                      NotificationHelper.showSuccess(context, message: 'Password reset email sent! Please check your inbox.');
                                     }
                                   } on FirebaseAuthException catch (e) {
                                     if (mounted) {
@@ -344,28 +316,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                         isSendingReset = false;
                                       });
                                       
-                                      Fluttertoast.showToast(
-                                        msg: errorMessage,
-                                        backgroundColor: colorScheme.error,
-                                        textColor: colorScheme.onError,
-                                        toastLength: Toast.LENGTH_LONG,
-                                        gravity: ToastGravity.BOTTOM,
-                                        fontSize: 16.0,
-                                      );
+                                      NotificationHelper.showError(context, message: errorMessage);
                                     }
                                   } catch (e) {
                                     if (mounted) {
                                       setDialogState(() {
                                         isSendingReset = false;
                                       });
-                                      Fluttertoast.showToast(
-                                        msg: 'An error occurred. Please try again.',
-                                        backgroundColor: colorScheme.error,
-                                        textColor: colorScheme.onError,
-                                        toastLength: Toast.LENGTH_LONG,
-                                        gravity: ToastGravity.BOTTOM,
-                                        fontSize: 16.0,
-                                      );
+                                      NotificationHelper.showError(context, message: 'An error occurred. Please try again.');
                                     }
                                   }
                                 }

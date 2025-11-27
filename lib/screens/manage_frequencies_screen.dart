@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import '../helpers/database_helper.dart';
 import '../models/frequency.dart';
 import '../widgets/input_fields.dart';
 import '../widgets/dialog_helpers.dart';
 import '../widgets/loading_widgets.dart';
+import '../helpers/notification_helper.dart';
 
 class ManageFrequenciesScreen extends StatefulWidget {
   const ManageFrequenciesScreen({super.key});
@@ -165,7 +165,7 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
                   if (nameController.text.isEmpty ||
                       displayNameController.text.isEmpty ||
                       valueController.text.isEmpty) {
-                    Fluttertoast.showToast(msg: 'Please fill all fields');
+                    NotificationHelper.showWarning(context, message: 'Please fill all fields');
                     return;
                   }
                   Navigator.pop(context, true);
@@ -202,9 +202,9 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
         final dbHelper = DatabaseHelper();
         await dbHelper.addFrequency(newFrequency, _currentUser!.uid);
         await _loadFrequencies();
-        Fluttertoast.showToast(msg: 'Frequency added successfully');
+        NotificationHelper.showSuccess(context, message: 'Frequency added successfully');
       } catch (e) {
-        Fluttertoast.showToast(msg: 'Error adding frequency: $e');
+        NotificationHelper.showError(context, message: 'Error adding frequency: $e');
       }
     }
   }
@@ -226,9 +226,9 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
         final dbHelper = DatabaseHelper();
         await dbHelper.deleteFrequency(frequency.id!, _currentUser!.uid);
         await _loadFrequencies();
-        Fluttertoast.showToast(msg: 'Frequency deleted successfully');
+        NotificationHelper.showSuccess(context, message: 'Frequency deleted successfully');
       } catch (e) {
-        Fluttertoast.showToast(msg: 'Error deleting frequency: $e');
+        NotificationHelper.showError(context, message: 'Error deleting frequency: $e');
       }
     }
   }

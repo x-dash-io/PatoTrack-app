@@ -10,6 +10,7 @@ import '../widgets/modern_date_picker.dart';
 import '../widgets/loading_widgets.dart';
 import '../widgets/input_fields.dart';
 import 'manage_categories_screen.dart';
+import '../helpers/notification_helper.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   const AddTransactionScreen({super.key});
@@ -65,7 +66,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
     try {
       final navigator = Navigator.of(context);
-      final messenger = ScaffoldMessenger.of(context);
 
       final newTransaction = model.Transaction(
         type: _transactionType,
@@ -79,28 +79,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       await dbHelper.addTransaction(newTransaction, _currentUser!.uid);
 
       if (mounted) {
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(
-              'Transaction Saved',
-              style: GoogleFonts.inter(),
-            ),
-          ),
-        );
+        NotificationHelper.showSuccess(context, message: 'Transaction Saved');
         navigator.pop();
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isSaving = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Error saving transaction: $e',
-              style: GoogleFonts.inter(),
-            ),
-            backgroundColor: Colors.red,
-          ),
-        );
+        NotificationHelper.showError(context, message: 'Error saving transaction: $e');
       }
     }
   }

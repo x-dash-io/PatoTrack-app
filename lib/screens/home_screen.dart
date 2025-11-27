@@ -12,6 +12,7 @@ import '../models/bill.dart';
 import '../models/transaction.dart' as model;
 import '../widgets/dialog_helpers.dart';
 import '../widgets/loading_widgets.dart';
+import '../helpers/notification_helper.dart';
 import 'add_transaction_screen.dart';
 import 'all_transactions_screen.dart';
 import 'add_bill_screen.dart';
@@ -163,14 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _deleteTransaction(int id, String userId) async {
     await dbHelper.deleteTransaction(id, userId);
     if(mounted){
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Transaction Deleted',
-            style: GoogleFonts.inter(),
-          ),
-        ),
-      );
+      NotificationHelper.showSuccess(context, message: 'Transaction Deleted');
     }
     _refreshData();
   }
@@ -406,36 +400,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           _refreshData();
                           
                           // Show success message
-                          ScaffoldMessenger.of(parentContext).showSnackBar(
-                            SnackBar(
-                              content: Row(
-                                children: [
-                                  Icon(
-                                    Icons.check_circle_rounded,
-                                    color: Colors.white,
-                                    size: ResponsiveHelper.iconSize(parentContext, 20),
-                                  ),
-                                  SizedBox(width: ResponsiveHelper.spacing(parentContext, 12)),
-                                  Expanded(
-                                    child: Text(
-                                      'Bill "${bill.name}" deleted successfully',
-                                      style: GoogleFonts.inter(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: ResponsiveHelper.fontSize(parentContext, 15),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              backgroundColor: Colors.green,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(ResponsiveHelper.radius(parentContext, 12)),
-                              ),
-                              margin: ResponsiveHelper.edgeInsets(parentContext, 16, 16, 16, 16),
-                              duration: const Duration(seconds: 3),
-                            ),
-                          );
+                          NotificationHelper.showSuccess(parentContext, message: 'Bill "${bill.name}" deleted successfully');
                         }
                       } else {
                         throw Exception('Bill not found or already deleted');
@@ -446,36 +411,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Navigator.of(parentContext).pop();
                         
                         // Show error message
-                        ScaffoldMessenger.of(parentContext).showSnackBar(
-                          SnackBar(
-                            content: Row(
-                              children: [
-                                Icon(
-                                  Icons.error_rounded,
-                                  color: Colors.white,
-                                  size: ResponsiveHelper.iconSize(parentContext, 20),
-                                ),
-                                SizedBox(width: ResponsiveHelper.spacing(parentContext, 12)),
-                                Expanded(
-                                  child: Text(
-                                    'Error deleting bill: ${e.toString()}',
-                                    style: GoogleFonts.inter(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: ResponsiveHelper.fontSize(parentContext, 15),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            backgroundColor: Colors.red,
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(ResponsiveHelper.radius(parentContext, 12)),
-                            ),
-                            margin: ResponsiveHelper.edgeInsets(parentContext, 16, 16, 16, 16),
-                            duration: const Duration(seconds: 4),
-                          ),
-                        );
+                        NotificationHelper.showError(parentContext, message: 'Error deleting bill: ${e.toString()}');
                       }
                     }
                   }
@@ -1157,26 +1093,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   currentUser.uid,
                                                 );
                                                 if (mounted) {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text(
-                                                        'Recurring bill "${bill.name}" paid. Next due date set.',
-                                                        style: GoogleFonts.inter(),
-                                                      ),
-                                                    ),
-                                                  );
+                                                  NotificationHelper.showSuccess(context, message: 'Recurring bill "${bill.name}" paid. Next due date set.');
                                                 }
                                               } else {
                                                 await dbHelper.deleteBill(bill.id!, currentUser.uid);
                                                 if (mounted) {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text(
-                                                        'Bill "${bill.name}" marked as paid.',
-                                                        style: GoogleFonts.inter(),
-                                                      ),
-                                                    ),
-                                                  );
+                                                  NotificationHelper.showSuccess(context, message: 'Bill "${bill.name}" marked as paid.');
                                                 }
                                               }
 

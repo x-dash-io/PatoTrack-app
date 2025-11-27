@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../helpers/database_helper.dart';
 import '../helpers/notification_service.dart';
+import '../helpers/notification_helper.dart';
 import '../models/bill.dart';
 import '../models/frequency.dart';
 import '../widgets/modern_date_picker.dart';
@@ -123,7 +123,7 @@ class _AddBillScreenState extends State<AddBillScreen> {
 
       if (isDuplicate && mounted) {
         setState(() => _isSaving = false);
-        Fluttertoast.showToast(msg: 'A bill with this name already exists.');
+        NotificationHelper.showWarning(context, message: 'A bill with this name already exists.');
         return;
       }
 
@@ -165,10 +165,7 @@ class _AddBillScreenState extends State<AddBillScreen> {
         // Show success message even if Firestore sync fails (offline mode)
         // The bill is saved locally and will sync when online
         final theme = Theme.of(context);
-        Fluttertoast.showToast(
-          msg: 'Bill saved successfully. Will sync when online.',
-          backgroundColor: theme.colorScheme.primary,
-        );
+        NotificationHelper.showSuccess(context, message: 'Bill saved successfully. Will sync when online.');
       }
     }
   }
