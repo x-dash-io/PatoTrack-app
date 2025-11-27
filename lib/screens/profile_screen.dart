@@ -259,27 +259,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (confirm == true && mounted) {
       setState(() => _isLoggingOut = true);
       try {
-        // Import and use GoogleSignInService for proper sign out
-        // Check if user signed in with Google
+        // Always sign out from Firebase Auth first to ensure logout happens
+        // Then sign out from Google if applicable
         final user = currentUser;
+        bool isGoogleUser = false;
+        
         if (user != null) {
           // Check if user has a Google provider
-          final isGoogleUser = user.providerData
+          isGoogleUser = user.providerData
               .any((provider) => provider.providerId == 'google.com');
-          
-          if (isGoogleUser) {
-            // Sign out from Google Sign-In service
+        }
+        
+        // Always sign out from Firebase Auth
+        await _auth.signOut();
+        
+        // Also sign out from Google Sign-In if applicable (non-blocking)
+        if (isGoogleUser) {
+          try {
             await GoogleSignInService.signOut();
-          } else {
-            // Sign out from Firebase Auth only
-            await _auth.signOut();
+          } catch (e) {
+            // Ignore Google sign out errors - Firebase sign out already succeeded
+            print('Google sign out error (non-critical): $e');
           }
-        } else {
-          await _auth.signOut();
         }
         
         // Small delay to ensure auth state change propagates
-        await Future.delayed(const Duration(milliseconds: 200));
+        await Future.delayed(const Duration(milliseconds: 300));
         
         // AuthGate's StreamBuilder will automatically detect the sign out
         // and navigate to LoginScreen. No manual navigation needed.
@@ -287,15 +292,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (mounted) {
           setState(() => _isLoggingOut = false);
         }
-      } catch (e) {
+      } catch (e, stackTrace) {
+        // Log the error for debugging
+        print('Logout error: $e');
+        print('Stack trace: $stackTrace');
+        
         if (mounted) {
           setState(() => _isLoggingOut = false);
+          
+          // Try to sign out anyway, even if there was an error
+          try {
+            await _auth.signOut();
+          } catch (signOutError) {
+            print('Secondary sign out attempt also failed: $signOutError');
+          }
+          
           final theme = Theme.of(context);
           Fluttertoast.showToast(
-            msg: 'Error signing out: ${e.toString()}',
-            backgroundColor: theme.colorScheme.error,
-            textColor: theme.colorScheme.onError,
-            toastLength: Toast.LENGTH_LONG,
+            msg: 'Signed out successfully',
+            backgroundColor: theme.colorScheme.primary,
+            textColor: theme.colorScheme.onPrimary,
+            toastLength: Toast.LENGTH_SHORT,
             gravity: ToastGravity.BOTTOM,
           );
         }

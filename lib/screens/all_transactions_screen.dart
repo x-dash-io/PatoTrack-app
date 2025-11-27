@@ -39,20 +39,37 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
   }
 
   Future<void> _loadInitialData() async {
-    if (_currentUser == null) return;
+    if (_currentUser == null) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+    
     if (mounted) setState(() => _isLoading = true);
     
-    // Load both transactions and categories
-    final transactions = await dbHelper.getTransactions(_currentUser!.uid);
-    final categories = await dbHelper.getCategories(_currentUser!.uid);
+    try {
+      // Load both transactions and categories from local database (works offline)
+      final transactions = await dbHelper.getTransactions(_currentUser!.uid);
+      final categories = await dbHelper.getCategories(_currentUser!.uid);
 
-    if (mounted) {
-      setState(() {
-        _allTransactions = transactions;
-        _allCategories = categories;
-        _isLoading = false;
-        _applyAllFilters(); // Apply initial (empty) filters
-      });
+      if (mounted) {
+        setState(() {
+          _allTransactions = transactions;
+          _allCategories = categories;
+          _isLoading = false;
+          _applyAllFilters(); // Apply initial (empty) filters
+        });
+      }
+    } catch (e) {
+      // Handle any errors gracefully (e.g., database issues)
+      print('Error loading transactions: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _allTransactions = [];
+          _allCategories = [];
+          _applyAllFilters(); // This will set _filteredTransactions to empty list
+        });
+      }
     }
   }
 

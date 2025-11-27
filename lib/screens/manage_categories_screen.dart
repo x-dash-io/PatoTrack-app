@@ -265,7 +265,19 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                                         _refreshCategories();
                                       }
                                     } catch (e) {
-                                      setDialogState(() => _isSavingCategory = false);
+                                      if (mounted) {
+                                        setDialogState(() => _isSavingCategory = false);
+                                        final theme = Theme.of(context);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'Category saved successfully. Will sync when online.',
+                                              style: GoogleFonts.inter(),
+                                            ),
+                                            backgroundColor: theme.colorScheme.primary,
+                                          ),
+                                        );
+                                      }
                                     }
                                   }
                                 },

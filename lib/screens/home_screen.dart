@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../helpers/database_helper.dart';
 import '../helpers/sms_service.dart';
+import '../helpers/responsive_helper.dart';
 import '../models/bill.dart';
 import '../models/transaction.dart' as model;
 import '../widgets/dialog_helpers.dart';
@@ -236,7 +237,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         // Modern Header
                         SliverToBoxAdapter(
                           child: Padding(
-                            padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                            padding: ResponsiveHelper.edgeInsets(context, 24, 20, 16, 20),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
@@ -244,16 +245,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                 Text(
                                   '${_getGreeting()} 👋',
                                   style: GoogleFonts.inter(
-                                    fontSize: 16,
+                                    fontSize: ResponsiveHelper.fontSize(context, 16),
                                     color: colorScheme.onSurfaceVariant,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
+                                SizedBox(height: ResponsiveHelper.spacing(context, 4)),
                                 Text(
                                   currentUser?.displayName ?? 'User',
                                   style: GoogleFonts.inter(
-                                    fontSize: 28,
+                                    fontSize: ResponsiveHelper.fontSize(context, 28),
                                     fontWeight: FontWeight.bold,
                                     color: colorScheme.onSurface,
                                   ),
@@ -267,7 +268,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         // Summary Cards
                         SliverToBoxAdapter(
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                            padding: ResponsiveHelper.edgeInsetsSymmetric(context, 20, 8),
                             child: Row(
                               children: [
                                 Expanded(
@@ -279,7 +280,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     currencySymbol: _currencySymbol,
                                   ),
                                 ),
-                                const SizedBox(width: 12),
+                                SizedBox(width: ResponsiveHelper.spacing(context, 12)),
                                 Expanded(
                                   child: _ModernSummaryCard(
                                     title: 'Expenses',
@@ -295,7 +296,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         SliverToBoxAdapter(
                           child: Padding(
-                            padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                            padding: ResponsiveHelper.edgeInsets(context, 8, 20, 16, 20),
                             child: _ModernSummaryCard(
                               title: 'Balance',
                               amount: _balance,
@@ -313,7 +314,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         // Recent Transactions Section
                         SliverToBoxAdapter(
                           child: Padding(
-                            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                            padding: ResponsiveHelper.edgeInsets(context, 16, 20, 8, 20),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -324,7 +325,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     child: Text(
                                       'Recent Transactions',
                                       style: GoogleFonts.inter(
-                                        fontSize: 20,
+                                        fontSize: ResponsiveHelper.fontSize(context, 20),
                                         fontWeight: FontWeight.bold,
                                       ),
                                       overflow: TextOverflow.ellipsis,
@@ -349,12 +350,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 6),
+                              SizedBox(height: ResponsiveHelper.spacing(context, 6)),
                               Row(
                                 children: [
                                   Icon(
                                     Icons.swipe_rounded,
-                                    size: 14,
+                                    size: ResponsiveHelper.iconSize(context, 14),
                                     color: colorScheme.onSurfaceVariant.withOpacity(0.6),
                                   ),
                                   const SizedBox(width: 6),
@@ -1042,12 +1043,12 @@ class _ModernSummaryCard extends StatelessWidget {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 20)),
       ),
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: ResponsiveHelper.edgeInsetsAll(context, 16),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 20)),
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -1064,19 +1065,19 @@ class _ModernSummaryCard extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: ResponsiveHelper.edgeInsetsAll(context, 8),
                   decoration: BoxDecoration(
                     color: color.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 10)),
                   ),
-                  child: Icon(icon, color: color, size: 24),
+                  child: Icon(icon, color: color, size: ResponsiveHelper.iconSize(context, 20)),
                 ),
                 const Spacer(),
                 Flexible(
                   child: Text(
                     title,
                     style: GoogleFonts.inter(
-                      fontSize: 14,
+                      fontSize: ResponsiveHelper.fontSize(context, 12),
                       color: colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w500,
                     ),
@@ -1086,11 +1087,11 @@ class _ModernSummaryCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: ResponsiveHelper.spacing(context, 12)),
             Text(
               '$currencySymbol ${currencyFormatter.format(amount)}',
               style: GoogleFonts.inter(
-                fontSize: 24,
+                fontSize: ResponsiveHelper.fontSize(context, 20),
                 fontWeight: FontWeight.bold,
                 color: color,
               ),

@@ -119,9 +119,12 @@ class _AddBillScreenState extends State<AddBillScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isSaving = false);
+        // Show success message even if Firestore sync fails (offline mode)
+        // The bill is saved locally and will sync when online
+        final theme = Theme.of(context);
         Fluttertoast.showToast(
-          msg: 'An error occurred while saving the bill.',
-          backgroundColor: Colors.red,
+          msg: 'Bill saved successfully. Will sync when online.',
+          backgroundColor: theme.colorScheme.primary,
         );
       }
     }

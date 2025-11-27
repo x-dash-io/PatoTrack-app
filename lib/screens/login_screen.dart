@@ -6,6 +6,7 @@ import 'signup_screen.dart';
 import '../widgets/loading_widgets.dart';
 import '../widgets/input_fields.dart';
 import '../services/google_sign_in_service.dart';
+import '../helpers/responsive_helper.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -73,42 +74,52 @@ class _LoginScreenState extends State<LoginScreen> {
         // Continue even if reload fails
       }
 
-      // Ensure the auth state change has been processed
-      // Wait for the stream to emit and AuthGate to rebuild
-      await Future.delayed(const Duration(milliseconds: 500));
-      
-      // Double-check that user is still authenticated after the delay
+      // Verify user is authenticated
       final verifyUser = FirebaseAuth.instance.currentUser;
       if (verifyUser == null) {
         throw Exception('Authentication state lost');
       }
       
-      // Clear loading state - AuthGate's StreamBuilder will automatically
-      // detect the auth state change via authStateChanges() stream and rebuild
-      // to show MainScreen or PasscodeScreen
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        
-        // Show success feedback
-        final theme = Theme.of(context);
-        Fluttertoast.showToast(
-          msg: "Login Successful!",
-          backgroundColor: theme.colorScheme.primary,
-          textColor: theme.colorScheme.onPrimary,
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.BOTTOM,
-        );
-      }
+      // AuthGate will automatically detect the auth state change via its listener
+      // No need to wait or clear loading - AuthGate will rebuild and navigate
+      // The widget tree will be replaced by AuthGate, so this widget may be disposed
+      
+      // Just verify and let AuthGate handle the navigation
+      // Keep loading state until AuthGate navigates away (which will dispose this widget)
     } on FirebaseAuthException catch (e) {
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
         final theme = Theme.of(context);
+        String errorMessage = 'Login failed. Please try again.';
+        
+        // Provide user-friendly error messages
+        switch (e.code) {
+          case 'user-not-found':
+          case 'wrong-password':
+          case 'invalid-credential':
+            errorMessage = 'Incorrect email or password. Please try again.';
+            break;
+          case 'invalid-email':
+            errorMessage = 'Invalid email address. Please check and try again.';
+            break;
+          case 'user-disabled':
+            errorMessage = 'This account has been disabled. Please contact support.';
+            break;
+          case 'too-many-requests':
+            errorMessage = 'Too many failed attempts. Please try again later.';
+            break;
+          case 'network-request-failed':
+            errorMessage = 'Network error. Please check your connection and try again.';
+            break;
+          default:
+            // Use the default message for unknown errors
+            errorMessage = 'Incorrect email or password. Please try again.';
+        }
+        
         Fluttertoast.showToast(
-          msg: e.message ?? 'Login failed',
+          msg: errorMessage,
           toastLength: Toast.LENGTH_LONG,
           gravity: ToastGravity.BOTTOM,
           backgroundColor: theme.colorScheme.error,
@@ -145,34 +156,18 @@ class _LoginScreenState extends State<LoginScreen> {
             // Continue even if reload fails
           }
           
-          // Ensure the auth state change has been processed
-          // Wait for the stream to emit and AuthGate to rebuild
-          await Future.delayed(const Duration(milliseconds: 500));
-          
-          // Double-check that user is still authenticated after the delay
+          // Verify user is authenticated
           final verifyUser = FirebaseAuth.instance.currentUser;
           if (verifyUser == null) {
             throw Exception('Authentication state lost');
           }
           
-          // Clear loading state - AuthGate's StreamBuilder will automatically
-          // detect the auth state change via authStateChanges() stream and rebuild
-          // to show MainScreen or PasscodeScreen
-          if (mounted) {
-            setState(() {
-              _isLoading = false;
-            });
-            
-            // Show success message
-            final theme = Theme.of(context);
-            Fluttertoast.showToast(
-              msg: 'Signed in with Google successfully!',
-              toastLength: Toast.LENGTH_SHORT,
-              gravity: ToastGravity.BOTTOM,
-              backgroundColor: theme.colorScheme.primary,
-              textColor: theme.colorScheme.onPrimary,
-            );
-          }
+          // AuthGate will automatically detect the auth state change via its listener
+          // No need to wait or clear loading - AuthGate will rebuild and navigate
+          // The widget tree will be replaced by AuthGate, so this widget may be disposed
+          
+          // Just verify and let AuthGate handle the navigation
+          // Keep loading state until AuthGate navigates away (which will dispose this widget)
         } else {
           // User not properly authenticated
           if (mounted) {
@@ -463,20 +458,20 @@ class _LoginScreenState extends State<LoginScreen> {
             isLoading: _isLoading,
             message: 'Signing in...',
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16),
+              padding: ResponsiveHelper.edgeInsetsSymmetric(context, 24.0, 16),
               child: Form(
                 key: _formKey,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 20),
+                    SizedBox(height: ResponsiveHelper.spacing(context, 20)),
                     
                     // App logo/icon with modern design
                     Center(
                       child: Container(
-                        width: 100,
-                        height: 100,
+                        width: ResponsiveHelper.width(context, 100),
+                        height: ResponsiveHelper.height(context, 100),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topLeft,
@@ -490,26 +485,26 @@ class _LoginScreenState extends State<LoginScreen> {
                           boxShadow: [
                             BoxShadow(
                               color: colorScheme.primary.withOpacity(0.3),
-                              blurRadius: 20,
-                              offset: const Offset(0, 10),
+                              blurRadius: ResponsiveHelper.spacing(context, 20),
+                              offset: Offset(0, ResponsiveHelper.spacing(context, 10)),
                             ),
                           ],
                         ),
                         child: Icon(
                           Icons.account_balance_wallet,
-                          size: 50,
+                          size: ResponsiveHelper.iconSize(context, 50),
                           color: colorScheme.onPrimary,
                         ),
                       ),
                     ),
 
-                    const SizedBox(height: 48),
+                    SizedBox(height: ResponsiveHelper.spacing(context, 48)),
 
                     // Modern title section
                     Text(
                       'Welcome Back',
                       style: GoogleFonts.inter(
-                        fontSize: 36,
+                        fontSize: ResponsiveHelper.fontSize(context, 36),
                         fontWeight: FontWeight.bold,
                         color: colorScheme.onSurface,
                         height: 1.2,
@@ -517,28 +512,28 @@ class _LoginScreenState extends State<LoginScreen> {
                       textAlign: TextAlign.center,
                     ),
 
-                    const SizedBox(height: 12),
+                    SizedBox(height: ResponsiveHelper.spacing(context, 12)),
 
                     Text(
                       'Sign in to continue tracking your expenses',
                       style: GoogleFonts.inter(
-                        fontSize: 16,
+                        fontSize: ResponsiveHelper.fontSize(context, 16),
                         color: colorScheme.onSurfaceVariant,
                         height: 1.4,
                       ),
                       textAlign: TextAlign.center,
                     ),
 
-                    const SizedBox(height: 48),
+                    SizedBox(height: ResponsiveHelper.spacing(context, 48)),
 
                     // Modern card container for form
                     Card(
                       elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 24)),
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.all(24),
+                        padding: ResponsiveHelper.edgeInsetsAll(context, 24),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
@@ -559,7 +554,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               },
                             ),
 
-                            const SizedBox(height: 20),
+                            SizedBox(height: ResponsiveHelper.spacing(context, 20)),
 
                             // Password field
                             StandardTextFormField(
@@ -591,7 +586,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               },
                             ),
 
-                            const SizedBox(height: 12),
+                            SizedBox(height: ResponsiveHelper.spacing(context, 12)),
 
                             // Forgot password link
                             Align(
@@ -599,17 +594,14 @@ class _LoginScreenState extends State<LoginScreen> {
                               child: TextButton(
                                 onPressed: _isLoading ? null : _showForgotPasswordDialog,
                                 style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
+                                  padding: ResponsiveHelper.edgeInsetsSymmetric(context, 8, 4),
                                   minimumSize: Size.zero,
                                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                 ),
                                 child: Text(
                                   'Forgot Password?',
                                   style: GoogleFonts.inter(
-                                    fontSize: 14,
+                                    fontSize: ResponsiveHelper.fontSize(context, 14),
                                     fontWeight: FontWeight.w600,
                                     color: colorScheme.primary,
                                   ),
@@ -617,21 +609,21 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
 
-                            const SizedBox(height: 20),
+                            SizedBox(height: ResponsiveHelper.spacing(context, 20)),
 
                             // Login button
                             FilledButton(
                               onPressed: _isLoading ? null : _login,
                               style: FilledButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: EdgeInsets.symmetric(vertical: ResponsiveHelper.buttonHeight(context, 16)),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 16)),
                                 ),
                               ),
                               child: _isLoading
                                   ? SizedBox(
-                                      height: 20,
-                                      width: 20,
+                                      height: ResponsiveHelper.iconSize(context, 20),
+                                      width: ResponsiveHelper.iconSize(context, 20),
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
                                         valueColor: AlwaysStoppedAnimation<Color>(
@@ -642,24 +634,24 @@ class _LoginScreenState extends State<LoginScreen> {
                                   : Text(
                                       'Sign In',
                                       style: GoogleFonts.inter(
-                                        fontSize: 17,
+                                        fontSize: ResponsiveHelper.fontSize(context, 17),
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
                             ),
 
-                            const SizedBox(height: 24),
+                            SizedBox(height: ResponsiveHelper.spacing(context, 24)),
 
                             // Divider with "OR"
                             Row(
                               children: [
                                 Expanded(child: Divider(color: colorScheme.outline)),
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  padding: ResponsiveHelper.edgeInsetsSymmetric(context, 16, 0),
                                   child: Text(
                                     'OR',
                                     style: GoogleFonts.inter(
-                                      fontSize: 14,
+                                      fontSize: ResponsiveHelper.fontSize(context, 14),
                                       color: colorScheme.onSurfaceVariant,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -669,15 +661,15 @@ class _LoginScreenState extends State<LoginScreen> {
                               ],
                             ),
 
-                            const SizedBox(height: 24),
+                            SizedBox(height: ResponsiveHelper.spacing(context, 24)),
 
                             // Google Sign-In button
                             OutlinedButton.icon(
                               onPressed: _isLoading ? null : _signInWithGoogle,
                               style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: EdgeInsets.symmetric(vertical: ResponsiveHelper.buttonHeight(context, 16)),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 16)),
                                 ),
                                 side: BorderSide(
                                   color: colorScheme.outline,
