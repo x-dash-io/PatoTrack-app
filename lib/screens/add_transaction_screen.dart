@@ -43,7 +43,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     if (_currentUser != null) {
       setState(() {
         _categoriesFuture =
-            dbHelper.getCategories(_currentUser!.uid, type: _transactionType);
+            dbHelper.getCategories(_currentUser.uid, type: _transactionType);
       });
     }
   }
@@ -76,7 +76,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         tag: 'business', // Always business
       );
 
-      await dbHelper.addTransaction(newTransaction, _currentUser!.uid);
+      await dbHelper.addTransaction(newTransaction, _currentUser.uid);
 
       if (mounted) {
         NotificationHelper.showSuccess(context, message: 'Transaction Saved');
@@ -85,7 +85,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isSaving = false);
-        NotificationHelper.showError(context, message: 'Error saving transaction: $e');
+        NotificationHelper.showError(context,
+            message: 'Error saving transaction: $e');
       }
     }
   }
@@ -112,7 +113,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     final colorScheme = theme.colorScheme;
 
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -173,7 +174,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             StandardTextFormField(
               controller: _amountController,
               labelText: 'Amount',
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               prefixIcon: Icons.attach_money_rounded,
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
@@ -313,4 +315,3 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 }
-

@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-# Patotrack
-=======
 # PatoTrack - Business Expense Tracking App
->>>>>>> 29ce131 (Update README and .gitignore; remove deprecated Firestore service and modernize home and category management screens)
 
 A modern, beautiful expense tracking application built with Flutter, designed specifically for business financial management. Track your income, expenses, bills, and generate professional reports for loan applications and investor pitches.
 

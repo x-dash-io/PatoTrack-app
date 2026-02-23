@@ -16,7 +16,7 @@ class GoogleSignInService {
       // Always sign out first to force account selection
       // This ensures the account picker is shown every time
       await _googleSignIn.signOut();
-      
+
       // Trigger the Google Sign-In flow with account selection
       // This will show the account picker if multiple accounts exist
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
@@ -51,7 +51,7 @@ class GoogleSignInService {
     } catch (e) {
       // Handle other errors (network, cancellation, etc.)
       // Don't throw if user cancelled - return null instead
-      if (e.toString().contains('sign_in_canceled') || 
+      if (e.toString().contains('sign_in_canceled') ||
           e.toString().contains('cancelled') ||
           e.toString().contains('canceled')) {
         return null;
@@ -96,7 +96,8 @@ class GoogleSignInService {
       case 'wrong-password':
         return Exception('Wrong password provided.');
       case 'network-request-failed':
-        return Exception('Network error. Please check your internet connection.');
+        return Exception(
+            'Network error. Please check your internet connection.');
       case 'too-many-requests':
         return Exception(
           'Too many requests. Please try again later.',
@@ -106,4 +107,3 @@ class GoogleSignInService {
     }
   }
 }
-

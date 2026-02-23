@@ -12,10 +12,12 @@ class PdfHelper {
   static Future<void> generateAndSharePdf(List<model.Transaction> transactions,
       String userName, String fileName) async {
     // Filter to only include business transactions (for loan/investor applications)
-    final businessTransactions = transactions.where((t) => t.tag == 'business').toList();
-    
+    final businessTransactions =
+        transactions.where((t) => t.tag == 'business').toList();
+
     if (businessTransactions.isEmpty) {
-      throw Exception('No business transactions found. Cannot generate business report.');
+      throw Exception(
+          'No business transactions found. Cannot generate business report.');
     }
 
     final pdf = pw.Document();
@@ -25,7 +27,8 @@ class PdfHelper {
         pageTheme: const pw.PageTheme(
           margin: pw.EdgeInsets.all(32),
         ),
-        header: (pw.Context context) => _buildHeader(userName, businessTransactions),
+        header: (pw.Context context) =>
+            _buildHeader(userName, businessTransactions),
         build: (pw.Context context) {
           return [
             _buildBusinessInfo(businessTransactions),
@@ -42,17 +45,18 @@ class PdfHelper {
     await Printing.sharePdf(bytes: await pdf.save(), filename: fileName);
   }
 
-  static pw.Widget _buildHeader(String userName, List<model.Transaction> transactions) {
+  static pw.Widget _buildHeader(
+      String userName, List<model.Transaction> transactions) {
     // Determine report period from transactions
     if (transactions.isEmpty) {
       return pw.SizedBox();
     }
-    
+
     final dates = transactions.map((t) => DateTime.parse(t.date)).toList();
     dates.sort();
     final startDate = dates.first;
     final endDate = dates.last;
-    
+
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
@@ -62,10 +66,12 @@ class PdfHelper {
         pw.Text('Business Owner: $userName',
             style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
         pw.SizedBox(height: 4),
-        pw.Text('Report Period: ${DateFormat('MMM dd, yyyy').format(startDate)} - ${DateFormat('MMM dd, yyyy').format(endDate)}',
+        pw.Text(
+            'Report Period: ${DateFormat('MMM dd, yyyy').format(startDate)} - ${DateFormat('MMM dd, yyyy').format(endDate)}',
             style: const pw.TextStyle(fontSize: 12)),
         pw.SizedBox(height: 4),
-        pw.Text('Report Generated on: ${DateFormat('MMMM dd, yyyy').format(DateTime.now())}',
+        pw.Text(
+            'Report Generated on: ${DateFormat('MMMM dd, yyyy').format(DateTime.now())}',
             style: const pw.TextStyle(fontSize: 12)),
         pw.Text('Note: This report contains ONLY business transactions',
             style: pw.TextStyle(fontSize: 10, fontStyle: pw.FontStyle.italic)),
@@ -90,11 +96,10 @@ class PdfHelper {
         expenseCount++;
       }
     }
-    
+
     final netProfit = totalBusinessIncome - totalBusinessExpenses;
-    final profitMargin = totalBusinessIncome > 0 
-        ? (netProfit / totalBusinessIncome * 100) 
-        : 0.0;
+    final profitMargin =
+        totalBusinessIncome > 0 ? (netProfit / totalBusinessIncome * 100) : 0.0;
 
     return pw.Container(
       padding: const pw.EdgeInsets.all(16),
@@ -106,7 +111,8 @@ class PdfHelper {
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.Text('Business Overview',
-              style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+              style:
+                  pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
           pw.SizedBox(height: 12),
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -114,15 +120,21 @@ class PdfHelper {
               pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.Text('Total Income Transactions:', style: const pw.TextStyle(fontSize: 11)),
-                  pw.Text('$incomeCount', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                  pw.Text('Total Income Transactions:',
+                      style: const pw.TextStyle(fontSize: 11)),
+                  pw.Text('$incomeCount',
+                      style: pw.TextStyle(
+                          fontSize: 14, fontWeight: pw.FontWeight.bold)),
                 ],
               ),
               pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.Text('Total Expense Transactions:', style: const pw.TextStyle(fontSize: 11)),
-                  pw.Text('$expenseCount', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                  pw.Text('Total Expense Transactions:',
+                      style: const pw.TextStyle(fontSize: 11)),
+                  pw.Text('$expenseCount',
+                      style: pw.TextStyle(
+                          fontSize: 14, fontWeight: pw.FontWeight.bold)),
                 ],
               ),
             ],
@@ -136,20 +148,27 @@ class PdfHelper {
               pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.Text('Gross Revenue:', style: const pw.TextStyle(fontSize: 12)),
+                  pw.Text('Gross Revenue:',
+                      style: const pw.TextStyle(fontSize: 12)),
                   pw.Text('KSh ${totalBusinessIncome.toStringAsFixed(2)}',
-                      style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.green)),
+                      style: pw.TextStyle(
+                          fontSize: 16,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.green)),
                 ],
               ),
               pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.end,
                 children: [
-                  pw.Text('Net Profit Margin:', style: const pw.TextStyle(fontSize: 12)),
+                  pw.Text('Net Profit Margin:',
+                      style: const pw.TextStyle(fontSize: 12)),
                   pw.Text('${profitMargin.toStringAsFixed(1)}%',
                       style: pw.TextStyle(
                           fontSize: 16,
                           fontWeight: pw.FontWeight.bold,
-                          color: profitMargin >= 0 ? PdfColors.green : PdfColors.red)),
+                          color: profitMargin >= 0
+                              ? PdfColors.green
+                              : PdfColors.red)),
                 ],
               ),
             ],
@@ -174,9 +193,11 @@ class PdfHelper {
       data: sortedTransactions.map((transaction) {
         final date = DateTime.parse(transaction.date);
         // Remove MPESA transaction IDs from description (format: (XXXXXXXXXX))
-        String cleanDescription = transaction.description.isEmpty 
-            ? '-' 
-            : transaction.description.replaceAll(RegExp(r'\([A-Z0-9]{10}\)'), '').trim();
+        String cleanDescription = transaction.description.isEmpty
+            ? '-'
+            : transaction.description
+                .replaceAll(RegExp(r'\([A-Z0-9]{10}\)'), '')
+                .trim();
         if (cleanDescription.isEmpty) cleanDescription = '-';
         return [
           DateFormat('MMM dd, yyyy').format(date),
@@ -206,9 +227,8 @@ class PdfHelper {
       }
     }
     final netProfit = totalIncome - totalExpenses;
-    final profitMargin = totalIncome > 0 
-        ? (netProfit / totalIncome * 100) 
-        : 0.0;
+    final profitMargin =
+        totalIncome > 0 ? (netProfit / totalIncome * 100) : 0.0;
 
     return pw.Container(
       padding: const pw.EdgeInsets.all(16),
@@ -220,7 +240,8 @@ class PdfHelper {
         crossAxisAlignment: pw.CrossAxisAlignment.end,
         children: [
           pw.Text('BUSINESS FINANCIAL SUMMARY',
-              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+              style:
+                  pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
           pw.SizedBox(height: 12),
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -271,7 +292,8 @@ class PdfHelper {
                   style: pw.TextStyle(
                       fontSize: 14,
                       fontWeight: pw.FontWeight.bold,
-                      color: profitMargin >= 0 ? PdfColors.green : PdfColors.red)),
+                      color:
+                          profitMargin >= 0 ? PdfColors.green : PdfColors.red)),
             ],
           ),
         ],

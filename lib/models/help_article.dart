@@ -21,4 +21,3 @@ class HelpArticle {
     this.tips,
   });
 }
-

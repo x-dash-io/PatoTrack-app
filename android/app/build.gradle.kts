@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.ledgerlite"
+    namespace = "com.patotrack.app"
     compileSdk = 36
 
     compileOptions {
@@ -27,7 +27,7 @@ android {
     }
     
     defaultConfig {
-        applicationId = "com.example.ledgerlite"
+        applicationId = "com.patotrack.app"
         minSdk = flutter.minSdkVersion
         targetSdk = 34
         versionCode = 1

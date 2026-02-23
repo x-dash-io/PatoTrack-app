@@ -24,7 +24,8 @@ class SmsService {
         final transactionCode = _getTransactionCode(message.body!);
         if (transactionCode == null) continue;
 
-        final isDuplicate = existingTransactions.any((t) => t.description.contains(transactionCode));
+        final isDuplicate = existingTransactions
+            .any((t) => t.description.contains(transactionCode));
         if (isDuplicate) continue;
 
         // Pass the message date to the parsing function
@@ -39,7 +40,8 @@ class SmsService {
     return match?.group(1);
   }
 
-  Future<void> _parseAndSave(SmsMessage message, String transactionCode, String userId) async {
+  Future<void> _parseAndSave(
+      SmsMessage message, String transactionCode, String userId) async {
     final String body = message.body!;
     String description = '';
     double? amount;
@@ -54,9 +56,11 @@ class SmsService {
     }
 
     final paidToRegex = RegExp(r"paid to (.+?)\.");
-    final receivedFromRegex = RegExp(r"received Ksh[\d,]+\.\d{2} from (.+?) on");
+    final receivedFromRegex =
+        RegExp(r"received Ksh[\d,]+\.\d{2} from (.+?) on");
     final sentToRegex = RegExp(r"sent to (.+?) on");
-    final boughtAirtimeRegex = RegExp(r"You bought Ksh[\d,]+\.\d{2} of airtime for number (\d+)");
+    final boughtAirtimeRegex =
+        RegExp(r"You bought Ksh[\d,]+\.\d{2} of airtime for number (\d+)");
     final payBillRegex = RegExp(r"sent to (.+?) for account");
 
     if (payBillRegex.hasMatch(body)) {
@@ -68,11 +72,13 @@ class SmsService {
       description = 'Paid to $recipient';
       transactionType = 'expense';
     } else if (receivedFromRegex.hasMatch(body)) {
-      final sender = receivedFromRegex.firstMatch(body)!.group(1)!.trim().split(' ').first;
+      final sender =
+          receivedFromRegex.firstMatch(body)!.group(1)!.trim().split(' ').first;
       description = 'Received from $sender';
       transactionType = 'income';
     } else if (sentToRegex.hasMatch(body)) {
-      final recipient = sentToRegex.firstMatch(body)!.group(1)!.trim().split(' ').first;
+      final recipient =
+          sentToRegex.firstMatch(body)!.group(1)!.trim().split(' ').first;
       description = 'Sent to $recipient';
       transactionType = 'expense';
     } else if (boughtAirtimeRegex.hasMatch(body)) {
@@ -82,7 +88,7 @@ class SmsService {
     } else {
       description = 'M-Pesa Transaction';
     }
-    
+
     description += ' ($transactionCode)';
 
     final newTransaction = model.Transaction(

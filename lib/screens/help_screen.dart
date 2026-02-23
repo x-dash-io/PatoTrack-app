@@ -16,7 +16,7 @@ class HelpScreen extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -80,101 +80,101 @@ class HelpScreen extends StatelessWidget {
 
               const SizedBox(height: 32),
 
-            // FAQ Section
-            _HelpSection(
-              title: 'Frequently Asked Questions',
-              description: 'Find answers to common questions',
-              icon: Icons.question_answer_outlined,
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => const FaqScreen()),
-                );
-              },
-            ),
-
-            const SizedBox(height: 16),
-
-            // Contact Support
-            _HelpSection(
-              title: 'Contact Support',
-              description: 'Get help via WhatsApp',
-              icon: Icons.chat_outlined,
-              onTap: () => _launchWhatsApp(context),
-            ),
-
-            const SizedBox(height: 8),
-
-            // Quick Start Guide
-            _HelpSection(
-              title: 'Quick Start Guide',
-              description: 'Learn how to get started with PatoTrack',
-              icon: Icons.menu_book_rounded,
-              onTap: () => _showQuickStartGuide(context),
-            ),
-
-            const SizedBox(height: 32),
-
-            // Help Articles
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      Icons.article_rounded,
-                      size: 20,
-                      color: colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Help Articles',
-                    style: GoogleFonts.inter(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            ..._getHelpArticles().map((article) {
-              return _HelpArticleCard(
-                article: article,
+              // FAQ Section
+              _HelpSection(
+                title: 'Frequently Asked Questions',
+                description: 'Find answers to common questions',
+                icon: Icons.question_answer_outlined,
                 onTap: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => HelpArticleDetailScreen(
-                        article: article,
-                      ),
-                    ),
+                    MaterialPageRoute(builder: (context) => const FaqScreen()),
                   );
                 },
-              );
-            }),
+              ),
 
-            const SizedBox(height: 32),
+              const SizedBox(height: 16),
 
-            // App Version Info
-            Center(
-              child: Text(
-                'PatoTrack v1.0.0',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  color: colorScheme.onSurfaceVariant,
+              // Contact Support
+              _HelpSection(
+                title: 'Contact Support',
+                description: 'Get help via WhatsApp',
+                icon: Icons.chat_outlined,
+                onTap: () => _launchWhatsApp(context),
+              ),
+
+              const SizedBox(height: 8),
+
+              // Quick Start Guide
+              _HelpSection(
+                title: 'Quick Start Guide',
+                description: 'Learn how to get started with PatoTrack',
+                icon: Icons.menu_book_rounded,
+                onTap: () => _showQuickStartGuide(context),
+              ),
+
+              const SizedBox(height: 32),
+
+              // Help Articles
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.article_rounded,
+                        size: 20,
+                        color: colorScheme.onPrimaryContainer,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Help Articles',
+                      style: GoogleFonts.inter(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
 
-            const SizedBox(height: 16),
-          ],
+              ..._getHelpArticles().map((article) {
+                return _HelpArticleCard(
+                  article: article,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => HelpArticleDetailScreen(
+                          article: article,
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }),
+
+              const SizedBox(height: 32),
+
+              // App Version Info
+              Center(
+                child: Text(
+                  'PatoTrack v1.0.0',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -356,12 +356,16 @@ class HelpScreen extends StatelessWidget {
                 height: 4,
                 margin: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.4),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant
+                      .withOpacity(0.4),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [

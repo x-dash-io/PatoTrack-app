@@ -64,7 +64,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
       // Update the user's display name
       try {
-        await userCredential.user?.updateDisplayName(_nameController.text.trim());
+        await userCredential.user
+            ?.updateDisplayName(_nameController.text.trim());
       } catch (e) {
         print('Warning: Failed to update display name: $e');
         // Continue even if display name update fails
@@ -92,23 +93,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
       // Ensure the auth state change has been processed
       // Wait for the stream to emit and AuthGate to rebuild
       await Future.delayed(const Duration(milliseconds: 500));
-      
+
       // Double-check that user is still authenticated after the delay
       final verifyUser = FirebaseAuth.instance.currentUser;
       if (verifyUser == null) {
         throw Exception('Authentication state lost');
       }
-      
+
       // Clear loading state first
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
-        
+
         // Show success feedback
-        final theme = Theme.of(context);
-        NotificationHelper.showSuccess(context, message: "Account Created Successfully!");
-        
+        NotificationHelper.showSuccess(context,
+            message: "Account Created Successfully!");
+
         // Pop SignUpScreen to return to AuthGate
         // AuthGate's StreamBuilder will automatically detect the auth state change
         // via authStateChanges() stream and rebuild to show MainScreen or PasscodeScreen
@@ -120,16 +121,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
         setState(() {
           _isLoading = false;
         });
-        final theme = Theme.of(context);
-        NotificationHelper.showError(context, message: e.message ?? 'Sign up failed. Please try again.');
+        NotificationHelper.showError(context,
+            message: e.message ?? 'Sign up failed. Please try again.');
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
-        final theme = Theme.of(context);
-        NotificationHelper.showError(context, message: 'Error: ${e.toString().replaceAll('Exception: ', '')}');
+        NotificationHelper.showError(context,
+            message: 'Error: ${e.toString().replaceAll('Exception: ', '')}');
       }
     }
   }
@@ -141,7 +142,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     try {
       final userCredential = await GoogleSignInService.signInWithGoogle();
-      
+
       if (userCredential != null && userCredential.user != null && mounted) {
         // Verify user is authenticated
         final currentUser = FirebaseAuth.instance.currentUser;
@@ -158,27 +159,27 @@ class _SignUpScreenState extends State<SignUpScreen> {
             print('Warning: Failed to reload user data: $e');
             // Continue even if reload fails
           }
-          
+
           // Ensure the auth state change has been processed
           // Wait for the stream to emit and AuthGate to rebuild
           await Future.delayed(const Duration(milliseconds: 500));
-          
+
           // Double-check that user is still authenticated after the delay
           final verifyUser = FirebaseAuth.instance.currentUser;
           if (verifyUser == null) {
             throw Exception('Authentication state lost');
           }
-          
+
           // Clear loading state first
           if (mounted) {
             setState(() {
               _isLoading = false;
             });
-            
+
             // Show success message
-            final theme = Theme.of(context);
-            NotificationHelper.showSuccess(context, message: 'Account created with Google successfully!');
-            
+            NotificationHelper.showSuccess(context,
+                message: 'Account created with Google successfully!');
+
             // Pop SignUpScreen to return to AuthGate
             // AuthGate's StreamBuilder will automatically detect the auth state change
             // via authStateChanges() stream and rebuild to show MainScreen or PasscodeScreen
@@ -191,8 +192,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
             setState(() {
               _isLoading = false;
             });
-            final theme = Theme.of(context);
-            NotificationHelper.showError(context, message: 'Authentication failed. Please try again.');
+            NotificationHelper.showError(context,
+                message: 'Authentication failed. Please try again.');
           }
         }
       } else {
@@ -209,8 +210,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
         setState(() {
           _isLoading = false;
         });
-        final theme = Theme.of(context);
-        NotificationHelper.showError(context, message: e.toString().replaceAll('Exception: ', ''));
+        NotificationHelper.showError(context,
+            message: e.toString().replaceAll('Exception: ', ''));
       }
     }
   }
@@ -238,7 +239,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
             isLoading: _isLoading,
             message: 'Creating account...',
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16),
               child: Form(
                 key: _formKey,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -388,7 +390,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             FilledButton(
                               onPressed: _isLoading ? null : _signUp,
                               style: FilledButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
                                 ),
@@ -399,7 +402,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                       width: 20,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
                                           colorScheme.onPrimary,
                                         ),
                                       ),
@@ -418,9 +422,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             // Divider with "OR"
                             Row(
                               children: [
-                                Expanded(child: Divider(color: colorScheme.outline)),
+                                Expanded(
+                                    child: Divider(color: colorScheme.outline)),
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16),
                                   child: Text(
                                     'OR',
                                     style: GoogleFonts.inter(
@@ -430,7 +436,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                     ),
                                   ),
                                 ),
-                                Expanded(child: Divider(color: colorScheme.outline)),
+                                Expanded(
+                                    child: Divider(color: colorScheme.outline)),
                               ],
                             ),
 
@@ -440,7 +447,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             OutlinedButton.icon(
                               onPressed: _isLoading ? null : _signUpWithGoogle,
                               style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
                                 ),
@@ -455,7 +463,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 width: 20,
                                 errorBuilder: (context, error, stackTrace) {
                                   // Fallback if Google logo asset doesn't exist
-                                  return const Icon(Icons.g_mobiledata, size: 24);
+                                  return const Icon(Icons.g_mobiledata,
+                                      size: 24);
                                 },
                               ),
                               label: Text(
@@ -512,5 +521,4 @@ class _SignUpScreenState extends State<SignUpScreen> {
       ),
     );
   }
-
 }

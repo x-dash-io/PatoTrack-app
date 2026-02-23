@@ -20,8 +20,7 @@ class Shimmer extends StatefulWidget {
   State<Shimmer> createState() => _ShimmerState();
 }
 
-class _ShimmerState extends State<Shimmer>
-    with SingleTickerProviderStateMixin {
+class _ShimmerState extends State<Shimmer> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override
@@ -202,8 +201,8 @@ class ModernLoadingIndicator extends StatelessWidget {
           Text(
             message!,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontSize: 14,
-            ),
+                  fontSize: 14,
+                ),
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -243,7 +242,8 @@ class LoadingOverlay extends StatelessWidget {
                   maxWidth: 200,
                   maxHeight: 120,
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
@@ -575,5 +575,3 @@ class TransactionDetailShimmer extends StatelessWidget {
     );
   }
 }
-
-

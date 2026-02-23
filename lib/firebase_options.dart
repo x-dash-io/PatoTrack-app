@@ -50,29 +50,29 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBP2ZFBwBAJtv41-ifTZ34icb5G9jJrXws',
-    appId: '1:142893563437:android:e66ffed3510e91cc1cc2a4',
-    messagingSenderId: '142893563437',
-    projectId: 'ledgerlite-app',
-    storageBucket: 'ledgerlite-app.firebasestorage.app',
+    apiKey: 'AIzaSyAyTw1WzZgJ9rxHYjtsJAbKcnT0zofgRaY',
+    appId: '1:474420702424:android:4d3ed2ba7220beee0ebbad',
+    messagingSenderId: '474420702424',
+    projectId: 'patotrack',
+    storageBucket: 'patotrack.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyA64Z6QAEQjeuOSnkEGhsTn-zEKIqEW5Ww',
-    appId: '1:142893563437:ios:c256c80ab3e5b3c51cc2a4',
-    messagingSenderId: '142893563437',
-    projectId: 'ledgerlite-app',
-    storageBucket: 'ledgerlite-app.firebasestorage.app',
-    iosBundleId: 'com.example.ledgerlite',
+    apiKey: 'AIzaSyDEo4DiwXoxcnCz6EVRTAqa-AKagGbGIKM',
+    appId: '1:474420702424:ios:49b415f43a174f6b0ebbad',
+    messagingSenderId: '474420702424',
+    projectId: 'patotrack',
+    storageBucket: 'patotrack.firebasestorage.app',
+    iosBundleId: 'com.patotrack.app',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyA64Z6QAEQjeuOSnkEGhsTn-zEKIqEW5Ww',
-    appId: '1:142893563437:ios:c256c80ab3e5b3c51cc2a4',
-    messagingSenderId: '142893563437',
-    projectId: 'ledgerlite-app',
-    storageBucket: 'ledgerlite-app.firebasestorage.app',
-    iosBundleId: 'com.example.ledgerlite',
+    apiKey: 'AIzaSyDEo4DiwXoxcnCz6EVRTAqa-AKagGbGIKM',
+    appId: '1:474420702424:ios:49b415f43a174f6b0ebbad',
+    messagingSenderId: '474420702424',
+    projectId: 'patotrack',
+    storageBucket: 'patotrack.firebasestorage.app',
+    iosBundleId: 'com.patotrack.app',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(

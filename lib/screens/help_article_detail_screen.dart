@@ -276,4 +276,3 @@ class HelpArticleDetailScreen extends StatelessWidget {
     );
   }
 }
-

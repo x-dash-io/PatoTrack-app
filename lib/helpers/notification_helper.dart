@@ -11,8 +11,6 @@ class NotificationHelper {
     required String message,
     Duration duration = const Duration(seconds: 3),
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -38,7 +36,8 @@ class NotificationHelper {
         backgroundColor: Colors.green,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
+          borderRadius:
+              BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
         ),
         margin: ResponsiveHelper.edgeInsets(context, 16, 16, 16, 16),
         duration: duration,
@@ -52,8 +51,6 @@ class NotificationHelper {
     required String message,
     Duration duration = const Duration(seconds: 4),
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -79,7 +76,8 @@ class NotificationHelper {
         backgroundColor: Colors.red,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
+          borderRadius:
+              BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
         ),
         margin: ResponsiveHelper.edgeInsets(context, 16, 16, 16, 16),
         duration: duration,
@@ -94,7 +92,7 @@ class NotificationHelper {
     Duration duration = const Duration(seconds: 3),
   }) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -120,7 +118,8 @@ class NotificationHelper {
         backgroundColor: colorScheme.primary,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
+          borderRadius:
+              BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
         ),
         margin: ResponsiveHelper.edgeInsets(context, 16, 16, 16, 16),
         duration: duration,
@@ -134,8 +133,6 @@ class NotificationHelper {
     required String message,
     Duration duration = const Duration(seconds: 3),
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -161,7 +158,8 @@ class NotificationHelper {
         backgroundColor: Colors.orange,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
+          borderRadius:
+              BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
         ),
         margin: ResponsiveHelper.edgeInsets(context, 16, 16, 16, 16),
         duration: duration,
@@ -202,7 +200,8 @@ class NotificationHelper {
         backgroundColor: backgroundColor,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
+          borderRadius:
+              BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
         ),
         margin: ResponsiveHelper.edgeInsets(context, 16, 16, 16, 16),
         duration: duration,
@@ -210,4 +209,3 @@ class NotificationHelper {
     );
   }
 }
-

@@ -103,7 +103,7 @@ class _FaqScreenState extends State<FaqScreen> {
       category: 'Troubleshooting',
       question: 'I forgot my passcode',
       answer:
-          'Unfortunately, passcodes cannot be recovered for security reasons. You\'ll need to sign out and sign back in, which will reset the passcode. You can then set a new one in Settings.',
+          'Passcodes cannot be recovered for security reasons. If you forget it, clear the app data (or reinstall the app), then sign in again and set a new passcode. Make sure your data is backed up before clearing local data.',
     ),
   ];
 
@@ -150,7 +150,7 @@ class _FaqScreenState extends State<FaqScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final categories = _allFAQs.map((e) => e.category).toSet().toList();
-    
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -188,18 +188,26 @@ class _FaqScreenState extends State<FaqScreen> {
                   decoration: InputDecoration(
                     hintText: 'Search FAQ...',
                     hintStyle: GoogleFonts.inter(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurfaceVariant
+                          .withOpacity(0.6),
                     ),
                     prefixIcon: Icon(
                       Icons.search_rounded,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurfaceVariant
+                          .withOpacity(0.6),
                       size: 24,
                     ),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
                             icon: Icon(
                               Icons.clear_rounded,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
                             ),
                             onPressed: () {
                               _searchController.clear();
@@ -272,13 +280,18 @@ class _FaqScreenState extends State<FaqScreen> {
                             Container(
                               padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest,
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
                                 Icons.search_off_rounded,
                                 size: 48,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.4),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant
+                                    .withOpacity(0.4),
                               ),
                             ),
                             const SizedBox(height: 24),
@@ -287,7 +300,9 @@ class _FaqScreenState extends State<FaqScreen> {
                               style: GoogleFonts.inter(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w600,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -295,7 +310,10 @@ class _FaqScreenState extends State<FaqScreen> {
                               'Try a different search term',
                               style: GoogleFonts.inter(
                                 fontSize: 14,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant
+                                    .withOpacity(0.7),
                               ),
                             ),
                           ],
@@ -303,7 +321,8 @@ class _FaqScreenState extends State<FaqScreen> {
                       ),
                     )
                   : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 8),
                       itemCount: _filteredFAQs.length,
                       itemBuilder: (context, index) {
                         final faq = _filteredFAQs[index];
@@ -344,8 +363,6 @@ class _FAQCardState extends State<_FAQCard> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -393,7 +410,9 @@ class _FAQCardState extends State<_FAQCard> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
-                      _isExpanded ? Icons.help_rounded : Icons.help_outline_rounded,
+                      _isExpanded
+                          ? Icons.help_rounded
+                          : Icons.help_outline_rounded,
                       size: 22,
                       color: colorScheme.primary,
                     ),
@@ -408,12 +427,16 @@ class _FAQCardState extends State<_FAQCard> {
                         color: colorScheme.onSurface,
                       ),
                       maxLines: _isExpanded ? null : 2,
-                      overflow: _isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                      overflow: _isExpanded
+                          ? TextOverflow.visible
+                          : TextOverflow.ellipsis,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Icon(
-                    _isExpanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+                    _isExpanded
+                        ? Icons.expand_less_rounded
+                        : Icons.expand_more_rounded,
                     size: 28,
                     color: colorScheme.primary,
                   ),
@@ -428,7 +451,8 @@ class _FAQCardState extends State<_FAQCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
@@ -506,8 +530,8 @@ class _CategoryChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-            ? Theme.of(context).colorScheme.primary
-            : Theme.of(context).colorScheme.surfaceContainerHighest,
+              ? Theme.of(context).colorScheme.primary
+              : Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
@@ -528,5 +552,3 @@ class _CategoryChip extends StatelessWidget {
     );
   }
 }
-
-

@@ -16,6 +16,8 @@ Future<DateTime?> showModernDatePicker({
 }) async {
   firstDate ??= DateTime(2020);
   lastDate ??= DateTime(2030);
+  final effectiveFirstDate = firstDate;
+  final effectiveLastDate = lastDate;
 
   DateTime selectedDate = initialDate;
 
@@ -24,8 +26,8 @@ Future<DateTime?> showModernDatePicker({
     height: showPresets ? 450 : 400,
     child: _ModernDatePickerBottomSheet(
       initialDate: initialDate,
-      firstDate: firstDate!,
-      lastDate: lastDate!,
+      firstDate: effectiveFirstDate,
+      lastDate: effectiveLastDate,
       title: title ?? 'Select Date',
       showPresets: showPresets,
       onDateSelected: (date) {
@@ -48,10 +50,13 @@ Future<DateTimeRange?> showModernDateRangePicker({
 }) async {
   firstDate ??= DateTime(2020);
   lastDate ??= DateTime(2030);
-  final effectiveInitialRange = initialDateRange ?? DateTimeRange(
-    start: DateTime.now().subtract(const Duration(days: 7)),
-    end: DateTime.now(),
-  );
+  final effectiveFirstDate = firstDate;
+  final effectiveLastDate = lastDate;
+  final effectiveInitialRange = initialDateRange ??
+      DateTimeRange(
+        start: DateTime.now().subtract(const Duration(days: 7)),
+        end: DateTime.now(),
+      );
 
   DateTime startDate = effectiveInitialRange.start;
   DateTime endDate = effectiveInitialRange.end;
@@ -61,8 +66,8 @@ Future<DateTimeRange?> showModernDateRangePicker({
     height: 500,
     child: _ModernDateRangePickerBottomSheet(
       initialRange: effectiveInitialRange,
-      firstDate: firstDate!,
-      lastDate: lastDate!,
+      firstDate: effectiveFirstDate,
+      lastDate: effectiveLastDate,
       title: title ?? 'Select Date Range',
       onRangeSelected: (start, end) {
         startDate = start;
@@ -276,9 +281,7 @@ class _PresetButton extends StatelessWidget {
         child: Text(
           label,
           style: GoogleFonts.inter(
-            color: isSelected
-                ? colorScheme.onPrimary
-                : colorScheme.onSurface,
+            color: isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
             fontSize: 14,
           ),

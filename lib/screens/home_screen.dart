@@ -55,31 +55,21 @@ class _HomeScreenState extends State<HomeScreen> {
     await _requestSmsPermission();
     if (!mounted) return;
     if (_currentUser != null) {
-      // Restore bills and other data from Firestore first
-      // This ensures we have the latest data from the cloud
-      try {
-        print('Starting Firestore restore for user: ${_currentUser!.uid}');
-        await dbHelper.restoreFromFirestore(_currentUser!.uid);
-        print('Firestore restore completed successfully');
-      } catch (e) {
-        print('Error restoring from Firestore: $e');
-        // Continue even if restore fails - we'll still load local data
-      }
-      
-      // Sync M-Pesa messages to add any new transactions
+      // Sync M-Pesa messages to add any new transactions.
       try {
         print('Starting M-Pesa message sync...');
-        await _smsService.syncMpesaMessages(_currentUser!.uid);
+        await _smsService.syncMpesaMessages(_currentUser.uid);
         print('M-Pesa message sync completed');
       } catch (e) {
         print('Error syncing M-Pesa messages: $e');
         // Continue even if sync fails
       }
-      
+
       // Finally, refresh the UI with all data (Firestore + local)
       if (mounted) {
         await _refreshData();
-        print('Data refresh completed. Transactions: ${_transactions.length}, Income: $_totalIncome, Expenses: $_totalExpenses');
+        print(
+            'Data refresh completed. Transactions: ${_transactions.length}, Income: $_totalIncome, Expenses: $_totalExpenses');
       }
     } else {
       if (mounted) {
@@ -94,14 +84,14 @@ class _HomeScreenState extends State<HomeScreen> {
       await Permission.sms.request();
     }
   }
-  
+
   String _getGreeting() {
     final hour = DateTime.now().hour;
     if (hour < 12) return 'Good Morning';
     if (hour < 17) return 'Good Afternoon';
     return 'Good Evening';
   }
-  
+
   Future<void> _refreshData() async {
     if (!mounted) return;
     if (_currentUser == null) {
@@ -109,12 +99,12 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
     if (mounted) setState(() => _isLoading = true);
-    
+
     try {
       await Future.wait([
         _loadCurrencyPreference(),
-        _loadBills(_currentUser!.uid),
-        _loadTransactions(_currentUser!.uid),
+        _loadBills(_currentUser.uid),
+        _loadTransactions(_currentUser.uid),
       ]);
     } catch (e) {
       print("Error refreshing data: $e");
@@ -126,7 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
   }
-  
+
   Future<void> _loadCurrencyPreference() async {
     final prefs = await SharedPreferences.getInstance();
     if (mounted) {
@@ -137,14 +127,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _calculateSummary(List<model.Transaction> transactions) {
-    _totalIncome = transactions.where((t) => t.type == 'income').fold(0.0, (sum, t) => sum + t.amount);
-    _totalExpenses = transactions.where((t) => t.type == 'expense').fold(0.0, (sum, t) => sum + t.amount);
+    _totalIncome = transactions
+        .where((t) => t.type == 'income')
+        .fold(0.0, (sum, t) => sum + t.amount);
+    _totalExpenses = transactions
+        .where((t) => t.type == 'expense')
+        .fold(0.0, (sum, t) => sum + t.amount);
     _balance = _totalIncome - _totalExpenses;
   }
 
   Future<void> _loadTransactions(String userId) async {
     final allTransactions = await dbHelper.getTransactions(userId);
-    if(mounted) {
+    if (mounted) {
       _calculateSummary(allTransactions);
       setState(() {
         _transactions = allTransactions;
@@ -163,22 +157,31 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _deleteTransaction(int id, String userId) async {
     await dbHelper.deleteTransaction(id, userId);
-    if(mounted){
+    if (mounted) {
       NotificationHelper.showSuccess(context, message: 'Transaction Deleted');
     }
     _refreshData();
   }
-  
+
   ({IconData icon, Color color}) _getBillStyling(String billName) {
     final name = billName.toLowerCase();
     final colorScheme = Theme.of(context).colorScheme;
-    if (name.contains('rent')) return (icon: Icons.home_outlined, color: Colors.orange);
-    if (name.contains('netflix') || name.contains('movie')) return (icon: Icons.movie_outlined, color: Colors.red);
-    if (name.contains('wifi') || name.contains('internet')) return (icon: Icons.wifi_outlined, color: Colors.blue);
-    if (name.contains('electricity') || name.contains('power')) return (icon: Icons.lightbulb_outline, color: Colors.amber);
-    if (name.contains('water')) return (icon: Icons.water_drop_outlined, color: Colors.lightBlue);
-    if (name.contains('loan') || name.contains('debt')) return (icon: Icons.credit_card_outlined, color: Colors.purple);
-    return (icon: Icons.receipt_long_outlined, color: colorScheme.onSurfaceVariant);
+    if (name.contains('rent'))
+      return (icon: Icons.home_outlined, color: Colors.orange);
+    if (name.contains('netflix') || name.contains('movie'))
+      return (icon: Icons.movie_outlined, color: Colors.red);
+    if (name.contains('wifi') || name.contains('internet'))
+      return (icon: Icons.wifi_outlined, color: Colors.blue);
+    if (name.contains('electricity') || name.contains('power'))
+      return (icon: Icons.lightbulb_outline, color: Colors.amber);
+    if (name.contains('water'))
+      return (icon: Icons.water_drop_outlined, color: Colors.lightBlue);
+    if (name.contains('loan') || name.contains('debt'))
+      return (icon: Icons.credit_card_outlined, color: Colors.purple);
+    return (
+      icon: Icons.receipt_long_outlined,
+      color: colorScheme.onSurfaceVariant
+    );
   }
 
   ({String text, Color color}) _getBillStatus(DateTime dueDate) {
@@ -198,12 +201,12 @@ class _HomeScreenState extends State<HomeScreen> {
       return (text: '$daysLeft days left', color: colorScheme.onSurfaceVariant);
     }
   }
-  
+
   void _showBillOptions(BuildContext context, Bill bill, User? currentUser) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final parentContext = context; // Store parent context
-    
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -220,12 +223,14 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               // Handle bar
               Container(
-                margin: EdgeInsets.only(top: ResponsiveHelper.spacing(context, 12)),
+                margin:
+                    EdgeInsets.only(top: ResponsiveHelper.spacing(context, 12)),
                 width: ResponsiveHelper.width(context, 40),
                 height: 4,
                 decoration: BoxDecoration(
                   color: colorScheme.onSurfaceVariant.withOpacity(0.4),
-                  borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 2)),
+                  borderRadius: BorderRadius.circular(
+                      ResponsiveHelper.radius(context, 2)),
                 ),
               ),
               SizedBox(height: ResponsiveHelper.spacing(context, 20)),
@@ -238,7 +243,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       padding: ResponsiveHelper.edgeInsetsAll(context, 12),
                       decoration: BoxDecoration(
                         color: colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
+                        borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.radius(context, 12)),
                       ),
                       child: Icon(
                         Icons.receipt_long_rounded,
@@ -258,7 +264,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          SizedBox(height: ResponsiveHelper.spacing(context, 4)),
+                          SizedBox(
+                              height: ResponsiveHelper.spacing(context, 4)),
                           Text(
                             '$_currencySymbol${bill.amount.toStringAsFixed(0)}',
                             style: GoogleFonts.inter(
@@ -280,7 +287,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   padding: ResponsiveHelper.edgeInsetsAll(context, 10),
                   decoration: BoxDecoration(
                     color: colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 10)),
+                    borderRadius: BorderRadius.circular(
+                        ResponsiveHelper.radius(context, 10)),
                   ),
                   child: Icon(
                     Icons.edit_rounded,
@@ -315,7 +323,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   padding: ResponsiveHelper.edgeInsetsAll(context, 10),
                   decoration: BoxDecoration(
                     color: Colors.red.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 10)),
+                    borderRadius: BorderRadius.circular(
+                        ResponsiveHelper.radius(context, 10)),
                   ),
                   child: Icon(
                     Icons.delete_outline_rounded,
@@ -333,12 +342,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 onTap: () async {
                   Navigator.pop(bottomSheetContext);
-                  
+
                   // Wait a bit for bottom sheet to close
                   await Future.delayed(const Duration(milliseconds: 200));
-                  
+
                   if (!parentContext.mounted) return;
-                  
+
                   final confirm = await showModernConfirmDialog(
                     context: parentContext,
                     title: 'Delete Bill',
@@ -347,10 +356,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     cancelText: 'Cancel',
                     isDestructive: true,
                   );
-                  
+
                   if (confirm == true && currentUser != null) {
                     if (!parentContext.mounted) return;
-                    
+
                     // Show loading dialog
                     showDialog(
                       context: parentContext,
@@ -360,10 +369,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Dialog(
                           backgroundColor: Colors.transparent,
                           child: Container(
-                            padding: ResponsiveHelper.edgeInsetsAll(parentContext, 24),
+                            padding: ResponsiveHelper.edgeInsetsAll(
+                                parentContext, 24),
                             decoration: BoxDecoration(
                               color: colorScheme.surface,
-                              borderRadius: BorderRadius.circular(ResponsiveHelper.radius(parentContext, 20)),
+                              borderRadius: BorderRadius.circular(
+                                  ResponsiveHelper.radius(parentContext, 20)),
                             ),
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
@@ -378,29 +389,33 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     );
-                    
+
                     try {
                       // Delete from database
-                      final result = await dbHelper.deleteBill(bill.id!, currentUser.uid);
-                      
+                      final result =
+                          await dbHelper.deleteBill(bill.id!, currentUser.uid);
+
                       if (result > 0) {
                         // Cancel notification if it exists
                         try {
                           final notificationService = NotificationService();
-                          await notificationService.cancelNotification(bill.id!);
+                          await notificationService
+                              .cancelNotification(bill.id!);
                         } catch (e) {
                           print('Error canceling notification: $e');
                         }
-                        
+
                         if (parentContext.mounted) {
                           // Close loading dialog
                           Navigator.of(parentContext).pop();
-                          
+
                           // Refresh data
                           _refreshData();
-                          
+
                           // Show success message
-                          NotificationHelper.showSuccess(parentContext, message: 'Bill "${bill.name}" deleted successfully');
+                          NotificationHelper.showSuccess(parentContext,
+                              message:
+                                  'Bill "${bill.name}" deleted successfully');
                         }
                       } else {
                         throw Exception('Bill not found or already deleted');
@@ -409,9 +424,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       if (parentContext.mounted) {
                         // Close loading dialog
                         Navigator.of(parentContext).pop();
-                        
+
                         // Show error message
-                        NotificationHelper.showError(parentContext, message: 'Error deleting bill: ${e.toString()}');
+                        NotificationHelper.showError(parentContext,
+                            message: 'Error deleting bill: ${e.toString()}');
                       }
                     }
                   }
@@ -426,12 +442,47 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   DateTime _calculateNextDueDate(Bill bill) {
-    if (bill.recurrenceType == 'monthly') {
-      return DateTime(bill.dueDate.year, bill.dueDate.month + 1, bill.dueDate.day);
-    } else if (bill.recurrenceType == 'weekly') {
-      return bill.dueDate.add(const Duration(days: 7));
+    switch (bill.recurrenceType) {
+      case 'weekly':
+        return bill.dueDate.add(const Duration(days: 7));
+      case 'biweekly':
+        return bill.dueDate.add(const Duration(days: 14));
+      case 'monthly':
+        return _addMonthsPreservingDay(bill.dueDate, 1);
+      case 'quarterly':
+        return _addMonthsPreservingDay(bill.dueDate, 3);
+      case 'yearly':
+        return _addMonthsPreservingDay(bill.dueDate, 12);
+      default:
+        return bill.dueDate;
     }
-    return bill.dueDate;
+  }
+
+  DateTime _addMonthsPreservingDay(DateTime source, int monthsToAdd) {
+    final targetMonthBase = DateTime(
+      source.year,
+      source.month + monthsToAdd,
+      1,
+      source.hour,
+      source.minute,
+      source.second,
+      source.millisecond,
+      source.microsecond,
+    );
+    final lastDayOfTargetMonth =
+        DateTime(targetMonthBase.year, targetMonthBase.month + 1, 0).day;
+    final clampedDay =
+        source.day > lastDayOfTargetMonth ? lastDayOfTargetMonth : source.day;
+    return DateTime(
+      targetMonthBase.year,
+      targetMonthBase.month,
+      clampedDay,
+      source.hour,
+      source.minute,
+      source.second,
+      source.millisecond,
+      source.microsecond,
+    );
   }
 
   IconData _getStatusIcon(String statusText) {
@@ -465,7 +516,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         // Modern Header
                         SliverToBoxAdapter(
                           child: Padding(
-                            padding: ResponsiveHelper.edgeInsets(context, 24, 20, 16, 20),
+                            padding: ResponsiveHelper.edgeInsets(
+                                context, 24, 20, 16, 20),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
@@ -473,16 +525,20 @@ class _HomeScreenState extends State<HomeScreen> {
                                 Text(
                                   '${_getGreeting()} 👋',
                                   style: GoogleFonts.inter(
-                                    fontSize: ResponsiveHelper.fontSize(context, 16),
+                                    fontSize:
+                                        ResponsiveHelper.fontSize(context, 16),
                                     color: colorScheme.onSurfaceVariant,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                                SizedBox(height: ResponsiveHelper.spacing(context, 4)),
+                                SizedBox(
+                                    height:
+                                        ResponsiveHelper.spacing(context, 4)),
                                 Text(
                                   currentUser?.displayName ?? 'User',
                                   style: GoogleFonts.inter(
-                                    fontSize: ResponsiveHelper.fontSize(context, 28),
+                                    fontSize:
+                                        ResponsiveHelper.fontSize(context, 28),
                                     fontWeight: FontWeight.bold,
                                     color: colorScheme.onSurface,
                                   ),
@@ -496,7 +552,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         // Enhanced Summary Cards Section
                         SliverToBoxAdapter(
                           child: Padding(
-                            padding: ResponsiveHelper.edgeInsets(context, 16, 20, 12, 20),
+                            padding: ResponsiveHelper.edgeInsets(
+                                context, 16, 20, 12, 20),
                             child: Column(
                               children: [
                                 Row(
@@ -508,12 +565,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                         icon: Icons.trending_up_rounded,
                                         color: Colors.green,
                                         currencySymbol: _currencySymbol,
-                                        percentage: _totalIncome > 0 && _totalExpenses > 0 
-                                            ? (_totalIncome / (_totalIncome + _totalExpenses) * 100)
+                                        percentage: _totalIncome > 0 &&
+                                                _totalExpenses > 0
+                                            ? (_totalIncome /
+                                                (_totalIncome +
+                                                    _totalExpenses) *
+                                                100)
                                             : 0,
                                       ),
                                     ),
-                                    SizedBox(width: ResponsiveHelper.spacing(context, 12)),
+                                    SizedBox(
+                                        width: ResponsiveHelper.spacing(
+                                            context, 12)),
                                     Expanded(
                                       child: _EnhancedSummaryCard(
                                         title: 'Expenses',
@@ -521,19 +584,27 @@ class _HomeScreenState extends State<HomeScreen> {
                                         icon: Icons.trending_down_rounded,
                                         color: Colors.red,
                                         currencySymbol: _currencySymbol,
-                                        percentage: _totalIncome > 0 && _totalExpenses > 0
-                                            ? (_totalExpenses / (_totalIncome + _totalExpenses) * 100)
+                                        percentage: _totalIncome > 0 &&
+                                                _totalExpenses > 0
+                                            ? (_totalExpenses /
+                                                (_totalIncome +
+                                                    _totalExpenses) *
+                                                100)
                                             : 0,
                                       ),
                                     ),
                                   ],
                                 ),
-                                SizedBox(height: ResponsiveHelper.spacing(context, 12)),
+                                SizedBox(
+                                    height:
+                                        ResponsiveHelper.spacing(context, 12)),
                                 _EnhancedSummaryCard(
                                   title: 'Balance',
                                   amount: _balance,
                                   icon: Icons.account_balance_wallet_rounded,
-                                  color: _balance >= 0 ? Colors.blue : Colors.orange,
+                                  color: _balance >= 0
+                                      ? Colors.blue
+                                      : Colors.orange,
                                   currencySymbol: _currencySymbol,
                                   isFullWidth: true,
                                   showTrend: true,
@@ -550,63 +621,75 @@ class _HomeScreenState extends State<HomeScreen> {
                         // Recent Transactions Section
                         SliverToBoxAdapter(
                           child: Padding(
-                            padding: ResponsiveHelper.edgeInsets(context, 16, 20, 8, 20),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      'Recent Transactions',
-                                      style: GoogleFonts.inter(
-                                        fontSize: ResponsiveHelper.fontSize(context, 20),
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      if (currentUser == null) return;
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => const AllTransactionsScreen(),
+                            padding: ResponsiveHelper.edgeInsets(
+                                context, 16, 20, 8, 20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        'Recent Transactions',
+                                        style: GoogleFonts.inter(
+                                          fontSize: ResponsiveHelper.fontSize(
+                                              context, 20),
+                                          fontWeight: FontWeight.bold,
                                         ),
-                                      ).then((_) => _refreshData());
-                                    },
-                                    child: Text(
-                                      'See All',
-                                      style: GoogleFonts.inter(
-                                        fontWeight: FontWeight.w600,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: ResponsiveHelper.spacing(context, 6)),
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.swipe_rounded,
-                                    size: ResponsiveHelper.iconSize(context, 14),
-                                    color: colorScheme.onSurfaceVariant.withOpacity(0.6),
-                                  ),
-                                  SizedBox(width: ResponsiveHelper.spacing(context, 6)),
-                                  Text(
-                                    'Swipe right to edit, swipe left to delete',
-                                    style: GoogleFonts.inter(
-                                      fontSize: ResponsiveHelper.fontSize(context, 12),
-                                      color: colorScheme.onSurfaceVariant.withOpacity(0.7),
-                                      fontStyle: FontStyle.italic,
+                                    TextButton(
+                                      onPressed: () {
+                                        if (currentUser == null) return;
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                const AllTransactionsScreen(),
+                                          ),
+                                        ).then((_) => _refreshData());
+                                      },
+                                      child: Text(
+                                        'See All',
+                                        style: GoogleFonts.inter(
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
+                                  ],
+                                ),
+                                SizedBox(
+                                    height:
+                                        ResponsiveHelper.spacing(context, 6)),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.swipe_rounded,
+                                      size: ResponsiveHelper.iconSize(
+                                          context, 14),
+                                      color: colorScheme.onSurfaceVariant
+                                          .withOpacity(0.6),
+                                    ),
+                                    SizedBox(
+                                        width: ResponsiveHelper.spacing(
+                                            context, 6)),
+                                    Text(
+                                      'Swipe right to edit, swipe left to delete',
+                                      style: GoogleFonts.inter(
+                                        fontSize: ResponsiveHelper.fontSize(
+                                            context, 12),
+                                        color: colorScheme.onSurfaceVariant
+                                            .withOpacity(0.7),
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                         // Transaction List
@@ -618,7 +701,8 @@ class _HomeScreenState extends State<HomeScreen> {
           floatingActionButton: Container(
             margin: ResponsiveHelper.edgeInsets(context, 0, 20, 16, 20),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 20)),
+              borderRadius:
+                  BorderRadius.circular(ResponsiveHelper.radius(context, 20)),
               boxShadow: [
                 BoxShadow(
                   color: colorScheme.primary.withOpacity(0.3),
@@ -661,7 +745,8 @@ class _HomeScreenState extends State<HomeScreen> {
               foregroundColor: colorScheme.onPrimary,
               elevation: 0,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 20)),
+                borderRadius:
+                    BorderRadius.circular(ResponsiveHelper.radius(context, 20)),
               ),
             ),
           ),
@@ -671,9 +756,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildLoadingState() {
-    final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Shimmer(
       baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
       highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
@@ -730,7 +814,8 @@ class _HomeScreenState extends State<HomeScreen> {
           SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) => Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
                 child: _ShimmerCard(height: 80),
               ),
               childCount: 5,
@@ -743,7 +828,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildUpcomingBillsSection(User? currentUser) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -775,7 +860,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     }
                   });
                 },
-                icon: Icon(Icons.add_rounded, size: ResponsiveHelper.iconSize(context, 18)),
+                icon: Icon(Icons.add_rounded,
+                    size: ResponsiveHelper.iconSize(context, 18)),
                 label: Text(
                   'Add Bill',
                   style: GoogleFonts.inter(
@@ -825,22 +911,24 @@ class _HomeScreenState extends State<HomeScreen> {
                   final screenWidth = MediaQuery.of(context).size.width;
                   // Very compact cards for small screens
                   final cardWidth = screenWidth <= 380
-                      ? screenWidth * 0.58  // 58% for very small screens
-                      : screenWidth <= 400 
-                          ? screenWidth * 0.62  // 62% for 400 DPI screens
-                          : screenWidth * 0.68;  // 68% for larger screens
+                      ? screenWidth * 0.58 // 58% for very small screens
+                      : screenWidth <= 400
+                          ? screenWidth * 0.62 // 62% for 400 DPI screens
+                          : screenWidth * 0.68; // 68% for larger screens
                   final cardWidthClamped = cardWidth.clamp(140.0, 220.0);
                   final cardHeight = screenWidth <= 380
-                      ? 155.0  // Increased for better spacing
-                      : screenWidth <= 400 
-                          ? 165.0  // Increased for better spacing
-                          : ResponsiveHelper.height(context, 180);  // Increased for better spacing
-                  
+                      ? 155.0 // Increased for better spacing
+                      : screenWidth <= 400
+                          ? 165.0 // Increased for better spacing
+                          : ResponsiveHelper.height(
+                              context, 180); // Increased for better spacing
+
                   return SizedBox(
                     height: cardHeight,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
-                      padding: ResponsiveHelper.edgeInsetsSymmetric(context, 20, 0),
+                      padding:
+                          ResponsiveHelper.edgeInsetsSymmetric(context, 20, 0),
                       itemCount: _bills.length,
                       itemBuilder: (context, index) {
                         final bill = _bills[index];
@@ -849,12 +937,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         return Container(
                           width: cardWidthClamped,
-                          margin: EdgeInsets.only(right: ResponsiveHelper.spacing(context, 16)),
+                          margin: EdgeInsets.only(
+                              right: ResponsiveHelper.spacing(context, 16)),
                           child: Material(
                             color: Colors.transparent,
                             child: InkWell(
-                              onTap: () => _showBillOptions(context, bill, currentUser),
-                              borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 20)),
+                              onTap: () =>
+                                  _showBillOptions(context, bill, currentUser),
+                              borderRadius: BorderRadius.circular(
+                                  ResponsiveHelper.radius(context, 20)),
                               child: Card(
                                 margin: EdgeInsets.zero,
                                 elevation: 2,
@@ -863,7 +954,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     color: status.color.withOpacity(0.2),
                                     width: 1,
                                   ),
-                                  borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 20)),
+                                  borderRadius: BorderRadius.circular(
+                                      ResponsiveHelper.radius(context, 20)),
                                 ),
                                 child: Container(
                                   decoration: BoxDecoration(
@@ -871,253 +963,387 @@ class _HomeScreenState extends State<HomeScreen> {
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                       colors: [
-                                        colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                                        colorScheme.surfaceContainerHighest
+                                            .withOpacity(0.5),
                                         colorScheme.surface,
                                       ],
                                     ),
-                                    borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 20)),
+                                    borderRadius: BorderRadius.circular(
+                                        ResponsiveHelper.radius(context, 20)),
                                   ),
                                   child: Padding(
-                                    padding: EdgeInsets.all(ResponsiveHelper.padding(context, (cardWidth * 0.05).clamp(6.0, 10.0))),
+                                    padding: EdgeInsets.all(
+                                        ResponsiveHelper.padding(
+                                            context,
+                                            (cardWidth * 0.05)
+                                                .clamp(6.0, 10.0))),
                                     child: LayoutBuilder(
-                                  builder: (context, cardConstraints) {
-                                    // Calculate responsive sizes based on card width - VERY compact
-                                    final cardW = cardConstraints.maxWidth;
-                                    final screenWidth = MediaQuery.of(context).size.width;
-                                    final isSmall = screenWidth <= 400;
-                                    final isVerySmall = screenWidth <= 380;
-                                    
-                                    final availableHeight = cardHeight - (isVerySmall ? 16.0 : isSmall ? 18.0 : 20.0);
-                                    final iconSize = isVerySmall
-                                        ? 16.0
-                                        : isSmall 
-                                            ? 17.0
-                                            : ResponsiveHelper.iconSize(context, 20);
-                                    final fontSizeName = isVerySmall
-                                        ? ResponsiveHelper.fontSize(context, 12)
-                                        : isSmall
-                                            ? ResponsiveHelper.fontSize(context, 13)
-                                            : ResponsiveHelper.fontSize(context, 14);
-                                    final fontSizeAmount = isVerySmall
-                                        ? ResponsiveHelper.fontSize(context, 16)
-                                        : isSmall
-                                            ? ResponsiveHelper.fontSize(context, 17)
-                                            : ResponsiveHelper.fontSize(context, 19);
-                                    final fontSizeStatus = isVerySmall
-                                        ? ResponsiveHelper.fontSize(context, 9)
-                                        : ResponsiveHelper.fontSize(context, 10);
-                                    // Increased spacing for better layout
-                                    final verticalSpacing = isVerySmall ? 6.0 : isSmall ? 7.0 : 8.0;
-                                    final horizontalSpacing = isVerySmall ? 4.0 : isSmall ? 5.0 : 6.0;
-                                    final buttonHeight = isVerySmall
-                                        ? 28.0
-                                        : isSmall
-                                            ? 30.0
-                                            : ResponsiveHelper.buttonHeight(context, 32);
-                                    
-                                    return SizedBox(
-                                      height: availableHeight,
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          // Icon and recurring indicator row - with better spacing
-                                          Row(
+                                      builder: (context, cardConstraints) {
+                                        // Calculate responsive sizes based on card width - VERY compact
+                                        final screenWidth =
+                                            MediaQuery.of(context).size.width;
+                                        final isSmall = screenWidth <= 400;
+                                        final isVerySmall = screenWidth <= 380;
+
+                                        final availableHeight = cardHeight -
+                                            (isVerySmall
+                                                ? 16.0
+                                                : isSmall
+                                                    ? 18.0
+                                                    : 20.0);
+                                        final iconSize = isVerySmall
+                                            ? 16.0
+                                            : isSmall
+                                                ? 17.0
+                                                : ResponsiveHelper.iconSize(
+                                                    context, 20);
+                                        final fontSizeName = isVerySmall
+                                            ? ResponsiveHelper.fontSize(
+                                                context, 12)
+                                            : isSmall
+                                                ? ResponsiveHelper.fontSize(
+                                                    context, 13)
+                                                : ResponsiveHelper.fontSize(
+                                                    context, 14);
+                                        final fontSizeAmount = isVerySmall
+                                            ? ResponsiveHelper.fontSize(
+                                                context, 16)
+                                            : isSmall
+                                                ? ResponsiveHelper.fontSize(
+                                                    context, 17)
+                                                : ResponsiveHelper.fontSize(
+                                                    context, 19);
+                                        final fontSizeStatus = isVerySmall
+                                            ? ResponsiveHelper.fontSize(
+                                                context, 9)
+                                            : ResponsiveHelper.fontSize(
+                                                context, 10);
+                                        // Increased spacing for better layout
+                                        final verticalSpacing = isVerySmall
+                                            ? 6.0
+                                            : isSmall
+                                                ? 7.0
+                                                : 8.0;
+                                        final horizontalSpacing = isVerySmall
+                                            ? 4.0
+                                            : isSmall
+                                                ? 5.0
+                                                : 6.0;
+                                        final buttonHeight = isVerySmall
+                                            ? 28.0
+                                            : isSmall
+                                                ? 30.0
+                                                : ResponsiveHelper.buttonHeight(
+                                                    context, 32);
+
+                                        return SizedBox(
+                                          height: availableHeight,
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              Container(
-                                                padding: EdgeInsets.all(ResponsiveHelper.padding(context, iconSize * 0.35)),
-                                                decoration: BoxDecoration(
-                                                  gradient: LinearGradient(
-                                                    begin: Alignment.topLeft,
-                                                    end: Alignment.bottomRight,
-                                                    colors: [
-                                                      styling.color,
-                                                      styling.color.withOpacity(0.8),
-                                                    ],
+                                              // Icon and recurring indicator row - with better spacing
+                                              Row(
+                                                children: [
+                                                  Container(
+                                                    padding: EdgeInsets.all(
+                                                        ResponsiveHelper
+                                                            .padding(
+                                                                context,
+                                                                iconSize *
+                                                                    0.35)),
+                                                    decoration: BoxDecoration(
+                                                      gradient: LinearGradient(
+                                                        begin:
+                                                            Alignment.topLeft,
+                                                        end: Alignment
+                                                            .bottomRight,
+                                                        colors: [
+                                                          styling.color,
+                                                          styling.color
+                                                              .withOpacity(0.8),
+                                                        ],
+                                                      ),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              ResponsiveHelper
+                                                                  .radius(
+                                                                      context,
+                                                                      10)),
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                          color: styling.color
+                                                              .withOpacity(
+                                                                  0.35),
+                                                          blurRadius: 4,
+                                                          offset: Offset(
+                                                              0,
+                                                              ResponsiveHelper
+                                                                  .spacing(
+                                                                      context,
+                                                                      2)),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    child: Icon(
+                                                      styling.icon,
+                                                      size: iconSize,
+                                                      color: Colors.white,
+                                                    ),
                                                   ),
-                                                  borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 10)),
-                                                  boxShadow: [
-                                                    BoxShadow(
-                                                      color: styling.color.withOpacity(0.35),
-                                                      blurRadius: 4,
-                                                      offset: Offset(0, ResponsiveHelper.spacing(context, 2)),
+                                                  const Spacer(),
+                                                  if (bill.isRecurring)
+                                                    Container(
+                                                      padding: EdgeInsets.all(
+                                                          ResponsiveHelper
+                                                              .padding(
+                                                                  context,
+                                                                  iconSize *
+                                                                      0.25)),
+                                                      decoration: BoxDecoration(
+                                                        color: colorScheme
+                                                            .primaryContainer
+                                                            .withOpacity(0.6),
+                                                        shape: BoxShape.circle,
+                                                        border: Border.all(
+                                                          color: colorScheme
+                                                              .primaryContainer
+                                                              .withOpacity(0.3),
+                                                          width: 1,
+                                                        ),
+                                                      ),
+                                                      child: Icon(
+                                                        Icons.sync_rounded,
+                                                        size: iconSize * 0.6,
+                                                        color: colorScheme
+                                                            .onPrimaryContainer,
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+                                              SizedBox(
+                                                  height: verticalSpacing + 2),
+                                              // Bill name - with better spacing
+                                              Expanded(
+                                                child: Align(
+                                                  alignment:
+                                                      Alignment.centerLeft,
+                                                  child: Text(
+                                                    bill.name,
+                                                    style: GoogleFonts.inter(
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontSize: fontSizeName,
+                                                      color:
+                                                          colorScheme.onSurface,
+                                                      height: 1.2,
+                                                      letterSpacing: 0.1,
+                                                    ),
+                                                    maxLines: 2,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ),
+                                              SizedBox(height: verticalSpacing),
+                                              // Amount - better aligned
+                                              FittedBox(
+                                                fit: BoxFit.scaleDown,
+                                                alignment: Alignment.centerLeft,
+                                                child: Text(
+                                                  '$_currencySymbol${bill.amount.toStringAsFixed(0)}',
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: fontSizeAmount,
+                                                    fontWeight: FontWeight.w700,
+                                                    color:
+                                                        colorScheme.onSurface,
+                                                    letterSpacing: -0.5,
+                                                  ),
+                                                  maxLines: 1,
+                                                ),
+                                              ),
+                                              SizedBox(height: verticalSpacing),
+                                              // Status badge - improved design with better spacing
+                                              Container(
+                                                padding: EdgeInsets.symmetric(
+                                                  horizontal:
+                                                      ResponsiveHelper.spacing(
+                                                          context,
+                                                          horizontalSpacing),
+                                                  vertical:
+                                                      ResponsiveHelper.spacing(
+                                                          context,
+                                                          verticalSpacing *
+                                                              0.5),
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: status.color
+                                                      .withOpacity(0.18),
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          ResponsiveHelper
+                                                              .radius(
+                                                                  context, 8)),
+                                                  border: Border.all(
+                                                    color: status.color
+                                                        .withOpacity(0.4),
+                                                    width: 1,
+                                                  ),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Icon(
+                                                      _getStatusIcon(
+                                                          status.text),
+                                                      size: ResponsiveHelper
+                                                          .iconSize(
+                                                              context,
+                                                              fontSizeStatus +
+                                                                  1),
+                                                      color: status.color,
+                                                    ),
+                                                    SizedBox(
+                                                        width: ResponsiveHelper
+                                                            .spacing(
+                                                                context,
+                                                                horizontalSpacing *
+                                                                    0.5)),
+                                                    Flexible(
+                                                      child: Text(
+                                                        status.text,
+                                                        style:
+                                                            GoogleFonts.inter(
+                                                          color: status.color,
+                                                          fontSize:
+                                                              fontSizeStatus,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          letterSpacing: 0.2,
+                                                        ),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
                                                     ),
                                                   ],
                                                 ),
-                                                child: Icon(
-                                                  styling.icon,
-                                                  size: iconSize,
-                                                  color: Colors.white,
-                                                ),
                                               ),
+                                              SizedBox(
+                                                  height:
+                                                      verticalSpacing * 0.8),
                                               const Spacer(),
-                                              if (bill.isRecurring)
-                                                Container(
-                                                  padding: EdgeInsets.all(ResponsiveHelper.padding(context, iconSize * 0.25)),
-                                                  decoration: BoxDecoration(
-                                                    color: colorScheme.primaryContainer.withOpacity(0.6),
-                                                    shape: BoxShape.circle,
-                                                    border: Border.all(
-                                                      color: colorScheme.primaryContainer.withOpacity(0.3),
-                                                      width: 1,
+                                              // Pay button - better sized and spaced
+                                              SizedBox(
+                                                width: double.infinity,
+                                                child: FilledButton(
+                                                  style: FilledButton.styleFrom(
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                      horizontal: ResponsiveHelper
+                                                          .spacing(context,
+                                                              horizontalSpacing),
+                                                      vertical: ResponsiveHelper
+                                                          .spacing(
+                                                              context,
+                                                              verticalSpacing *
+                                                                  0.6),
+                                                    ),
+                                                    minimumSize:
+                                                        Size(0, buttonHeight),
+                                                    shape:
+                                                        RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              ResponsiveHelper
+                                                                  .radius(
+                                                                      context,
+                                                                      12)),
+                                                    ),
+                                                    backgroundColor:
+                                                        styling.color,
+                                                    foregroundColor:
+                                                        Colors.white,
+                                                  ),
+                                                  onPressed: () async {
+                                                    // Stop event propagation to prevent card tap
+                                                    if (currentUser == null)
+                                                      return;
+
+                                                    final billTransaction =
+                                                        model.Transaction(
+                                                      type: 'expense',
+                                                      amount: bill.amount,
+                                                      description:
+                                                          'Paid bill: ${bill.name}',
+                                                      date: DateTime.now()
+                                                          .toIso8601String(),
+                                                      categoryId: await dbHelper
+                                                          .getOrCreateCategory(
+                                                        'Bills',
+                                                        currentUser.uid,
+                                                        type: 'expense',
+                                                      ),
+                                                    );
+                                                    await dbHelper
+                                                        .addTransaction(
+                                                      billTransaction,
+                                                      currentUser.uid,
+                                                    );
+
+                                                    if (bill.isRecurring) {
+                                                      final nextDueDate =
+                                                          _calculateNextDueDate(
+                                                              bill);
+                                                      final updatedBill =
+                                                          bill.copyWith(
+                                                        dueDate: nextDueDate,
+                                                      );
+                                                      await dbHelper.updateBill(
+                                                        updatedBill,
+                                                        currentUser.uid,
+                                                      );
+                                                      if (!mounted) return;
+                                                      NotificationHelper
+                                                          .showSuccess(
+                                                        this.context,
+                                                        message:
+                                                            'Recurring bill "${bill.name}" paid. Next due date set.',
+                                                      );
+                                                    } else {
+                                                      await dbHelper.deleteBill(
+                                                          bill.id!,
+                                                          currentUser.uid);
+                                                      if (!mounted) return;
+                                                      NotificationHelper
+                                                          .showSuccess(
+                                                        this.context,
+                                                        message:
+                                                            'Bill "${bill.name}" marked as paid.',
+                                                      );
+                                                    }
+
+                                                    _refreshData();
+                                                  },
+                                                  child: Text(
+                                                    'Pay Bill',
+                                                    style: GoogleFonts.inter(
+                                                      fontSize: ResponsiveHelper
+                                                          .fontSize(
+                                                              context, 14),
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      letterSpacing: 0.3,
                                                     ),
                                                   ),
-                                                  child: Icon(
-                                                    Icons.sync_rounded,
-                                                    size: iconSize * 0.6,
-                                                    color: colorScheme.onPrimaryContainer,
-                                                  ),
                                                 ),
+                                              ),
                                             ],
                                           ),
-                                          SizedBox(height: verticalSpacing + 2),
-                                          // Bill name - with better spacing
-                                          Expanded(
-                                            child: Align(
-                                              alignment: Alignment.centerLeft,
-                                              child: Text(
-                                                bill.name,
-                                                style: GoogleFonts.inter(
-                                                  fontWeight: FontWeight.w600,
-                                                  fontSize: fontSizeName,
-                                                  color: colorScheme.onSurface,
-                                                  height: 1.2,
-                                                  letterSpacing: 0.1,
-                                                ),
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                          ),
-                                          SizedBox(height: verticalSpacing),
-                                          // Amount - better aligned
-                                          FittedBox(
-                                            fit: BoxFit.scaleDown,
-                                            alignment: Alignment.centerLeft,
-                                            child: Text(
-                                              '$_currencySymbol${bill.amount.toStringAsFixed(0)}',
-                                              style: GoogleFonts.inter(
-                                                fontSize: fontSizeAmount,
-                                                fontWeight: FontWeight.w700,
-                                                color: colorScheme.onSurface,
-                                                letterSpacing: -0.5,
-                                              ),
-                                              maxLines: 1,
-                                            ),
-                                          ),
-                                          SizedBox(height: verticalSpacing),
-                                          // Status badge - improved design with better spacing
-                                          Container(
-                                            padding: EdgeInsets.symmetric(
-                                              horizontal: ResponsiveHelper.spacing(context, horizontalSpacing),
-                                              vertical: ResponsiveHelper.spacing(context, verticalSpacing * 0.5),
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: status.color.withOpacity(0.18),
-                                              borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 8)),
-                                              border: Border.all(
-                                                color: status.color.withOpacity(0.4),
-                                                width: 1,
-                                              ),
-                                            ),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(
-                                                  _getStatusIcon(status.text),
-                                                  size: ResponsiveHelper.iconSize(context, fontSizeStatus + 1),
-                                                  color: status.color,
-                                                ),
-                                                SizedBox(width: ResponsiveHelper.spacing(context, horizontalSpacing * 0.5)),
-                                                Flexible(
-                                                  child: Text(
-                                                    status.text,
-                                                    style: GoogleFonts.inter(
-                                                      color: status.color,
-                                                      fontSize: fontSizeStatus,
-                                                      fontWeight: FontWeight.w600,
-                                                      letterSpacing: 0.2,
-                                                    ),
-                                                    maxLines: 1,
-                                                    overflow: TextOverflow.ellipsis,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          SizedBox(height: verticalSpacing * 0.8),
-                                          const Spacer(),
-                                          // Pay button - better sized and spaced
-                                          SizedBox(
-                                            width: double.infinity,
-                                            child: FilledButton(
-                                            style: FilledButton.styleFrom(
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal: ResponsiveHelper.spacing(context, horizontalSpacing),
-                                                vertical: ResponsiveHelper.spacing(context, verticalSpacing * 0.6),
-                                              ),
-                                              minimumSize: Size(0, buttonHeight),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
-                                              ),
-                                              backgroundColor: styling.color,
-                                              foregroundColor: Colors.white,
-                                            ),
-                                            onPressed: () async {
-                                              // Stop event propagation to prevent card tap
-                                              if (currentUser == null) return;
-                                              
-                                              final billTransaction = model.Transaction(
-                                                type: 'expense',
-                                                amount: bill.amount,
-                                                description: 'Paid bill: ${bill.name}',
-                                                date: DateTime.now().toIso8601String(),
-                                                categoryId: await dbHelper.getOrCreateCategory(
-                                                  'Bills',
-                                                  currentUser.uid,
-                                                  type: 'expense',
-                                                ),
-                                              );
-                                              await dbHelper.addTransaction(
-                                                billTransaction,
-                                                currentUser.uid,
-                                              );
-
-                                              if (bill.isRecurring) {
-                                                final nextDueDate = _calculateNextDueDate(bill);
-                                                final updatedBill = bill.copyWith(
-                                                  dueDate: nextDueDate,
-                                                );
-                                                await dbHelper.updateBill(
-                                                  updatedBill,
-                                                  currentUser.uid,
-                                                );
-                                                if (mounted) {
-                                                  NotificationHelper.showSuccess(context, message: 'Recurring bill "${bill.name}" paid. Next due date set.');
-                                                }
-                                              } else {
-                                                await dbHelper.deleteBill(bill.id!, currentUser.uid);
-                                                if (mounted) {
-                                                  NotificationHelper.showSuccess(context, message: 'Bill "${bill.name}" marked as paid.');
-                                                }
-                                              }
-
-                                              _refreshData();
-                                            },
-                                              child: Text(
-                                                'Pay Bill',
-                                                style: GoogleFonts.inter(
-                                                  fontSize: ResponsiveHelper.fontSize(context, 14),
-                                                  fontWeight: FontWeight.w700,
-                                                  letterSpacing: 0.3,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
+                                        );
+                                      },
                                     ),
                                   ),
                                 ),
@@ -1130,8 +1356,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
               ),
-            ],
-          );
+      ],
+    );
   }
 
   Widget _buildTransactionList(User? currentUser) {
@@ -1147,7 +1373,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 Icon(
                   Icons.receipt_long_outlined,
                   size: 80,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.4),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant
+                      .withOpacity(0.4),
                 ),
                 const SizedBox(height: 24),
                 Text(
@@ -1174,7 +1403,8 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    final currencyFormatter = NumberFormat.currency(locale: 'en_US', symbol: '');
+    final currencyFormatter =
+        NumberFormat.currency(locale: 'en_US', symbol: '');
     final recentTransactions = _transactions.take(10).toList();
 
     return SliverList(
@@ -1185,7 +1415,8 @@ class _HomeScreenState extends State<HomeScreen> {
           final amountColor = isIncome ? Colors.green : Colors.red;
           final amountPrefix = isIncome ? '+' : '-';
 
-          final isMpesa = RegExp(r'\([A-Z0-9]{10}\)').hasMatch(transaction.description);
+          final isMpesa =
+              RegExp(r'\([A-Z0-9]{10}\)').hasMatch(transaction.description);
 
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
@@ -1208,7 +1439,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   return await showModernConfirmDialog(
                     context: context,
                     title: 'Confirm Deletion',
-                    message: 'Are you sure you want to delete this transaction?',
+                    message:
+                        'Are you sure you want to delete this transaction?',
                     confirmText: 'Delete',
                     cancelText: 'Cancel',
                     isDestructive: true,
@@ -1216,7 +1448,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 }
               },
               onDismissed: (direction) {
-                if (direction == DismissDirection.endToStart && currentUser != null) {
+                if (direction == DismissDirection.endToStart &&
+                    currentUser != null) {
                   _deleteTransaction(transaction.id!, currentUser.uid);
                 }
               },
@@ -1300,7 +1533,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             Text(
                               transaction.date.split('T')[0],
                               style: GoogleFonts.inter(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
                                 fontSize: 12,
                               ),
                               overflow: TextOverflow.ellipsis,
@@ -1363,12 +1598,14 @@ class _EnhancedSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final currencyFormatter = NumberFormat.currency(locale: 'en_US', symbol: '');
+    final currencyFormatter =
+        NumberFormat.currency(locale: 'en_US', symbol: '');
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 24)),
+        borderRadius:
+            BorderRadius.circular(ResponsiveHelper.radius(context, 24)),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -1387,7 +1624,9 @@ class _EnhancedSummaryCard extends StatelessWidget {
             spreadRadius: 0,
           ),
           BoxShadow(
-            color: isDark ? Colors.black.withOpacity(0.3) : Colors.black.withOpacity(0.05),
+            color: isDark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1399,7 +1638,8 @@ class _EnhancedSummaryCard extends StatelessWidget {
           onTap: () {
             // Could add navigation to detailed view
           },
-          borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 24)),
+          borderRadius:
+              BorderRadius.circular(ResponsiveHelper.radius(context, 24)),
           child: Container(
             padding: ResponsiveHelper.edgeInsetsAll(context, 18),
             child: Column(
@@ -1420,7 +1660,8 @@ class _EnhancedSummaryCard extends StatelessWidget {
                             color.withOpacity(0.8),
                           ],
                         ),
-                        borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
+                        borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.radius(context, 12)),
                         boxShadow: [
                           BoxShadow(
                             color: color.withOpacity(0.4),
@@ -1444,19 +1685,23 @@ class _EnhancedSummaryCard extends StatelessWidget {
                             title,
                             style: GoogleFonts.inter(
                               fontSize: ResponsiveHelper.fontSize(context, 13),
-                              color: colorScheme.onSurfaceVariant.withOpacity(0.8),
+                              color:
+                                  colorScheme.onSurfaceVariant.withOpacity(0.8),
                               fontWeight: FontWeight.w600,
                               letterSpacing: 0.3,
                             ),
                           ),
                           if (percentage != null && percentage! > 0)
                             Padding(
-                              padding: EdgeInsets.only(top: ResponsiveHelper.spacing(context, 2)),
+                              padding: EdgeInsets.only(
+                                  top: ResponsiveHelper.spacing(context, 2)),
                               child: Text(
                                 '${percentage!.toStringAsFixed(1)}%',
                                 style: GoogleFonts.inter(
-                                  fontSize: ResponsiveHelper.fontSize(context, 10),
-                                  color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+                                  fontSize:
+                                      ResponsiveHelper.fontSize(context, 10),
+                                  color: colorScheme.onSurfaceVariant
+                                      .withOpacity(0.6),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -1466,25 +1711,33 @@ class _EnhancedSummaryCard extends StatelessWidget {
                     ),
                     if (showTrend && isPositive != null)
                       Container(
-                        padding: ResponsiveHelper.edgeInsetsSymmetric(context, 6, 8),
+                        padding:
+                            ResponsiveHelper.edgeInsetsSymmetric(context, 6, 8),
                         decoration: BoxDecoration(
-                          color: (isPositive! ? Colors.green : Colors.orange).withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 8)),
+                          color: (isPositive! ? Colors.green : Colors.orange)
+                              .withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(
+                              ResponsiveHelper.radius(context, 8)),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              isPositive! ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                              isPositive!
+                                  ? Icons.arrow_upward_rounded
+                                  : Icons.arrow_downward_rounded,
                               size: ResponsiveHelper.iconSize(context, 14),
                               color: isPositive! ? Colors.green : Colors.orange,
                             ),
-                            SizedBox(width: ResponsiveHelper.spacing(context, 2)),
+                            SizedBox(
+                                width: ResponsiveHelper.spacing(context, 2)),
                             Text(
                               isPositive! ? 'Good' : 'Low',
                               style: GoogleFonts.inter(
-                                fontSize: ResponsiveHelper.fontSize(context, 10),
-                                color: isPositive! ? Colors.green : Colors.orange,
+                                fontSize:
+                                    ResponsiveHelper.fontSize(context, 10),
+                                color:
+                                    isPositive! ? Colors.green : Colors.orange,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -1511,104 +1764,6 @@ class _EnhancedSummaryCard extends StatelessWidget {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// Keep old card for backwards compatibility if needed elsewhere
-class _ModernSummaryCard extends StatelessWidget {
-  final String title;
-  final double amount;
-  final IconData icon;
-  final Color color;
-  final String currencySymbol;
-  final bool isFullWidth;
-
-  const _ModernSummaryCard({
-    required this.title,
-    required this.amount,
-    required this.icon,
-    required this.color,
-    required this.currencySymbol,
-    this.isFullWidth = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final currencyFormatter = NumberFormat.currency(locale: 'en_US', symbol: '');
-
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 20)),
-      ),
-      child: Container(
-        padding: ResponsiveHelper.edgeInsetsAll(context, 16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 20)),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              color.withOpacity(0.1),
-              color.withOpacity(0.05),
-            ],
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Container(
-                  padding: ResponsiveHelper.edgeInsetsAll(context, 8),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 10)),
-                  ),
-                  child: Icon(icon, color: color, size: ResponsiveHelper.iconSize(context, 20)),
-                ),
-                SizedBox(width: ResponsiveHelper.spacing(context, 10)),
-                Expanded(
-                  child: Center(
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        title,
-                        style: GoogleFonts.inter(
-                          fontSize: ResponsiveHelper.fontSize(context, 12),
-                          color: colorScheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w500,
-                          height: 1.2,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                        textAlign: TextAlign.left,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: ResponsiveHelper.spacing(context, 8)),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                '$currencySymbol ${currencyFormatter.format(amount)}',
-                style: GoogleFonts.inter(
-                  fontSize: ResponsiveHelper.fontSize(context, 18),
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );

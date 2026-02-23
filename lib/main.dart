@@ -40,17 +40,17 @@ ThemeData _buildLightTheme() {
   );
 
   final baseTextTheme = ThemeData.light().textTheme;
-  
+
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
-    
+
     // Typography
     textTheme: GoogleFonts.interTextTheme(baseTextTheme).apply(
       bodyColor: colorScheme.onSurface,
       displayColor: colorScheme.onSurface,
     ),
-    
+
     // Card Theme - Modern with subtle elevation
     cardTheme: CardThemeData(
       elevation: 0,
@@ -60,7 +60,7 @@ ThemeData _buildLightTheme() {
       color: colorScheme.surfaceContainerHighest,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
     ),
-    
+
     // Input Decoration Theme - Modern rounded inputs
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
@@ -89,7 +89,7 @@ ThemeData _buildLightTheme() {
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     ),
-    
+
     // Elevated Button Theme
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
@@ -102,7 +102,7 @@ ThemeData _buildLightTheme() {
         foregroundColor: colorScheme.onPrimary,
       ),
     ),
-    
+
     // Filled Button Theme
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
@@ -112,7 +112,7 @@ ThemeData _buildLightTheme() {
         ),
       ),
     ),
-    
+
     // App Bar Theme - Transparent with elevation
     appBarTheme: AppBarTheme(
       elevation: 0,
@@ -122,7 +122,7 @@ ThemeData _buildLightTheme() {
       foregroundColor: colorScheme.onSurface,
       iconTheme: IconThemeData(color: colorScheme.onSurface),
     ),
-    
+
     // Bottom Sheet Theme - Modern rounded
     bottomSheetTheme: const BottomSheetThemeData(
       shape: RoundedRectangleBorder(
@@ -130,7 +130,7 @@ ThemeData _buildLightTheme() {
       ),
       elevation: 8,
     ),
-    
+
     // Dialog Theme - Modern rounded dialogs
     dialogTheme: DialogThemeData(
       shape: RoundedRectangleBorder(
@@ -138,7 +138,7 @@ ThemeData _buildLightTheme() {
       ),
       elevation: 8,
     ),
-    
+
     // Floating Action Button Theme
     floatingActionButtonTheme: FloatingActionButtonThemeData(
       elevation: 4,
@@ -146,7 +146,7 @@ ThemeData _buildLightTheme() {
         borderRadius: BorderRadius.circular(16),
       ),
     ),
-    
+
     // Chip Theme
     chipTheme: ChipThemeData(
       shape: RoundedRectangleBorder(
@@ -166,13 +166,13 @@ ThemeData _buildDarkTheme() {
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
-    
+
     // Typography
     textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme).apply(
       bodyColor: colorScheme.onSurface,
       displayColor: colorScheme.onSurface,
     ),
-    
+
     // Card Theme - Modern with subtle elevation
     cardTheme: CardThemeData(
       elevation: 0,
@@ -182,7 +182,7 @@ ThemeData _buildDarkTheme() {
       color: colorScheme.surfaceContainerHighest,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
     ),
-    
+
     // Input Decoration Theme - Modern rounded inputs
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
@@ -211,7 +211,7 @@ ThemeData _buildDarkTheme() {
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     ),
-    
+
     // Elevated Button Theme
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
@@ -224,7 +224,7 @@ ThemeData _buildDarkTheme() {
         foregroundColor: colorScheme.onPrimary,
       ),
     ),
-    
+
     // Filled Button Theme
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
@@ -234,7 +234,7 @@ ThemeData _buildDarkTheme() {
         ),
       ),
     ),
-    
+
     // App Bar Theme - Transparent with elevation
     appBarTheme: AppBarTheme(
       elevation: 0,
@@ -244,7 +244,7 @@ ThemeData _buildDarkTheme() {
       foregroundColor: colorScheme.onSurface,
       iconTheme: IconThemeData(color: colorScheme.onSurface),
     ),
-    
+
     // Bottom Sheet Theme - Modern rounded
     bottomSheetTheme: const BottomSheetThemeData(
       shape: RoundedRectangleBorder(
@@ -252,7 +252,7 @@ ThemeData _buildDarkTheme() {
       ),
       elevation: 8,
     ),
-    
+
     // Dialog Theme - Modern rounded dialogs
     dialogTheme: DialogThemeData(
       shape: RoundedRectangleBorder(
@@ -260,7 +260,7 @@ ThemeData _buildDarkTheme() {
       ),
       elevation: 8,
     ),
-    
+
     // Floating Action Button Theme
     floatingActionButtonTheme: FloatingActionButtonThemeData(
       elevation: 4,
@@ -268,7 +268,7 @@ ThemeData _buildDarkTheme() {
         borderRadius: BorderRadius.circular(16),
       ),
     ),
-    
+
     // Chip Theme
     chipTheme: ChipThemeData(
       shape: RoundedRectangleBorder(
@@ -293,7 +293,8 @@ class PatoTrack extends StatelessWidget {
         statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
         statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
         systemNavigationBarColor: Colors.transparent,
-        systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        systemNavigationBarIconBrightness:
+            isDark ? Brightness.light : Brightness.dark,
       ),
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -340,7 +341,7 @@ class _MainScreenState extends State<MainScreen> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: _onItemTapped,
-        
+
         // --- Style Customizations ---
         height: 70,
         indicatorColor: Theme.of(context).colorScheme.primaryContainer,

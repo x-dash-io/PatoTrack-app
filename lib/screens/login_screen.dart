@@ -79,11 +79,11 @@ class _LoginScreenState extends State<LoginScreen> {
       if (verifyUser == null) {
         throw Exception('Authentication state lost');
       }
-      
+
       // AuthGate will automatically detect the auth state change via its listener
       // No need to wait or clear loading - AuthGate will rebuild and navigate
       // The widget tree will be replaced by AuthGate, so this widget may be disposed
-      
+
       // Just verify and let AuthGate handle the navigation
       // Keep loading state until AuthGate navigates away (which will dispose this widget)
     } on FirebaseAuthException catch (e) {
@@ -91,9 +91,8 @@ class _LoginScreenState extends State<LoginScreen> {
         setState(() {
           _isLoading = false;
         });
-        final theme = Theme.of(context);
         String errorMessage = 'Login failed. Please try again.';
-        
+
         // Provide user-friendly error messages
         switch (e.code) {
           case 'user-not-found':
@@ -105,20 +104,32 @@ class _LoginScreenState extends State<LoginScreen> {
             errorMessage = 'Invalid email address. Please check and try again.';
             break;
           case 'user-disabled':
-            errorMessage = 'This account has been disabled. Please contact support.';
+            errorMessage =
+                'This account has been disabled. Please contact support.';
             break;
           case 'too-many-requests':
             errorMessage = 'Too many failed attempts. Please try again later.';
             break;
           case 'network-request-failed':
-            errorMessage = 'Network error. Please check your connection and try again.';
+            errorMessage =
+                'Network error. Please check your connection and try again.';
             break;
           default:
             // Use the default message for unknown errors
             errorMessage = 'Incorrect email or password. Please try again.';
         }
-        
+
         NotificationHelper.showError(context, message: errorMessage);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        NotificationHelper.showError(
+          context,
+          message: 'Login failed. Please try again.',
+        );
       }
     }
     // Don't clear loading state in finally - let AuthGate handle it on success
@@ -131,7 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final userCredential = await GoogleSignInService.signInWithGoogle();
-      
+
       if (userCredential != null && userCredential.user != null && mounted) {
         // Verify user is authenticated
         final currentUser = FirebaseAuth.instance.currentUser;
@@ -148,17 +159,17 @@ class _LoginScreenState extends State<LoginScreen> {
             print('Warning: Failed to reload user data: $e');
             // Continue even if reload fails
           }
-          
+
           // Verify user is authenticated
           final verifyUser = FirebaseAuth.instance.currentUser;
           if (verifyUser == null) {
             throw Exception('Authentication state lost');
           }
-          
+
           // AuthGate will automatically detect the auth state change via its listener
           // No need to wait or clear loading - AuthGate will rebuild and navigate
           // The widget tree will be replaced by AuthGate, so this widget may be disposed
-          
+
           // Just verify and let AuthGate handle the navigation
           // Keep loading state until AuthGate navigates away (which will dispose this widget)
         } else {
@@ -167,8 +178,8 @@ class _LoginScreenState extends State<LoginScreen> {
             setState(() {
               _isLoading = false;
             });
-            final theme = Theme.of(context);
-            NotificationHelper.showError(context, message: 'Authentication failed. Please try again.');
+            NotificationHelper.showError(context,
+                message: 'Authentication failed. Please try again.');
           }
         }
       } else {
@@ -185,8 +196,8 @@ class _LoginScreenState extends State<LoginScreen> {
         setState(() {
           _isLoading = false;
         });
-        final theme = Theme.of(context);
-        NotificationHelper.showError(context, message: e.toString().replaceAll('Exception: ', ''));
+        NotificationHelper.showError(context,
+            message: e.toString().replaceAll('Exception: ', ''));
       }
     }
   }
@@ -194,35 +205,35 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _showForgotPasswordDialog() async {
     final resetEmailController = TextEditingController();
     final resetFormKey = GlobalKey<FormState>();
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
+    bool isSendingReset = false;
 
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (dialogContext, setDialogState) {
-            bool isSendingReset = false;
-            
-            return Container(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(dialogContext).viewInsets.bottom,
-                left: 24,
-                right: 24,
-                top: 24,
-              ),
-              decoration: BoxDecoration(
-                color: colorScheme.surface,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-              ),
-              child: Form(
-                key: resetFormKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
+    try {
+      await showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (dialogContext) {
+          return StatefulBuilder(
+            builder: (dialogContext, setDialogState) {
+              return Container(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(dialogContext).viewInsets.bottom,
+                  left: 24,
+                  right: 24,
+                  top: 24,
+                ),
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(28)),
+                ),
+                child: Form(
+                  key: resetFormKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
                       // Handle bar
                       Center(
                         child: Container(
@@ -230,12 +241,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           height: 4,
                           margin: const EdgeInsets.only(bottom: 24),
                           decoration: BoxDecoration(
-                            color: colorScheme.onSurfaceVariant.withOpacity(0.4),
+                            color:
+                                colorScheme.onSurfaceVariant.withOpacity(0.4),
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
                       ),
-                      
+
                       // Title
                       Text(
                         'Reset Password',
@@ -245,9 +257,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           color: colorScheme.onSurface,
                         ),
                       ),
-                      
+
                       const SizedBox(height: 8),
-                      
+
                       // Description
                       Text(
                         'Enter your email address and we\'ll send you a link to reset your password.',
@@ -257,9 +269,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           height: 1.4,
                         ),
                       ),
-                      
+
                       const SizedBox(height: 24),
-                      
+
                       // Email input
                       StandardTextFormField(
                         controller: resetEmailController,
@@ -277,15 +289,16 @@ class _LoginScreenState extends State<LoginScreen> {
                           return null;
                         },
                       ),
-                      
+
                       const SizedBox(height: 24),
-                      
+
                       // Send reset email button
                       FilledButton(
                         onPressed: isSendingReset
                             ? null
                             : () async {
-                                if (resetFormKey.currentState?.validate() ?? false) {
+                                if (resetFormKey.currentState?.validate() ??
+                                    false) {
                                   setDialogState(() {
                                     isSendingReset = true;
                                   });
@@ -295,36 +308,51 @@ class _LoginScreenState extends State<LoginScreen> {
                                       email: resetEmailController.text.trim(),
                                     );
 
-                                    if (mounted) {
-                                      Navigator.of(dialogContext).pop();
-                                      NotificationHelper.showSuccess(context, message: 'Password reset email sent! Please check your inbox.');
-                                    }
+                                    if (!dialogContext.mounted) return;
+                                    Navigator.of(dialogContext).pop();
+                                    if (!mounted) return;
+                                    NotificationHelper.showSuccess(
+                                      this.context,
+                                      message:
+                                          'Password reset email sent! Please check your inbox.',
+                                    );
                                   } on FirebaseAuthException catch (e) {
-                                    if (mounted) {
-                                      String errorMessage = 'Failed to send reset email';
-                                      if (e.code == 'user-not-found') {
-                                        errorMessage = 'No account found with this email address.';
-                                      } else if (e.code == 'invalid-email') {
-                                        errorMessage = 'Invalid email address.';
-                                      } else if (e.code == 'too-many-requests') {
-                                        errorMessage = 'Too many requests. Please try again later.';
-                                      } else {
-                                        errorMessage = e.message ?? errorMessage;
-                                      }
-                                      
+                                    var errorMessage =
+                                        'Failed to send reset email';
+                                    if (e.code == 'user-not-found') {
+                                      errorMessage =
+                                          'No account found with this email address.';
+                                    } else if (e.code == 'invalid-email') {
+                                      errorMessage = 'Invalid email address.';
+                                    } else if (e.code == 'too-many-requests') {
+                                      errorMessage =
+                                          'Too many requests. Please try again later.';
+                                    } else {
+                                      errorMessage = e.message ?? errorMessage;
+                                    }
+
+                                    if (dialogContext.mounted) {
                                       setDialogState(() {
                                         isSendingReset = false;
                                       });
-                                      
-                                      NotificationHelper.showError(context, message: errorMessage);
                                     }
-                                  } catch (e) {
-                                    if (mounted) {
+                                    if (!mounted) return;
+                                    NotificationHelper.showError(
+                                      this.context,
+                                      message: errorMessage,
+                                    );
+                                  } catch (_) {
+                                    if (dialogContext.mounted) {
                                       setDialogState(() {
                                         isSendingReset = false;
                                       });
-                                      NotificationHelper.showError(context, message: 'An error occurred. Please try again.');
                                     }
+                                    if (!mounted) return;
+                                    NotificationHelper.showError(
+                                      this.context,
+                                      message:
+                                          'An error occurred. Please try again.',
+                                    );
                                   }
                                 }
                               },
@@ -353,9 +381,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                       ),
-                      
+
                       const SizedBox(height: 12),
-                      
+
                       // Cancel button
                       TextButton(
                         onPressed: isSendingReset
@@ -369,28 +397,21 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
-                      
-                    SizedBox(height: MediaQuery.of(dialogContext).padding.bottom + 8),
-                  ],
+
+                      SizedBox(
+                          height:
+                              MediaQuery.of(dialogContext).padding.bottom + 8),
+                    ],
+                  ),
                 ),
-              ),
-            );
-          },
-        );
-      },
-    ).then((_) {
-      // Dispose controller after dialog closes completely
-      if (!resetEmailController.hasListeners) {
-        resetEmailController.dispose();
-      } else {
-        // Delay disposal if controller is still attached
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (!resetEmailController.hasListeners) {
-            resetEmailController.dispose();
-          }
-        });
-      }
-    });
+              );
+            },
+          );
+        },
+      );
+    } finally {
+      resetEmailController.dispose();
+    }
   }
 
   @override
@@ -424,7 +445,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     SizedBox(height: ResponsiveHelper.spacing(context, 20)),
-                    
+
                     // App logo/icon with modern design
                     Center(
                       child: Container(
@@ -444,7 +465,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             BoxShadow(
                               color: colorScheme.primary.withOpacity(0.3),
                               blurRadius: ResponsiveHelper.spacing(context, 20),
-                              offset: Offset(0, ResponsiveHelper.spacing(context, 10)),
+                              offset: Offset(
+                                  0, ResponsiveHelper.spacing(context, 10)),
                             ),
                           ],
                         ),
@@ -488,7 +510,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     Card(
                       elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 24)),
+                        borderRadius: BorderRadius.circular(
+                            ResponsiveHelper.radius(context, 24)),
                       ),
                       child: Padding(
                         padding: ResponsiveHelper.edgeInsetsAll(context, 24),
@@ -512,7 +535,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               },
                             ),
 
-                            SizedBox(height: ResponsiveHelper.spacing(context, 20)),
+                            SizedBox(
+                                height: ResponsiveHelper.spacing(context, 20)),
 
                             // Password field
                             StandardTextFormField(
@@ -544,22 +568,28 @@ class _LoginScreenState extends State<LoginScreen> {
                               },
                             ),
 
-                            SizedBox(height: ResponsiveHelper.spacing(context, 12)),
+                            SizedBox(
+                                height: ResponsiveHelper.spacing(context, 12)),
 
                             // Forgot password link
                             Align(
                               alignment: Alignment.centerRight,
                               child: TextButton(
-                                onPressed: _isLoading ? null : _showForgotPasswordDialog,
+                                onPressed: _isLoading
+                                    ? null
+                                    : _showForgotPasswordDialog,
                                 style: TextButton.styleFrom(
-                                  padding: ResponsiveHelper.edgeInsetsSymmetric(context, 8, 4),
+                                  padding: ResponsiveHelper.edgeInsetsSymmetric(
+                                      context, 8, 4),
                                   minimumSize: Size.zero,
-                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
                                 ),
                                 child: Text(
                                   'Forgot Password?',
                                   style: GoogleFonts.inter(
-                                    fontSize: ResponsiveHelper.fontSize(context, 14),
+                                    fontSize:
+                                        ResponsiveHelper.fontSize(context, 14),
                                     fontWeight: FontWeight.w600,
                                     color: colorScheme.primary,
                                   ),
@@ -567,24 +597,31 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
 
-                            SizedBox(height: ResponsiveHelper.spacing(context, 20)),
+                            SizedBox(
+                                height: ResponsiveHelper.spacing(context, 20)),
 
                             // Login button
                             FilledButton(
                               onPressed: _isLoading ? null : _login,
                               style: FilledButton.styleFrom(
-                                padding: EdgeInsets.symmetric(vertical: ResponsiveHelper.buttonHeight(context, 16)),
+                                padding: EdgeInsets.symmetric(
+                                    vertical: ResponsiveHelper.buttonHeight(
+                                        context, 16)),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 16)),
+                                  borderRadius: BorderRadius.circular(
+                                      ResponsiveHelper.radius(context, 16)),
                                 ),
                               ),
                               child: _isLoading
                                   ? SizedBox(
-                                      height: ResponsiveHelper.iconSize(context, 20),
-                                      width: ResponsiveHelper.iconSize(context, 20),
+                                      height: ResponsiveHelper.iconSize(
+                                          context, 20),
+                                      width: ResponsiveHelper.iconSize(
+                                          context, 20),
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
                                           colorScheme.onPrimary,
                                         ),
                                       ),
@@ -592,42 +629,52 @@ class _LoginScreenState extends State<LoginScreen> {
                                   : Text(
                                       'Sign In',
                                       style: GoogleFonts.inter(
-                                        fontSize: ResponsiveHelper.fontSize(context, 17),
+                                        fontSize: ResponsiveHelper.fontSize(
+                                            context, 17),
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
                             ),
 
-                            SizedBox(height: ResponsiveHelper.spacing(context, 24)),
+                            SizedBox(
+                                height: ResponsiveHelper.spacing(context, 24)),
 
                             // Divider with "OR"
                             Row(
                               children: [
-                                Expanded(child: Divider(color: colorScheme.outline)),
+                                Expanded(
+                                    child: Divider(color: colorScheme.outline)),
                                 Padding(
-                                  padding: ResponsiveHelper.edgeInsetsSymmetric(context, 16, 0),
+                                  padding: ResponsiveHelper.edgeInsetsSymmetric(
+                                      context, 16, 0),
                                   child: Text(
                                     'OR',
                                     style: GoogleFonts.inter(
-                                      fontSize: ResponsiveHelper.fontSize(context, 14),
+                                      fontSize: ResponsiveHelper.fontSize(
+                                          context, 14),
                                       color: colorScheme.onSurfaceVariant,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ),
-                                Expanded(child: Divider(color: colorScheme.outline)),
+                                Expanded(
+                                    child: Divider(color: colorScheme.outline)),
                               ],
                             ),
 
-                            SizedBox(height: ResponsiveHelper.spacing(context, 24)),
+                            SizedBox(
+                                height: ResponsiveHelper.spacing(context, 24)),
 
                             // Google Sign-In button
                             OutlinedButton.icon(
                               onPressed: _isLoading ? null : _signInWithGoogle,
                               style: OutlinedButton.styleFrom(
-                                padding: EdgeInsets.symmetric(vertical: ResponsiveHelper.buttonHeight(context, 16)),
+                                padding: EdgeInsets.symmetric(
+                                    vertical: ResponsiveHelper.buttonHeight(
+                                        context, 16)),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 16)),
+                                  borderRadius: BorderRadius.circular(
+                                      ResponsiveHelper.radius(context, 16)),
                                 ),
                                 side: BorderSide(
                                   color: colorScheme.outline,
@@ -640,7 +687,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 width: 20,
                                 errorBuilder: (context, error, stackTrace) {
                                   // Fallback if Google logo asset doesn't exist
-                                  return const Icon(Icons.g_mobiledata, size: 24);
+                                  return const Icon(Icons.g_mobiledata,
+                                      size: 24);
                                 },
                               ),
                               label: Text(
@@ -697,5 +745,4 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-
 }

@@ -19,7 +19,8 @@ class TransactionDetailScreen extends StatefulWidget {
   const TransactionDetailScreen({super.key, required this.transaction});
 
   @override
-  State<TransactionDetailScreen> createState() => _TransactionDetailScreenState();
+  State<TransactionDetailScreen> createState() =>
+      _TransactionDetailScreenState();
 }
 
 class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
@@ -28,12 +29,12 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   late TextEditingController _amountController;
   late TextEditingController _descriptionController;
   late DateTime _selectedDate;
-  
+
   int? _selectedCategoryId;
   late Future<List<Category>> _categoriesFuture;
   bool _isUpdating = false;
   bool _isDeleting = false;
-  
+
   final dbHelper = DatabaseHelper();
   final User? _currentUser = FirebaseAuth.instance.currentUser;
 
@@ -41,8 +42,10 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   void initState() {
     super.initState();
     _transactionType = widget.transaction.type;
-    _amountController = TextEditingController(text: widget.transaction.amount.toString());
-    _descriptionController = TextEditingController(text: widget.transaction.description);
+    _amountController =
+        TextEditingController(text: widget.transaction.amount.toString());
+    _descriptionController =
+        TextEditingController(text: widget.transaction.description);
     _selectedDate = DateTime.parse(widget.transaction.date);
     _selectedCategoryId = widget.transaction.categoryId;
     _loadCategories();
@@ -51,7 +54,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   void _loadCategories() {
     if (_currentUser != null) {
       setState(() {
-        _categoriesFuture = dbHelper.getCategories(_currentUser!.uid, type: _transactionType);
+        _categoriesFuture =
+            dbHelper.getCategories(_currentUser.uid, type: _transactionType);
       });
     }
   }
@@ -84,7 +88,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
         tag: 'business', // Always business
       );
 
-      await dbHelper.updateTransaction(updatedTransaction, _currentUser!.uid);
+      await dbHelper.updateTransaction(updatedTransaction, _currentUser.uid);
 
       if (mounted) {
         NotificationHelper.showSuccess(context, message: 'Transaction Updated');
@@ -93,7 +97,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isUpdating = false);
-        NotificationHelper.showError(context, message: 'Error updating transaction: $e');
+        NotificationHelper.showError(context,
+            message: 'Error updating transaction: $e');
       }
     }
   }
@@ -116,15 +121,18 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
       setState(() => _isDeleting = true);
 
       try {
-        await dbHelper.deleteTransaction(widget.transaction.id!, _currentUser!.uid);
+        await dbHelper.deleteTransaction(
+            widget.transaction.id!, _currentUser.uid);
         if (mounted) {
-          NotificationHelper.showSuccess(context, message: 'Transaction Deleted');
+          NotificationHelper.showSuccess(context,
+              message: 'Transaction Deleted');
           Navigator.of(context).pop(true);
         }
       } catch (e) {
         if (mounted) {
           setState(() => _isDeleting = false);
-          NotificationHelper.showError(context, message: 'Error deleting transaction: $e');
+          NotificationHelper.showError(context,
+              message: 'Error deleting transaction: $e');
         }
       }
     }
@@ -236,7 +244,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
             StandardTextFormField(
               controller: _amountController,
               labelText: 'Amount',
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               prefixIcon: Icons.attach_money_rounded,
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
@@ -358,7 +367,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-                onPressed: (_isUpdating || _isDeleting) ? null : _updateTransaction,
+                onPressed:
+                    (_isUpdating || _isDeleting) ? null : _updateTransaction,
                 child: _isUpdating
                     ? SizedBox(
                         height: 20,
@@ -385,4 +395,3 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     );
   }
 }
-

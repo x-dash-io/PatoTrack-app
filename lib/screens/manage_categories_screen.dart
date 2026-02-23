@@ -72,8 +72,10 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
   Future<void> _refreshCategories() async {
     if (currentUser == null) return;
     setState(() => _isLoading = true);
-    final expenseCats = await dbHelper.getCategories(currentUser!.uid, type: 'expense');
-    final incomeCats = await dbHelper.getCategories(currentUser!.uid, type: 'income');
+    final expenseCats =
+        await dbHelper.getCategories(currentUser!.uid, type: 'expense');
+    final incomeCats =
+        await dbHelper.getCategories(currentUser!.uid, type: 'income');
     if (mounted) {
       setState(() {
         _expenseCategories = expenseCats;
@@ -94,23 +96,26 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
     _nameController.text = category?.name ?? '';
     IconData? selectedIcon = category?.iconCodePoint != null
         ? IconData(category!.iconCodePoint!, fontFamily: 'MaterialIcons')
-        : (type == 'expense' ? Icons.category_rounded : Icons.account_balance_wallet_rounded);
+        : (type == 'expense'
+            ? Icons.category_rounded
+            : Icons.account_balance_wallet_rounded);
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) {
+      builder: (_) {
         return StatefulBuilder(
-          builder: (context, setDialogState) {
-            final colorScheme = Theme.of(context).colorScheme;
+          builder: (dialogContext, setDialogState) {
+            final colorScheme = Theme.of(dialogContext).colorScheme;
             return Container(
               decoration: BoxDecoration(
                 color: colorScheme.surface,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(28)),
               ),
               padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
+                bottom: MediaQuery.of(dialogContext).viewInsets.bottom,
                 left: 24,
                 right: 24,
                 top: 24,
@@ -192,7 +197,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                           onPressed: () async {
                             final IconData? newIcon =
                                 await showModalBottomSheet<IconData>(
-                              context: context,
+                              context: dialogContext,
                               backgroundColor: Colors.transparent,
                               builder: (context) => _buildIconPickerDialog(),
                             );
@@ -215,7 +220,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                     children: [
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: () => Navigator.pop(context),
+                          onPressed: () => Navigator.of(dialogContext).pop(),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
@@ -239,12 +244,14 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                               : () async {
                                   if (_nameController.text.isNotEmpty &&
                                       currentUser != null) {
-                                    setDialogState(() => _isSavingCategory = true);
+                                    setDialogState(
+                                        () => _isSavingCategory = true);
                                     try {
                                       if (category == null) {
                                         final newCategory = Category(
                                           name: _nameController.text.trim(),
-                                          iconCodePoint: selectedIcon?.codePoint,
+                                          iconCodePoint:
+                                              selectedIcon?.codePoint,
                                           type: type,
                                         );
                                         await dbHelper.addCategory(
@@ -252,9 +259,11 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                                           currentUser!.uid,
                                         );
                                       } else {
-                                        final updatedCategory = category.copyWith(
+                                        final updatedCategory =
+                                            category.copyWith(
                                           name: _nameController.text.trim(),
-                                          iconCodePoint: selectedIcon?.codePoint,
+                                          iconCodePoint:
+                                              selectedIcon?.codePoint,
                                         );
                                         await dbHelper.updateCategory(
                                           updatedCategory,
@@ -262,14 +271,23 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                                         );
                                       }
                                       if (mounted) {
-                                        Navigator.pop(context);
-                                        _refreshCategories();
+                                        setDialogState(
+                                            () => _isSavingCategory = false);
+                                        if (dialogContext.mounted) {
+                                          Navigator.of(dialogContext).pop();
+                                        }
+                                        await _refreshCategories();
                                       }
                                     } catch (e) {
                                       if (mounted) {
-                                        setDialogState(() => _isSavingCategory = false);
-                                        final theme = Theme.of(context);
-                                        NotificationHelper.showSuccess(context, message: 'Category saved successfully. Will sync when online.');
+                                        if (dialogContext.mounted) {
+                                          setDialogState(
+                                              () => _isSavingCategory = false);
+                                        }
+                                        NotificationHelper.showError(
+                                            this.context,
+                                            message:
+                                                'Failed to save category: $e');
                                       }
                                     }
                                   }
@@ -301,7 +319,8 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                       ),
                     ],
                   ),
-                  SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
+                  SizedBox(
+                      height: MediaQuery.of(dialogContext).padding.bottom + 8),
                 ],
               ),
             );
@@ -470,7 +489,8 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                   tooltip: 'Edit Category',
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete_outline_rounded, color: Colors.red),
+                  icon: const Icon(Icons.delete_outline_rounded,
+                      color: Colors.red),
                   onPressed: () async {
                     if (currentUser == null) return;
                     final bool? confirm = await showModernConfirmDialog(
@@ -483,7 +503,8 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                       isDestructive: true,
                     );
                     if (confirm == true) {
-                      await dbHelper.deleteCategory(category.id!, currentUser!.uid);
+                      await dbHelper.deleteCategory(
+                          category.id!, currentUser!.uid);
                       _refreshCategories();
                     }
                   },
@@ -500,9 +521,8 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
@@ -561,4 +581,3 @@ extension StringExtension on String {
     return "${this[0].toUpperCase()}${substring(1).toLowerCase()}";
   }
 }
-

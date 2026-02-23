@@ -13,7 +13,8 @@ class ManageFrequenciesScreen extends StatefulWidget {
   const ManageFrequenciesScreen({super.key});
 
   @override
-  State<ManageFrequenciesScreen> createState() => _ManageFrequenciesScreenState();
+  State<ManageFrequenciesScreen> createState() =>
+      _ManageFrequenciesScreenState();
 }
 
 class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
@@ -29,11 +30,11 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
 
   Future<void> _loadFrequencies() async {
     if (_currentUser == null) return;
-    
+
     setState(() => _isLoading = true);
     try {
       final dbHelper = DatabaseHelper();
-      final frequencies = await dbHelper.getFrequencies(_currentUser!.uid);
+      final frequencies = await dbHelper.getFrequencies(_currentUser.uid);
       if (mounted) {
         setState(() {
           _frequencies = frequencies;
@@ -76,7 +77,10 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 20),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.4),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant
+                      .withOpacity(0.4),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -111,12 +115,18 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
                         labelText: 'Type',
                         prefixIcon: Icons.category_rounded,
                         items: const [
-                          DropdownMenuItem(value: 'weekly', child: Text('Weekly')),
-                          DropdownMenuItem(value: 'biweekly', child: Text('Bi-weekly')),
-                          DropdownMenuItem(value: 'monthly', child: Text('Monthly')),
-                          DropdownMenuItem(value: 'quarterly', child: Text('Quarterly')),
-                          DropdownMenuItem(value: 'yearly', child: Text('Yearly')),
-                          DropdownMenuItem(value: 'custom', child: Text('Custom')),
+                          DropdownMenuItem(
+                              value: 'weekly', child: Text('Weekly')),
+                          DropdownMenuItem(
+                              value: 'biweekly', child: Text('Bi-weekly')),
+                          DropdownMenuItem(
+                              value: 'monthly', child: Text('Monthly')),
+                          DropdownMenuItem(
+                              value: 'quarterly', child: Text('Quarterly')),
+                          DropdownMenuItem(
+                              value: 'yearly', child: Text('Yearly')),
+                          DropdownMenuItem(
+                              value: 'custom', child: Text('Custom')),
                         ],
                         onChanged: (value) {
                           if (value != null) {
@@ -151,9 +161,12 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
                         controller: valueController,
                         labelText: 'Value (days)',
                         hintText: 'e.g., 7 for weekly',
-                        keyboardType: const TextInputType.numberWithOptions(decimal: false),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: false),
                         prefixIcon: Icons.numbers_rounded,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
                       ),
                     ],
                   );
@@ -165,7 +178,8 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
                   if (nameController.text.isEmpty ||
                       displayNameController.text.isEmpty ||
                       valueController.text.isEmpty) {
-                    NotificationHelper.showWarning(context, message: 'Please fill all fields');
+                    NotificationHelper.showWarning(context,
+                        message: 'Please fill all fields');
                     return;
                   }
                   Navigator.pop(context, true);
@@ -190,22 +204,26 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
       ),
     );
 
-    if (result == true && _currentUser != null && mounted) {
-      try {
-        final newFrequency = Frequency(
-          name: nameController.text.trim(),
-          type: selectedType,
-          value: int.parse(valueController.text.trim()),
-          displayName: displayNameController.text.trim(),
-          userId: _currentUser!.uid,
-        );
-        final dbHelper = DatabaseHelper();
-        await dbHelper.addFrequency(newFrequency, _currentUser!.uid);
-        await _loadFrequencies();
-        NotificationHelper.showSuccess(context, message: 'Frequency added successfully');
-      } catch (e) {
-        NotificationHelper.showError(context, message: 'Error adding frequency: $e');
-      }
+    if (result != true || _currentUser == null) return;
+
+    try {
+      final newFrequency = Frequency(
+        name: nameController.text.trim(),
+        type: selectedType,
+        value: int.parse(valueController.text.trim()),
+        displayName: displayNameController.text.trim(),
+        userId: _currentUser.uid,
+      );
+      final dbHelper = DatabaseHelper();
+      await dbHelper.addFrequency(newFrequency, _currentUser.uid);
+      await _loadFrequencies();
+      if (!mounted) return;
+      NotificationHelper.showSuccess(context,
+          message: 'Frequency added successfully');
+    } catch (e) {
+      if (!mounted) return;
+      NotificationHelper.showError(context,
+          message: 'Error adding frequency: $e');
     }
   }
 
@@ -215,21 +233,26 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
     final confirm = await showModernConfirmDialog(
       context: context,
       title: 'Delete Frequency',
-      message: 'Are you sure you want to delete "${frequency.displayName}"? This cannot be undone.',
+      message:
+          'Are you sure you want to delete "${frequency.displayName}"? This cannot be undone.',
       confirmText: 'Delete',
       cancelText: 'Cancel',
       isDestructive: true,
     );
 
-    if (confirm == true && mounted) {
-      try {
-        final dbHelper = DatabaseHelper();
-        await dbHelper.deleteFrequency(frequency.id!, _currentUser!.uid);
-        await _loadFrequencies();
-        NotificationHelper.showSuccess(context, message: 'Frequency deleted successfully');
-      } catch (e) {
-        NotificationHelper.showError(context, message: 'Error deleting frequency: $e');
-      }
+    if (confirm != true) return;
+
+    try {
+      final dbHelper = DatabaseHelper();
+      await dbHelper.deleteFrequency(frequency.id!, _currentUser.uid);
+      await _loadFrequencies();
+      if (!mounted) return;
+      NotificationHelper.showSuccess(context,
+          message: 'Frequency deleted successfully');
+    } catch (e) {
+      if (!mounted) return;
+      NotificationHelper.showError(context,
+          message: 'Error deleting frequency: $e');
     }
   }
 
@@ -348,4 +371,3 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
     );
   }
 }
-

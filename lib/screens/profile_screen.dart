@@ -1,9 +1,6 @@
 import 'dart:convert';
-import 'dart:io';
-import 'package:crypto/crypto.dart';
-import 'package:flutter/cupertino.dart';
+
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -15,8 +12,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../helpers/config.dart';
 import '../helpers/database_helper.dart';
+import '../helpers/passcode_service.dart';
 import '../helpers/responsive_helper.dart';
-import '../models/category.dart';
 import '../theme_provider.dart';
 import '../widgets/dialog_helpers.dart';
 import '../widgets/input_fields.dart';
@@ -34,6 +31,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final dbHelper = DatabaseHelper();
+  final PasscodeService _passcodeService = PasscodeService();
   final _auth = FirebaseAuth.instance;
   final _nameController = TextEditingController();
 
@@ -85,35 +83,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final XFile? image = await imagePicker.pickImage(
         source: ImageSource.gallery, imageQuality: 70);
 
-    if (image == null || currentUser == null) return;
+    if (!mounted || image == null || currentUser == null) return;
 
     setState(() => _isUploading = true);
 
     try {
+      if (AppConfig.cloudinaryUploadPreset ==
+          'REPLACE_WITH_UNSIGNED_UPLOAD_PRESET') {
+        if (!mounted) return;
+        NotificationHelper.showError(
+          context,
+          message:
+              'Cloudinary upload preset is not configured. Set AppConfig.cloudinaryUploadPreset first.',
+        );
+        return;
+      }
+
       final url = Uri.parse(
           'https://api.cloudinary.com/v1_1/${AppConfig.cloudinaryCloudName}/image/upload');
       final request = http.MultipartRequest('POST', url);
       request.files.add(await http.MultipartFile.fromPath('file', image.path));
-
-      final timestamp =
-          (DateTime.now().millisecondsSinceEpoch ~/ 1000).toString();
-      final stringToSign =
-          'timestamp=$timestamp${AppConfig.cloudinaryApiSecret}';
-      final signature = sha1.convert(utf8.encode(stringToSign)).toString();
-
-      request.fields['api_key'] = AppConfig.cloudinaryApiKey;
-      request.fields['timestamp'] = timestamp;
-      request.fields['signature'] = signature;
+      request.fields['upload_preset'] = AppConfig.cloudinaryUploadPreset;
 
       final response = await request.send();
 
       if (response.statusCode == 200) {
         final responseData = await response.stream.bytesToString();
-        final responseJson = json.decode(responseData);
-        final imageUrl = responseJson['secure_url'];
+        final responseJson = json.decode(responseData) as Map<String, dynamic>;
+        final imageUrl = responseJson['secure_url'] as String?;
+        if (imageUrl == null || imageUrl.isEmpty) {
+          throw Exception('Cloudinary response missing secure_url');
+        }
 
         await currentUser!.updatePhotoURL(imageUrl);
-        
+
         // Reload user data to ensure photoURL is immediately available
         try {
           await currentUser!.reload();
@@ -127,16 +130,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
         } catch (e) {
           print('Warning: Failed to reload user data after photo update: $e');
         }
-        
-        NotificationHelper.showSuccess(context, message: 'Profile picture updated!');
+
+        if (!mounted) return;
+        NotificationHelper.showSuccess(context,
+            message: 'Profile picture updated!');
       } else {
         final errorData = await response.stream.bytesToString();
         print('Cloudinary Error: $errorData');
-        NotificationHelper.showError(context, message: 'Failed to upload image. Status code: ${response.statusCode}');
+        if (!mounted) return;
+        NotificationHelper.showError(
+          context,
+          message:
+              'Failed to upload image. Status code: ${response.statusCode}',
+        );
       }
     } catch (e) {
       print('Error uploading to Cloudinary: $e');
-      NotificationHelper.showError(context, message: 'Failed to upload image: $e');
+      if (!mounted) return;
+      NotificationHelper.showError(context,
+          message: 'Failed to upload image: $e');
     } finally {
       if (mounted) setState(() => _isUploading = false);
     }
@@ -144,10 +156,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadPreferences() async {
     final prefs = await SharedPreferences.getInstance();
+    await _passcodeService.migrateLegacyPasscodeIfNeeded();
+    final isPasscodeEnabled = await _passcodeService.isPasscodeSet();
     if (mounted) {
       setState(() {
         _selectedCurrency = prefs.getString('currency') ?? 'KSh';
-        _isPasscodeEnabled = prefs.getString('passcode') != null;
+        _isPasscodeEnabled = isPasscodeEnabled;
       });
     }
   }
@@ -160,10 +174,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _showUpdateNameDialog() {
     _nameController.text = currentUser?.displayName ?? '';
-    
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Update Your Name'),
         content: StandardTextFormField(
           controller: _nameController,
@@ -174,18 +188,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Cancel'),
           ),
           FilledButton(
             onPressed: () async {
               if (_nameController.text.isNotEmpty) {
-                await currentUser?.updateDisplayName(_nameController.text.trim());
-                Navigator.pop(context);
-                if (mounted) {
-                  NotificationHelper.showSuccess(context, message: 'Name updated successfully!');
-                  setState(() {});
-                }
+                final navigator = Navigator.of(dialogContext);
+                await currentUser
+                    ?.updateDisplayName(_nameController.text.trim());
+                navigator.pop();
+                if (!mounted) return;
+                NotificationHelper.showSuccess(
+                  this.context,
+                  message: 'Name updated successfully!',
+                );
+                setState(() {});
               }
             },
             child: const Text('Update'),
@@ -198,16 +216,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _sendPasswordResetEmail() async {
     if (currentUser?.email == null) return;
     if (_isSendingPasswordReset) return;
-    
+
     setState(() => _isSendingPasswordReset = true);
     try {
       await _auth.sendPasswordResetEmail(email: currentUser!.email!);
       if (mounted) {
-        NotificationHelper.showSuccess(context, message: 'Password reset link sent to your email.');
+        NotificationHelper.showSuccess(context,
+            message: 'Password reset link sent to your email.');
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
-        NotificationHelper.showError(context, message: e.message ?? 'An error occurred.');
+        NotificationHelper.showError(context,
+            message: e.message ?? 'An error occurred.');
       }
     } finally {
       if (mounted) {
@@ -218,11 +238,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _deleteAccount() async {
     if (_isDeletingAccount) return;
-    
+    final user = currentUser;
+    if (user == null) return;
+
     final bool? confirm = await showModernConfirmDialog(
       context: context,
       title: 'DELETE ACCOUNT',
-      message: 'This is irreversible. All your data will be permanently deleted. Are you sure?',
+      message:
+          'This is irreversible. All your data will be permanently deleted. Are you sure?',
       confirmText: 'DELETE',
       cancelText: 'Cancel',
       isDestructive: true,
@@ -230,15 +253,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (confirm == true && mounted) {
       setState(() => _isDeletingAccount = true);
-      try {
-        await currentUser?.delete();
+
+      final lastSignInAt = user.metadata.lastSignInTime;
+      final hasRecentSignIn = lastSignInAt != null &&
+          DateTime.now().difference(lastSignInAt) <= const Duration(minutes: 5);
+      if (!hasRecentSignIn) {
         if (mounted) {
-          NotificationHelper.showSuccess(context, message: 'Account deleted successfully.');
+          setState(() => _isDeletingAccount = false);
+          NotificationHelper.showWarning(
+            context,
+            message:
+                'For security, please log in again before deleting your account.',
+          );
+        }
+        return;
+      }
+
+      try {
+        // Delete user data first while auth credentials are still valid.
+        await dbHelper.deleteUserDataFromFirestore(user.uid);
+        await dbHelper.deleteAllUserData(user.uid);
+        await user.delete();
+
+        if (mounted) {
+          NotificationHelper.showSuccess(
+            context,
+            message: 'Account and data deleted successfully.',
+          );
         }
       } on FirebaseAuthException catch (e) {
         if (mounted) {
+          final message = e.code == 'requires-recent-login'
+              ? 'Please log in again, then retry account deletion.'
+              : (e.message ?? 'Failed to delete account.');
+          NotificationHelper.showError(context, message: message);
+        }
+      } catch (e) {
+        if (mounted) {
+          NotificationHelper.showError(
+            context,
+            message: 'Failed to delete account data: $e',
+          );
+        }
+      } finally {
+        if (mounted) {
           setState(() => _isDeletingAccount = false);
-          NotificationHelper.showError(context, message: e.message ?? 'Failed to delete account.');
         }
       }
     }
@@ -261,16 +320,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         // Then sign out from Google if applicable
         final user = currentUser;
         bool isGoogleUser = false;
-        
+
         if (user != null) {
           // Check if user has a Google provider
           isGoogleUser = user.providerData
               .any((provider) => provider.providerId == 'google.com');
         }
-        
+
         // Always sign out from Firebase Auth
         await _auth.signOut();
-        
+
         // Also sign out from Google Sign-In if applicable (non-blocking)
         if (isGoogleUser) {
           try {
@@ -280,10 +339,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             print('Google sign out error (non-critical): $e');
           }
         }
-        
+
         // Small delay to ensure auth state change propagates
         await Future.delayed(const Duration(milliseconds: 300));
-        
+
         // AuthGate's StreamBuilder will automatically detect the sign out
         // and navigate to LoginScreen. No manual navigation needed.
         // Clear loading state after delay
@@ -294,19 +353,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
         // Log the error for debugging
         print('Logout error: $e');
         print('Stack trace: $stackTrace');
-        
+
         if (mounted) {
           setState(() => _isLoggingOut = false);
-          
+
           // Try to sign out anyway, even if there was an error
           try {
             await _auth.signOut();
           } catch (signOutError) {
             print('Secondary sign out attempt also failed: $signOutError');
           }
-          
-          final theme = Theme.of(context);
-          NotificationHelper.showSuccess(context, message: 'Signed out successfully');
+          if (!mounted) return;
+          NotificationHelper.showSuccess(this.context,
+              message: 'Signed out successfully');
         }
       }
     }
@@ -322,9 +381,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (await canLaunchUrl(whatsappUrl)) {
         await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
       } else {
-        NotificationHelper.showWarning(context, message: 'Could not launch WhatsApp. Is it installed?');
+        if (!mounted) return;
+        NotificationHelper.showWarning(
+          context,
+          message: 'Could not launch WhatsApp. Is it installed?',
+        );
       }
     } catch (e) {
+      if (!mounted) return;
       NotificationHelper.showError(context, message: 'An error occurred.');
     }
   }
@@ -341,7 +405,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final bool? confirm = await showModernConfirmDialog(
       context: context,
       title: 'Restore from Cloud',
-      message: 'This will replace all local data with your cloud backup. Are you sure?',
+      message:
+          'This will replace all local data with your cloud backup. Are you sure?',
       confirmText: 'Restore',
       cancelText: 'Cancel',
       isDestructive: false,
@@ -351,9 +416,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() => _isRestoring = true);
       try {
         await dbHelper.restoreFromFirestore(currentUser!.uid);
-        NotificationHelper.showSuccess(context, message: "Data restored successfully! Please restart the app to see all changes.", duration: const Duration(seconds: 5));
+        if (!mounted) return;
+        NotificationHelper.showSuccess(
+          this.context,
+          message:
+              "Data restored successfully! Please restart the app to see all changes.",
+          duration: const Duration(seconds: 5),
+        );
       } catch (e) {
-        NotificationHelper.showError(context, message: "Error restoring data: $e");
+        if (!mounted) return;
+        NotificationHelper.showError(this.context,
+            message: "Error restoring data: $e");
       } finally {
         if (mounted) setState(() => _isRestoring = false);
       }
@@ -365,7 +438,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       body: Container(
@@ -460,7 +532,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 child: (currentUser!.photoURL == null)
                                     ? Icon(
                                         Icons.person_rounded,
-                                        size: ResponsiveHelper.iconSize(context, 60),
+                                        size: ResponsiveHelper.iconSize(
+                                            context, 60),
                                         color: colorScheme.onPrimary,
                                       )
                                     : null,
@@ -471,7 +544,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               bottom: 0,
                               right: 0,
                               child: Container(
-                                padding: ResponsiveHelper.edgeInsetsAll(context, 8),
+                                padding:
+                                    ResponsiveHelper.edgeInsetsAll(context, 8),
                                 decoration: BoxDecoration(
                                   color: colorScheme.primary,
                                   shape: BoxShape.circle,
@@ -523,7 +597,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: Text(
                               currentUser!.displayName ?? 'User',
                               style: GoogleFonts.inter(
-                                fontSize: ResponsiveHelper.fontSize(context, 28),
+                                fontSize:
+                                    ResponsiveHelper.fontSize(context, 28),
                                 fontWeight: FontWeight.bold,
                                 color: colorScheme.onPrimaryContainer,
                                 letterSpacing: -0.5,
@@ -534,17 +609,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               maxLines: 1,
                             ),
                           ),
-                          SizedBox(width: ResponsiveHelper.spacing(context, 10)),
+                          SizedBox(
+                              width: ResponsiveHelper.spacing(context, 10)),
                           Material(
                             color: Colors.transparent,
                             child: InkWell(
                               onTap: _showUpdateNameDialog,
-                              borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
+                              borderRadius: BorderRadius.circular(
+                                  ResponsiveHelper.radius(context, 12)),
                               child: Container(
-                                padding: ResponsiveHelper.edgeInsetsAll(context, 8),
+                                padding:
+                                    ResponsiveHelper.edgeInsetsAll(context, 8),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withOpacity(0.25),
-                                  borderRadius: BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
+                                  borderRadius: BorderRadius.circular(
+                                      ResponsiveHelper.radius(context, 12)),
                                   border: Border.all(
                                     color: Colors.white.withOpacity(0.4),
                                     width: 1.5,
@@ -575,15 +654,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Icon(
                             Icons.email_outlined,
                             size: ResponsiveHelper.iconSize(context, 16),
-                            color: colorScheme.onPrimaryContainer.withOpacity(0.7),
+                            color:
+                                colorScheme.onPrimaryContainer.withOpacity(0.7),
                           ),
                           SizedBox(width: ResponsiveHelper.spacing(context, 6)),
                           Flexible(
                             child: Text(
                               currentUser!.email ?? 'No email',
                               style: GoogleFonts.inter(
-                                fontSize: ResponsiveHelper.fontSize(context, 14),
-                                color: colorScheme.onPrimaryContainer.withOpacity(0.85),
+                                fontSize:
+                                    ResponsiveHelper.fontSize(context, 14),
+                                color: colorScheme.onPrimaryContainer
+                                    .withOpacity(0.85),
                                 fontWeight: FontWeight.w500,
                               ),
                               textAlign: TextAlign.center,
@@ -622,10 +704,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         title: 'Dark Mode',
                         trailing: Switch(
                           value: themeProvider.themeMode == ThemeMode.dark,
-                          onChanged: (value) => themeProvider.toggleTheme(value),
+                          onChanged: (value) =>
+                              themeProvider.toggleTheme(value),
                         ),
                       ),
-                      Divider(height: 1, indent: 60, color: colorScheme.outline.withOpacity(0.1)),
+                      Divider(
+                          height: 1,
+                          indent: 60,
+                          color: colorScheme.outline.withOpacity(0.1)),
                       _buildModernListTile(
                         context: context,
                         icon: Icons.lock_rounded,
@@ -634,22 +720,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         trailing: Switch(
                           value: _isPasscodeEnabled,
                           onChanged: (value) async {
-                            final prefs = await SharedPreferences.getInstance();
                             if (value) {
-                              final success = await Navigator.of(context).push<bool>(
-                                  MaterialPageRoute(
-                                      builder: (context) =>
-                                          const PasscodeScreen(isSettingPasscode: true)));
+                              final navigator = Navigator.of(context);
+                              final success =
+                                  await navigator.push<bool>(MaterialPageRoute(
+                                builder: (context) => const PasscodeScreen(
+                                    isSettingPasscode: true),
+                              ));
                               if (success == true && mounted) {
                                 setState(() => _isPasscodeEnabled = true);
                               }
                             } else {
-                              final success = await Navigator.of(context).push<bool>(
-                                  MaterialPageRoute(
-                                      builder: (context) => const PasscodeScreen(
-                                          isSettingPasscode: false)));
+                              final navigator = Navigator.of(context);
+                              final success =
+                                  await navigator.push<bool>(MaterialPageRoute(
+                                builder: (context) => const PasscodeScreen(
+                                  isSettingPasscode: false,
+                                ),
+                              ));
                               if (success == true && mounted) {
-                                await prefs.remove('passcode');
+                                await _passcodeService.clearPasscode();
                                 setState(() => _isPasscodeEnabled = false);
                               }
                             }
@@ -657,25 +747,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                       if (_isPasscodeEnabled) ...[
-                        Divider(height: 1, indent: 60, color: colorScheme.outline.withOpacity(0.1)),
+                        Divider(
+                            height: 1,
+                            indent: 60,
+                            color: colorScheme.outline.withOpacity(0.1)),
                         _buildModernListTile(
                           context: context,
                           icon: Icons.phonelink_lock_rounded,
                           title: 'Change Passcode',
                           onTap: () async {
-                            final verified = await Navigator.of(context).push<bool>(
-                                MaterialPageRoute(
-                                    builder: (context) =>
-                                        const PasscodeScreen(isSettingPasscode: false)));
-                            if (verified == true && mounted) {
-                              await Navigator.of(context).push<bool>(MaterialPageRoute(
-                                  builder: (context) =>
-                                      const PasscodeScreen(isSettingPasscode: true)));
-                            }
+                            final navigator = Navigator.of(context);
+                            final verified =
+                                await navigator.push<bool>(MaterialPageRoute(
+                              builder: (context) => const PasscodeScreen(
+                                  isSettingPasscode: false),
+                            ));
+                            if (verified != true || !mounted) return;
+                            await navigator.push<bool>(
+                              MaterialPageRoute(
+                                builder: (context) => const PasscodeScreen(
+                                    isSettingPasscode: true),
+                              ),
+                            );
                           },
                         ),
                       ],
-                      Divider(height: 1, indent: 60, color: colorScheme.outline.withOpacity(0.1)),
+                      Divider(
+                          height: 1,
+                          indent: 60,
+                          color: colorScheme.outline.withOpacity(0.1)),
                       _buildModernListTile(
                         context: context,
                         icon: Icons.currency_exchange_rounded,
@@ -695,8 +795,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           borderRadius: BorderRadius.circular(12),
                           menuMaxHeight: 200,
                           items: <String>['KSh', 'USD', 'EUR', 'GBP']
-                              .map<DropdownMenuItem<String>>((String value) =>
-                                  DropdownMenuItem<String>(
+                              .map<DropdownMenuItem<String>>(
+                                  (String value) => DropdownMenuItem<String>(
                                       value: value,
                                       child: Text(
                                         value,
@@ -721,7 +821,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           onChanged: (String? newValue) {
                             if (newValue != null && mounted) {
                               _saveCurrencyPreference(newValue);
-                              NotificationHelper.showSuccess(context, message: 'Currency updated!');
+                              NotificationHelper.showSuccess(context,
+                                  message: 'Currency updated!');
                             }
                           },
                         ),
@@ -766,9 +867,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                               )
                             : null,
-                        onTap: _isSendingPasswordReset ? null : _sendPasswordResetEmail,
+                        onTap: _isSendingPasswordReset
+                            ? null
+                            : _sendPasswordResetEmail,
                       ),
-                      Divider(height: 1, indent: 60, color: colorScheme.outline.withOpacity(0.1)),
+                      Divider(
+                          height: 1,
+                          indent: 60,
+                          color: colorScheme.outline.withOpacity(0.1)),
                       _buildModernListTile(
                         context: context,
                         icon: Icons.delete_forever_rounded,
@@ -858,18 +964,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         title: 'FAQ',
                         onTap: _showFaqScreen,
                       ),
-                      Divider(height: 1, indent: 60, color: colorScheme.outline.withOpacity(0.1)),
+                      Divider(
+                          height: 1,
+                          indent: 60,
+                          color: colorScheme.outline.withOpacity(0.1)),
                       _buildModernListTile(
                         context: context,
                         icon: Icons.help_outline_rounded,
                         title: 'Help & Support',
                         onTap: () {
                           Navigator.of(context).push(
-                            MaterialPageRoute(builder: (context) => const HelpScreen()),
+                            MaterialPageRoute(
+                                builder: (context) => const HelpScreen()),
                           );
                         },
                       ),
-                      Divider(height: 1, indent: 60, color: colorScheme.outline.withOpacity(0.1)),
+                      Divider(
+                          height: 1,
+                          indent: 60,
+                          color: colorScheme.outline.withOpacity(0.1)),
                       _buildModernListTile(
                         context: context,
                         icon: Icons.support_agent_rounded,
@@ -916,9 +1029,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
               ),
-          ],
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -979,4 +1092,3 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 }
-

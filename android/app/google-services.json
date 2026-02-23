@@ -1,48 +1,48 @@
 {
   "project_info": {
-    "project_number": "142893563437",
-    "project_id": "ledgerlite-app",
-    "storage_bucket": "ledgerlite-app.firebasestorage.app"
+    "project_number": "474420702424",
+    "project_id": "patotrack",
+    "storage_bucket": "patotrack.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:142893563437:android:e66ffed3510e91cc1cc2a4",
+        "mobilesdk_app_id": "1:474420702424:android:4d3ed2ba7220beee0ebbad",
         "android_client_info": {
-          "package_name": "com.example.ledgerlite"
+          "package_name": "com.patotrack.app"
         }
       },
       "oauth_client": [
         {
-          "client_id": "142893563437-ufb8bu449cah0oa9anjra4qlo4mp2kir.apps.googleusercontent.com",
+          "client_id": "474420702424-nv5a7iuhuqqlbtkfprfenitmr9gcj0vd.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.example.ledgerlite",
-            "certificate_hash": "e2b9e63be20ed8a24b1b87c6789e0d2b89c12617"
+            "package_name": "com.patotrack.app",
+            "certificate_hash": "e4f4c5f78ba3dfc9a8dd072aa4d272f76593a53c"
           }
         },
         {
-          "client_id": "142893563437-m7dkahhp5fkap95nshe1t1807jg1b14j.apps.googleusercontent.com",
+          "client_id": "474420702424-u2k2c01j3uhj01tlbnnilm4r4pfjnv1c.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyBP2ZFBwBAJtv41-ifTZ34icb5G9jJrXws"
+          "current_key": "AIzaSyAyTw1WzZgJ9rxHYjtsJAbKcnT0zofgRaY"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "142893563437-m7dkahhp5fkap95nshe1t1807jg1b14j.apps.googleusercontent.com",
+              "client_id": "474420702424-u2k2c01j3uhj01tlbnnilm4r4pfjnv1c.apps.googleusercontent.com",
               "client_type": 3
             },
             {
-              "client_id": "142893563437-017uu0uh89ob9uqcjtgsbkrrrkivivlq.apps.googleusercontent.com",
+              "client_id": "474420702424-r129crgppr84h7n7bcuh198ou9t68l7u.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.example.ledgerlite"
+                "bundle_id": "com.patotrack.app"
               }
             }
           ]

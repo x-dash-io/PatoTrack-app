@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'helpers/passcode_service.dart';
 import 'main.dart'; // Your MainScreen with the bottom nav bar
 import 'screens/login_screen.dart';
 import 'screens/passcode_screen.dart';
@@ -17,13 +18,14 @@ class AuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<AuthGate> {
   User? _currentUser;
-  
+  final PasscodeService _passcodeService = PasscodeService();
+
   @override
   void initState() {
     super.initState();
     // Get initial user state
     _currentUser = FirebaseAuth.instance.currentUser;
-    
+
     // Listen to auth state changes and force rebuilds immediately
     // This is critical - it ensures AuthGate rebuilds as soon as login happens
     FirebaseAuth.instance.authStateChanges().listen((User? user) {
@@ -36,8 +38,8 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   Future<bool> _isPasscodeEnabled() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('passcode') != null;
+    await _passcodeService.migrateLegacyPasscodeIfNeeded();
+    return _passcodeService.isPasscodeSet();
   }
 
   Future<bool> _isOnboardingCompleted() async {
@@ -89,7 +91,8 @@ class _AuthGateState extends State<AuthGate> {
             if (passcodeEnabled) {
               return const PasscodeScreen(
                 isSettingPasscode: false, // We are verifying, not setting
-                isAppUnlock: true, // A new flag to tell the screen it's for unlocking the app
+                isAppUnlock:
+                    true, // A new flag to tell the screen it's for unlocking the app
               );
             }
 

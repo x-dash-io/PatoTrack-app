@@ -3,8 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
+import '../helpers/passcode_service.dart';
 import '../helpers/notification_helper.dart';
 
 class PasscodeScreen extends StatefulWidget {
@@ -23,14 +23,16 @@ class PasscodeScreen extends StatefulWidget {
 
 class _PasscodeScreenState extends State<PasscodeScreen>
     with SingleTickerProviderStateMixin {
-  final List<TextEditingController> _pinControllers = List.generate(4, (_) => TextEditingController());
+  final List<TextEditingController> _pinControllers =
+      List.generate(4, (_) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(4, (_) => FocusNode());
+  final PasscodeService _passcodeService = PasscodeService();
   String? _pinToConfirm;
   String _title = '';
   String _subtitle = '';
   bool _hasError = false;
   bool _isDisposed = false;
-  
+
   late AnimationController _shakeController;
   late Animation<double> _shakeAnimation;
 
@@ -38,7 +40,7 @@ class _PasscodeScreenState extends State<PasscodeScreen>
   void initState() {
     super.initState();
     _updateUI();
-    
+
     _shakeController = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
@@ -49,7 +51,7 @@ class _PasscodeScreenState extends State<PasscodeScreen>
         curve: Curves.elasticIn,
       ),
     );
-    
+
     // Focus first field when screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && _focusNodes.isNotEmpty) {
@@ -112,18 +114,14 @@ class _PasscodeScreenState extends State<PasscodeScreen>
   Future<void> _onPinCompleted(String pin) async {
     if (_isDisposed || !mounted) return;
 
-    final prefs = await SharedPreferences.getInstance();
-    final savedPin = prefs.getString('passcode');
-    
+    await _passcodeService.migrateLegacyPasscodeIfNeeded();
+
     if (_isDisposed || !mounted) return;
-    
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
     // Setting a new passcode
     if (widget.isSettingPasscode) {
       // Check if new passcode is same as old one
-      if (savedPin != null && savedPin == pin) {
+      if (await _passcodeService.verifyPasscode(pin)) {
         _showError('New passcode cannot be the same as the old one.');
         return;
       }
@@ -143,12 +141,13 @@ class _PasscodeScreenState extends State<PasscodeScreen>
       // Confirmation entry
       else {
         if (_pinToConfirm == pin) {
-          await prefs.setString('passcode', pin);
-          
+          await _passcodeService.setPasscode(pin);
+
           if (!mounted || _isDisposed) return;
-          
+
           final navigator = Navigator.of(context);
-          NotificationHelper.showSuccess(context, message: 'Passcode Set Successfully');
+          NotificationHelper.showSuccess(context,
+              message: 'Passcode Set Successfully');
           navigator.pop(true);
         } else {
           _showError('Passcodes do not match. Please try again.');
@@ -157,7 +156,7 @@ class _PasscodeScreenState extends State<PasscodeScreen>
     }
     // Verifying existing passcode
     else {
-      if (savedPin == pin) {
+      if (await _passcodeService.verifyPasscode(pin)) {
         if (widget.isAppUnlock) {
           if (!mounted || _isDisposed) return;
           Navigator.of(context).pushReplacement(
@@ -175,10 +174,7 @@ class _PasscodeScreenState extends State<PasscodeScreen>
 
   void _showError(String message) {
     if (_isDisposed || !mounted) return;
-    
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    
+
     setState(() {
       _hasError = true;
       if (widget.isSettingPasscode && _pinToConfirm != null) {
@@ -186,9 +182,9 @@ class _PasscodeScreenState extends State<PasscodeScreen>
         _updateUI();
       }
     });
-    
+
     _triggerShake();
-    
+
     NotificationHelper.showError(context, message: message);
 
     Future.delayed(const Duration(milliseconds: 500), () {
@@ -219,8 +215,10 @@ class _PasscodeScreenState extends State<PasscodeScreen>
               elevation: 0,
               systemOverlayStyle: SystemUiOverlayStyle(
                 statusBarColor: Colors.transparent,
-                statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-                statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+                statusBarIconBrightness:
+                    isDark ? Brightness.light : Brightness.dark,
+                statusBarBrightness:
+                    isDark ? Brightness.dark : Brightness.light,
               ),
             ),
       body: GestureDetector(
@@ -240,7 +238,8 @@ class _PasscodeScreenState extends State<PasscodeScreen>
           child: SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -267,7 +266,8 @@ class _PasscodeScreenState extends State<PasscodeScreen>
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: colorScheme.primary.withValues(alpha: 0.3),
+                                  color: colorScheme.primary
+                                      .withValues(alpha: 0.3),
                                   blurRadius: 20,
                                   spreadRadius: 2,
                                   offset: const Offset(0, 8),
@@ -322,7 +322,8 @@ class _PasscodeScreenState extends State<PasscodeScreen>
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: List.generate(4, (index) {
                               return Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8),
                                 child: SizedBox(
                                   width: 68,
                                   height: 68,
@@ -346,7 +347,8 @@ class _PasscodeScreenState extends State<PasscodeScreen>
                                         borderSide: BorderSide(
                                           color: _hasError
                                               ? colorScheme.error
-                                              : colorScheme.outline.withValues(alpha: 0.3),
+                                              : colorScheme.outline
+                                                  .withValues(alpha: 0.3),
                                           width: 2.5,
                                         ),
                                       ),
@@ -354,8 +356,10 @@ class _PasscodeScreenState extends State<PasscodeScreen>
                                         borderRadius: BorderRadius.circular(16),
                                         borderSide: BorderSide(
                                           color: _hasError
-                                              ? colorScheme.error.withValues(alpha: 0.5)
-                                              : colorScheme.outline.withValues(alpha: 0.3),
+                                              ? colorScheme.error
+                                                  .withValues(alpha: 0.5)
+                                              : colorScheme.outline
+                                                  .withValues(alpha: 0.3),
                                           width: 2.5,
                                         ),
                                       ),
@@ -380,8 +384,12 @@ class _PasscodeScreenState extends State<PasscodeScreen>
                                       _onPinChanged();
                                     },
                                     onTap: () {
-                                      _pinControllers[index].selection = TextSelection.fromPosition(
-                                        TextPosition(offset: _pinControllers[index].text.length),
+                                      _pinControllers[index].selection =
+                                          TextSelection.fromPosition(
+                                        TextPosition(
+                                            offset: _pinControllers[index]
+                                                .text
+                                                .length),
                                       );
                                     },
                                   ),
@@ -402,7 +410,8 @@ class _PasscodeScreenState extends State<PasscodeScreen>
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: colorScheme.primaryContainer.withValues(alpha: 0.5),
+                          color: colorScheme.primaryContainer
+                              .withValues(alpha: 0.5),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Row(
@@ -437,7 +446,8 @@ class _PasscodeScreenState extends State<PasscodeScreen>
                             : 'Enter your 4-digit passcode',
                         style: GoogleFonts.inter(
                           fontSize: 13,
-                          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                          color: colorScheme.onSurfaceVariant
+                              .withValues(alpha: 0.7),
                         ),
                         textAlign: TextAlign.center,
                       ),

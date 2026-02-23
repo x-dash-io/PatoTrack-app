@@ -19,25 +19,29 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   final List<OnboardingSlide> _slides = [
     OnboardingSlide(
       title: 'Track Your Expenses',
-      description: 'Easily record and categorize your daily expenses and income to stay on top of your finances.',
+      description:
+          'Easily record and categorize your daily expenses and income to stay on top of your finances.',
       icon: Icons.receipt_long_rounded,
       gradient: [Color(0xFF007AFF), Color(0xFF0051D5)],
     ),
     OnboardingSlide(
       title: 'Bill Reminders',
-      description: 'Never miss a payment again. Set up bill reminders and get notified before due dates.',
+      description:
+          'Never miss a payment again. Set up bill reminders and get notified before due dates.',
       icon: Icons.calendar_today_rounded,
       gradient: [Color(0xFFFF9500), Color(0xFFFF6B00)],
     ),
     OnboardingSlide(
       title: 'Manage Categories',
-      description: 'Organize your transactions with custom categories. Track business and personal expenses separately.',
+      description:
+          'Organize your transactions with custom categories. Track business and personal expenses separately.',
       icon: Icons.category_rounded,
       gradient: [Color(0xFFAF52DE), Color(0xFF8E44AD)],
     ),
     OnboardingSlide(
       title: 'Reports & Analytics',
-      description: 'Visualize your spending patterns with charts and reports. Make informed financial decisions.',
+      description:
+          'Visualize your spending patterns with charts and reports. Make informed financial decisions.',
       icon: Icons.bar_chart_rounded,
       gradient: [Color(0xFF34C759), Color(0xFF27AE60)],
     ),
@@ -148,7 +152,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
               // Navigation buttons
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 child: Column(
                   children: [
                     // Next/Get Started button

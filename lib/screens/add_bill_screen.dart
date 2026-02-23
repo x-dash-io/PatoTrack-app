@@ -16,7 +16,7 @@ import 'manage_frequencies_screen.dart';
 
 class AddBillScreen extends StatefulWidget {
   final Bill? billToEdit;
-  
+
   const AddBillScreen({super.key, this.billToEdit});
 
   @override
@@ -29,7 +29,7 @@ class _AddBillScreenState extends State<AddBillScreen> {
   final _amountController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
   final User? _currentUser = FirebaseAuth.instance.currentUser;
-  
+
   // NEW: State variables for recurring bills
   bool _isRecurring = false;
   Frequency? _selectedFrequency;
@@ -64,32 +64,37 @@ class _AddBillScreenState extends State<AddBillScreen> {
 
   Future<void> _loadFrequencies() async {
     if (_currentUser == null) return;
-    
+
     setState(() => _isLoadingFrequencies = true);
     try {
       final dbHelper = DatabaseHelper();
-      final frequencies = await dbHelper.getFrequencies(_currentUser!.uid);
+      final frequencies = await dbHelper.getFrequencies(_currentUser.uid);
       if (mounted) {
         setState(() {
           _frequencies = frequencies;
           // Set frequency from bill if editing, otherwise default to monthly
-          if (widget.billToEdit != null && widget.billToEdit!.recurrenceType != null && _currentUser != null) {
+          if (widget.billToEdit != null &&
+              widget.billToEdit!.recurrenceType != null) {
             _selectedFrequency = frequencies.firstWhere(
               (f) => f.type == widget.billToEdit!.recurrenceType,
-              orElse: () => frequencies.isNotEmpty ? frequencies.first : Frequency(
-                id: 1,
-                name: 'Monthly',
-                type: 'monthly',
-                value: 30,
-                displayName: 'Monthly',
-                userId: _currentUser!.uid,
-              ),
+              orElse: () => frequencies.isNotEmpty
+                  ? frequencies.first
+                  : Frequency(
+                      id: 1,
+                      name: 'Monthly',
+                      type: 'monthly',
+                      value: 30,
+                      displayName: 'Monthly',
+                      userId: _currentUser.uid,
+                    ),
             );
           } else {
-            _selectedFrequency = frequencies.isNotEmpty ? frequencies.firstWhere(
-              (f) => f.type == 'monthly',
-              orElse: () => frequencies.first,
-            ) : null;
+            _selectedFrequency = frequencies.isNotEmpty
+                ? frequencies.firstWhere(
+                    (f) => f.type == 'monthly',
+                    orElse: () => frequencies.first,
+                  )
+                : null;
           }
           _isLoadingFrequencies = false;
         });
@@ -115,15 +120,15 @@ class _AddBillScreenState extends State<AddBillScreen> {
       final billName = _nameController.text.trim();
 
       // Check for duplicate bill names (excluding current bill if editing)
-      final existingBills = await dbHelper.getBills(_currentUser!.uid);
-      final isDuplicate = existingBills.any((bill) => 
-        bill.name.toLowerCase() == billName.toLowerCase() && 
-        bill.id != widget.billToEdit?.id
-      );
+      final existingBills = await dbHelper.getBills(_currentUser.uid);
+      final isDuplicate = existingBills.any((bill) =>
+          bill.name.toLowerCase() == billName.toLowerCase() &&
+          bill.id != widget.billToEdit?.id);
 
       if (isDuplicate && mounted) {
         setState(() => _isSaving = false);
-        NotificationHelper.showWarning(context, message: 'A bill with this name already exists.');
+        NotificationHelper.showWarning(context,
+            message: 'A bill with this name already exists.');
         return;
       }
 
@@ -134,17 +139,21 @@ class _AddBillScreenState extends State<AddBillScreen> {
         amount: double.parse(_amountController.text),
         dueDate: _selectedDate,
         isRecurring: _isRecurring,
-        recurrenceType: _isRecurring && _selectedFrequency != null ? _selectedFrequency!.type : null,
+        recurrenceType: _isRecurring && _selectedFrequency != null
+            ? _selectedFrequency!.type
+            : null,
         recurrenceValue: _isRecurring && _selectedFrequency != null
-            ? (_selectedFrequency!.type == 'weekly' ? _selectedDate.weekday : _selectedDate.day)
+            ? (_selectedFrequency!.type == 'weekly'
+                ? _selectedDate.weekday
+                : _selectedDate.day)
             : null,
       );
 
       final notificationService = NotificationService();
-      
+
       if (widget.billToEdit != null) {
         // Updating existing bill
-        await dbHelper.updateBill(bill, _currentUser!.uid);
+        await dbHelper.updateBill(bill, _currentUser.uid);
         // Reschedule notification - cancel old one if it had an ID
         if (widget.billToEdit!.id != null) {
           await notificationService.cancelNotification(widget.billToEdit!.id!);
@@ -152,8 +161,9 @@ class _AddBillScreenState extends State<AddBillScreen> {
         await notificationService.scheduleBillNotification(bill);
       } else {
         // Adding new bill
-        final newBillId = await dbHelper.addBill(bill, _currentUser!.uid);
-        await notificationService.scheduleBillNotification(bill.copyWith(id: newBillId));
+        final newBillId = await dbHelper.addBill(bill, _currentUser.uid);
+        await notificationService
+            .scheduleBillNotification(bill.copyWith(id: newBillId));
       }
 
       if (mounted) {
@@ -162,10 +172,10 @@ class _AddBillScreenState extends State<AddBillScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isSaving = false);
-        // Show success message even if Firestore sync fails (offline mode)
-        // The bill is saved locally and will sync when online
-        final theme = Theme.of(context);
-        NotificationHelper.showSuccess(context, message: 'Bill saved successfully. Will sync when online.');
+        NotificationHelper.showError(
+          context,
+          message: 'Failed to save bill: $e',
+        );
       }
     }
   }
@@ -222,216 +232,220 @@ class _AddBillScreenState extends State<AddBillScreen> {
           child: ListView(
             padding: const EdgeInsets.all(20.0),
             children: [
-            StandardTextFormField(
-              controller: _nameController,
-              labelText: 'Bill Name',
-              hintText: 'e.g., Rent, Netflix, Internet',
-              prefixIcon: Icons.receipt_long_rounded,
-              validator: (value) =>
-                  value == null || value.isEmpty ? 'Please enter a name' : null,
-            ),
-            const SizedBox(height: 20),
-            StandardTextFormField(
-              controller: _amountController,
-              labelText: 'Amount',
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              prefixIcon: Icons.attach_money_rounded,
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-              ],
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter an amount';
-                }
-                if (double.tryParse(value) == null) {
-                  return 'Please enter a valid number';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 20),
-            StandardTextFormField(
-              controller: TextEditingController(
-                text: DateFormat('MMMM dd, yyyy').format(_selectedDate),
+              StandardTextFormField(
+                controller: _nameController,
+                labelText: 'Bill Name',
+                hintText: 'e.g., Rent, Netflix, Internet',
+                prefixIcon: Icons.receipt_long_rounded,
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Please enter a name'
+                    : null,
               ),
-              labelText: 'Due Date',
-              prefixIcon: Icons.calendar_today_rounded,
-              readOnly: true,
-              onTap: _pickDate,
-            ),
-            const SizedBox(height: 24),
+              const SizedBox(height: 20),
+              StandardTextFormField(
+                controller: _amountController,
+                labelText: 'Amount',
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                prefixIcon: Icons.attach_money_rounded,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                ],
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter an amount';
+                  }
+                  if (double.tryParse(value) == null) {
+                    return 'Please enter a valid number';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+              StandardTextFormField(
+                controller: TextEditingController(
+                  text: DateFormat('MMMM dd, yyyy').format(_selectedDate),
+                ),
+                labelText: 'Due Date',
+                prefixIcon: Icons.calendar_today_rounded,
+                readOnly: true,
+                onTap: _pickDate,
+              ),
+              const SizedBox(height: 24),
 
-            // Modern Recurring bill toggle card
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    colorScheme.surfaceContainerHighest,
-                    colorScheme.surfaceContainerHighest.withOpacity(0.7),
-                  ],
+              // Modern Recurring bill toggle card
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      colorScheme.surfaceContainerHighest,
+                      colorScheme.surfaceContainerHighest.withOpacity(0.7),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: colorScheme.outline.withOpacity(0.1),
+                    width: 1,
+                  ),
                 ),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: colorScheme.outline.withOpacity(0.1),
-                  width: 1,
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: colorScheme.primaryContainer,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              Icons.repeat_rounded,
+                              color: colorScheme.onPrimaryContainer,
+                              size: 24,
+                            ),
                           ),
-                          child: Icon(
-                            Icons.repeat_rounded,
-                            color: colorScheme.onPrimaryContainer,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Make this a recurring bill',
-                                style: GoogleFonts.inter(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              if (_isRecurring && _selectedFrequency != null)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 6),
-                                  child: Text(
-                                    _getRecurrenceDescription(),
-                                    style: GoogleFonts.inter(
-                                      fontSize: 13,
-                                      color: colorScheme.onSurfaceVariant,
-                                    ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Make this a recurring bill',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                            ],
+                                if (_isRecurring && _selectedFrequency != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 6),
+                                    child: Text(
+                                      _getRecurrenceDescription(),
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
-                        ),
-                        Switch(
-                          value: _isRecurring,
-                          onChanged: (bool value) {
-                            setState(() {
-                              _isRecurring = value;
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Show dropdown only if the bill is recurring
-            if (_isRecurring) ...[
-              const SizedBox(height: 16),
-              _isLoadingFrequencies
-                  ? Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          colorScheme.primary,
-                        ),
-                      ),
-                    )
-                  : Row(
-                      children: [
-                        Expanded(
-                          child: StandardDropdownFormField<Frequency>(
-                            value: _selectedFrequency,
-                            labelText: 'Frequency',
-                            prefixIcon: Icons.repeat_rounded,
-                            items: _frequencies.map((frequency) {
-                              return DropdownMenuItem<Frequency>(
-                                value: frequency,
-                                child: Text(frequency.displayName),
-                              );
-                            }).toList(),
-                            onChanged: (Frequency? newValue) {
-                              if (newValue != null) {
-                                setState(() {
-                                  _selectedFrequency = newValue;
-                                });
-                              }
+                          Switch(
+                            value: _isRecurring,
+                            onChanged: (bool value) {
+                              setState(() {
+                                _isRecurring = value;
+                              });
                             },
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        IconButton(
-                          onPressed: () async {
-                            final result = await Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => const ManageFrequenciesScreen(),
-                              ),
-                            );
-                            if (result == true) {
-                              await _loadFrequencies();
-                            }
-                          },
-                          icon: const Icon(Icons.settings_rounded),
-                          tooltip: 'Manage Frequencies',
-                          style: IconButton.styleFrom(
-                            backgroundColor: colorScheme.surfaceContainerHighest,
-                            foregroundColor: colorScheme.primary,
-                          ),
-                        ),
-                      ],
-                    ),
-            ],
-
-            const SizedBox(height: 32),
-            FilledButton(
-              onPressed: _isSaving ? null : _saveBill,
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              child: _isSaving
-                  ? SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          colorScheme.onPrimary,
+
+              // Show dropdown only if the bill is recurring
+              if (_isRecurring) ...[
+                const SizedBox(height: 16),
+                _isLoadingFrequencies
+                    ? Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            colorScheme.primary,
+                          ),
+                        ),
+                      )
+                    : Row(
+                        children: [
+                          Expanded(
+                            child: StandardDropdownFormField<Frequency>(
+                              value: _selectedFrequency,
+                              labelText: 'Frequency',
+                              prefixIcon: Icons.repeat_rounded,
+                              items: _frequencies.map((frequency) {
+                                return DropdownMenuItem<Frequency>(
+                                  value: frequency,
+                                  child: Text(frequency.displayName),
+                                );
+                              }).toList(),
+                              onChanged: (Frequency? newValue) {
+                                if (newValue != null) {
+                                  setState(() {
+                                    _selectedFrequency = newValue;
+                                  });
+                                }
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          IconButton(
+                            onPressed: () async {
+                              final result = await Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const ManageFrequenciesScreen(),
+                                ),
+                              );
+                              if (result == true) {
+                                await _loadFrequencies();
+                              }
+                            },
+                            icon: const Icon(Icons.settings_rounded),
+                            tooltip: 'Manage Frequencies',
+                            style: IconButton.styleFrom(
+                              backgroundColor:
+                                  colorScheme.surfaceContainerHighest,
+                              foregroundColor: colorScheme.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+              ],
+
+              const SizedBox(height: 32),
+              FilledButton(
+                onPressed: _isSaving ? null : _saveBill,
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: _isSaving
+                    ? SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            colorScheme.onPrimary,
+                          ),
+                        ),
+                      )
+                    : Text(
+                        widget.billToEdit != null ? 'Update Bill' : 'Save Bill',
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                    )
-                  : Text(
-                      widget.billToEdit != null ? 'Update Bill' : 'Save Bill',
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
 
   String _getRecurrenceDescription() {
     if (_selectedFrequency == null) return '';
-    
+
     switch (_selectedFrequency!.type) {
       case 'weekly':
         return 'Repeats every ${DateFormat('EEEE').format(_selectedDate)}';

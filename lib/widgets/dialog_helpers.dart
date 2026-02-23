@@ -40,12 +40,10 @@ Future<bool?> showModernConfirmDialog({
         FilledButton(
           onPressed: () => Navigator.of(context).pop(true),
           style: FilledButton.styleFrom(
-            backgroundColor: isDestructive
-                ? colorScheme.error
-                : colorScheme.primary,
-            foregroundColor: isDestructive
-                ? colorScheme.onError
-                : colorScheme.onPrimary,
+            backgroundColor:
+                isDestructive ? colorScheme.error : colorScheme.primary,
+            foregroundColor:
+                isDestructive ? colorScheme.onError : colorScheme.onPrimary,
           ),
           child: Text(
             confirmText,
@@ -211,20 +209,17 @@ Future<T?> showActionSheet<T>({
             child: ListView(
               shrinkWrap: true,
               children: [
-                ...actions
-                    .where((a) => !a.isCancel)
-                    .map((action) => ListTile(
-                          title: Text(
-                            action.label,
-                            style: GoogleFonts.inter(
-                              color: action.isDestructive
-                                  ? colorScheme.error
-                                  : null,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          onTap: () => Navigator.of(context).pop(action.value),
-                        )),
+                ...actions.where((a) => !a.isCancel).map((action) => ListTile(
+                      title: Text(
+                        action.label,
+                        style: GoogleFonts.inter(
+                          color:
+                              action.isDestructive ? colorScheme.error : null,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      onTap: () => Navigator.of(context).pop(action.value),
+                    )),
                 if (cancelText != null) ...[
                   const Divider(height: 1),
                   ListTile(
