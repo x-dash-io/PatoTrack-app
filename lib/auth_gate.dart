@@ -19,6 +19,7 @@ class AuthGate extends StatefulWidget {
 class _AuthGateState extends State<AuthGate> {
   User? _currentUser;
   final PasscodeService _passcodeService = PasscodeService();
+  StreamSubscription<User?>? _authSubscription;
 
   @override
   void initState() {
@@ -28,13 +29,20 @@ class _AuthGateState extends State<AuthGate> {
 
     // Listen to auth state changes and force rebuilds immediately
     // This is critical - it ensures AuthGate rebuilds as soon as login happens
-    FirebaseAuth.instance.authStateChanges().listen((User? user) {
+    _authSubscription =
+        FirebaseAuth.instance.authStateChanges().listen((User? user) {
       if (mounted) {
         _currentUser = user;
         // Force immediate rebuild when auth state changes
         setState(() {});
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
   }
 
   Future<bool> _isPasscodeEnabled() async {
@@ -61,7 +69,13 @@ class _AuthGateState extends State<AuthGate> {
 
         // Show welcome screen if onboarding not completed
         if (!(onboardingSnapshot.data ?? false)) {
-          return const WelcomeScreen();
+          return WelcomeScreen(
+            onOnboardingCompleted: () {
+              if (mounted) {
+                setState(() {});
+              }
+            },
+          );
         }
 
         // Once onboarding is done, check auth state

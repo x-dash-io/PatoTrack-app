@@ -7,6 +7,7 @@ import '../widgets/input_fields.dart';
 import '../services/google_sign_in_service.dart';
 import '../helpers/responsive_helper.dart';
 import '../helpers/notification_helper.dart';
+import '../widgets/app_screen_background.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -51,46 +52,17 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      await _auth.signInWithEmailAndPassword(
+      final userCredential = await _auth.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
-      // Verify user is authenticated
-      final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser == null) {
+
+      if (userCredential.user == null ||
+          FirebaseAuth.instance.currentUser == null) {
         throw Exception('Login failed - user not authenticated');
       }
-
-      // Reload user profile data to ensure photoURL and other fields are up-to-date
-      try {
-        await currentUser.reload();
-        // Get the refreshed user data
-        final refreshedUser = FirebaseAuth.instance.currentUser;
-        if (refreshedUser == null) {
-          throw Exception('Failed to reload user data');
-        }
-      } catch (e) {
-        print('Warning: Failed to reload user data: $e');
-        // Continue even if reload fails
-      }
-
-      // Verify user is authenticated
-      final verifyUser = FirebaseAuth.instance.currentUser;
-      if (verifyUser == null) {
-        throw Exception('Authentication state lost');
-      }
-
-      // AuthGate will automatically detect the auth state change via its listener
-      // No need to wait or clear loading - AuthGate will rebuild and navigate
-      // The widget tree will be replaced by AuthGate, so this widget may be disposed
-
-      // Just verify and let AuthGate handle the navigation
-      // Keep loading state until AuthGate navigates away (which will dispose this widget)
     } on FirebaseAuthException catch (e) {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
         String errorMessage = 'Login failed. Please try again.';
 
         // Provide user-friendly error messages
@@ -123,19 +95,22 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
         NotificationHelper.showError(
           context,
           message: 'Login failed. Please try again.',
         );
       }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
-    // Don't clear loading state in finally - let AuthGate handle it on success
   }
 
   Future<void> _signInWithGoogle() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
     });
@@ -143,61 +118,26 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final userCredential = await GoogleSignInService.signInWithGoogle();
 
-      if (userCredential != null && userCredential.user != null && mounted) {
-        // Verify user is authenticated
-        final currentUser = FirebaseAuth.instance.currentUser;
-        if (currentUser != null) {
-          // Reload user profile data to ensure photoURL and other fields are up-to-date
-          try {
-            await currentUser.reload();
-            // Get the refreshed user data
-            final refreshedUser = FirebaseAuth.instance.currentUser;
-            if (refreshedUser == null) {
-              throw Exception('Failed to reload user data');
-            }
-          } catch (e) {
-            print('Warning: Failed to reload user data: $e');
-            // Continue even if reload fails
-          }
+      if (userCredential == null) {
+        return;
+      }
 
-          // Verify user is authenticated
-          final verifyUser = FirebaseAuth.instance.currentUser;
-          if (verifyUser == null) {
-            throw Exception('Authentication state lost');
-          }
-
-          // AuthGate will automatically detect the auth state change via its listener
-          // No need to wait or clear loading - AuthGate will rebuild and navigate
-          // The widget tree will be replaced by AuthGate, so this widget may be disposed
-
-          // Just verify and let AuthGate handle the navigation
-          // Keep loading state until AuthGate navigates away (which will dispose this widget)
-        } else {
-          // User not properly authenticated
-          if (mounted) {
-            setState(() {
-              _isLoading = false;
-            });
-            NotificationHelper.showError(context,
-                message: 'Authentication failed. Please try again.');
-          }
-        }
-      } else {
-        // User cancelled or sign-in returned null
-        // No need to show error - user intentionally cancelled
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
+      if (userCredential.user == null ||
+          FirebaseAuth.instance.currentUser == null) {
+        throw Exception('Authentication failed. Please try again.');
       }
     } catch (e) {
+      if (mounted) {
+        NotificationHelper.showError(
+          context,
+          message: e.toString().replaceAll('Exception: ', ''),
+        );
+      }
+    } finally {
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
-        NotificationHelper.showError(context,
-            message: e.toString().replaceAll('Exception: ', ''));
       }
     }
   }
@@ -241,8 +181,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           height: 4,
                           margin: const EdgeInsets.only(bottom: 24),
                           decoration: BoxDecoration(
-                            color:
-                                colorScheme.onSurfaceVariant.withOpacity(0.4),
+                            color: colorScheme.onSurfaceVariant
+                                .withValues(alpha: 0.4),
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
@@ -251,7 +191,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       // Title
                       Text(
                         'Reset Password',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                           color: colorScheme.onSurface,
@@ -263,7 +203,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       // Description
                       Text(
                         'Enter your email address and we\'ll send you a link to reset your password.',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: 14,
                           color: colorScheme.onSurfaceVariant,
                           height: 1.4,
@@ -312,7 +252,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     Navigator.of(dialogContext).pop();
                                     if (!mounted) return;
                                     NotificationHelper.showSuccess(
-                                      this.context,
+                                      context,
                                       message:
                                           'Password reset email sent! Please check your inbox.',
                                     );
@@ -338,7 +278,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     }
                                     if (!mounted) return;
                                     NotificationHelper.showError(
-                                      this.context,
+                                      context,
                                       message: errorMessage,
                                     );
                                   } catch (_) {
@@ -349,7 +289,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     }
                                     if (!mounted) return;
                                     NotificationHelper.showError(
-                                      this.context,
+                                      context,
                                       message:
                                           'An error occurred. Please try again.',
                                     );
@@ -375,7 +315,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               )
                             : Text(
                                 'Send Reset Link',
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.manrope(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -391,7 +331,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             : () => Navigator.of(dialogContext).pop(),
                         child: Text(
                           'Cancel',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.manrope(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
                           ),
@@ -420,324 +360,307 @@ class _LoginScreenState extends State<LoginScreen> {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.primaryContainer.withOpacity(0.3),
-              colorScheme.surface,
-              colorScheme.surface,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: LoadingOverlay(
-            isLoading: _isLoading,
-            message: 'Signing in...',
-            child: SingleChildScrollView(
-              padding: ResponsiveHelper.edgeInsetsSymmetric(context, 24.0, 16),
-              child: Form(
-                key: _formKey,
-                autovalidateMode: AutovalidateMode.onUserInteraction,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    SizedBox(height: ResponsiveHelper.spacing(context, 20)),
+      body: AppScreenBackground(
+        child: LoadingOverlay(
+          isLoading: _isLoading,
+          message: 'Signing in...',
+          child: SingleChildScrollView(
+            padding: ResponsiveHelper.edgeInsetsSymmetric(context, 24.0, 16),
+            child: Form(
+              key: _formKey,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SizedBox(height: ResponsiveHelper.spacing(context, 20)),
 
-                    // App logo/icon with modern design
-                    Center(
-                      child: Container(
-                        width: ResponsiveHelper.width(context, 100),
-                        height: ResponsiveHelper.height(context, 100),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              colorScheme.primary,
-                              colorScheme.primary.withOpacity(0.7),
-                            ],
-                          ),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: colorScheme.primary.withOpacity(0.3),
-                              blurRadius: ResponsiveHelper.spacing(context, 20),
-                              offset: Offset(
-                                  0, ResponsiveHelper.spacing(context, 10)),
-                            ),
+                  // App logo/icon with modern design
+                  Center(
+                    child: Container(
+                      width: ResponsiveHelper.width(context, 100),
+                      height: ResponsiveHelper.height(context, 100),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            colorScheme.primary,
+                            colorScheme.primary.withValues(alpha: 0.7),
                           ],
                         ),
-                        child: Icon(
-                          Icons.account_balance_wallet,
-                          size: ResponsiveHelper.iconSize(context, 50),
-                          color: colorScheme.onPrimary,
-                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: colorScheme.primary.withValues(alpha: 0.3),
+                            blurRadius: ResponsiveHelper.spacing(context, 20),
+                            offset: Offset(
+                                0, ResponsiveHelper.spacing(context, 10)),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.account_balance_wallet,
+                        size: ResponsiveHelper.iconSize(context, 50),
+                        color: colorScheme.onPrimary,
                       ),
                     ),
+                  ),
 
-                    SizedBox(height: ResponsiveHelper.spacing(context, 48)),
+                  SizedBox(height: ResponsiveHelper.spacing(context, 48)),
 
-                    // Modern title section
-                    Text(
-                      'Welcome Back',
-                      style: GoogleFonts.inter(
-                        fontSize: ResponsiveHelper.fontSize(context, 36),
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
-                        height: 1.2,
-                      ),
-                      textAlign: TextAlign.center,
+                  // Modern title section
+                  Text(
+                    'Welcome Back',
+                    style: GoogleFonts.manrope(
+                      fontSize: ResponsiveHelper.fontSize(context, 36),
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                      height: 1.2,
                     ),
+                    textAlign: TextAlign.center,
+                  ),
 
-                    SizedBox(height: ResponsiveHelper.spacing(context, 12)),
+                  SizedBox(height: ResponsiveHelper.spacing(context, 12)),
 
-                    Text(
-                      'Sign in to continue tracking your expenses',
-                      style: GoogleFonts.inter(
-                        fontSize: ResponsiveHelper.fontSize(context, 16),
-                        color: colorScheme.onSurfaceVariant,
-                        height: 1.4,
-                      ),
-                      textAlign: TextAlign.center,
+                  Text(
+                    'Sign in to continue tracking your expenses',
+                    style: GoogleFonts.manrope(
+                      fontSize: ResponsiveHelper.fontSize(context, 16),
+                      color: colorScheme.onSurfaceVariant,
+                      height: 1.4,
                     ),
+                    textAlign: TextAlign.center,
+                  ),
 
-                    SizedBox(height: ResponsiveHelper.spacing(context, 48)),
+                  SizedBox(height: ResponsiveHelper.spacing(context, 48)),
 
-                    // Modern card container for form
-                    Card(
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                            ResponsiveHelper.radius(context, 24)),
-                      ),
-                      child: Padding(
-                        padding: ResponsiveHelper.edgeInsetsAll(context, 24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            // Email field
-                            StandardTextFormField(
-                              controller: _emailController,
-                              labelText: 'Email',
-                              keyboardType: TextInputType.emailAddress,
-                              prefixIcon: Icons.email_outlined,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter your email';
-                                }
-                                if (!value.contains('@')) {
-                                  return 'Please enter a valid email';
-                                }
-                                return null;
+                  // Modern card container for form
+                  Card(
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                          ResponsiveHelper.radius(context, 24)),
+                    ),
+                    child: Padding(
+                      padding: ResponsiveHelper.edgeInsetsAll(context, 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Email field
+                          StandardTextFormField(
+                            controller: _emailController,
+                            labelText: 'Email',
+                            keyboardType: TextInputType.emailAddress,
+                            prefixIcon: Icons.email_outlined,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your email';
+                              }
+                              if (!value.contains('@')) {
+                                return 'Please enter a valid email';
+                              }
+                              return null;
+                            },
+                          ),
+
+                          SizedBox(
+                              height: ResponsiveHelper.spacing(context, 20)),
+
+                          // Password field
+                          StandardTextFormField(
+                            controller: _passwordController,
+                            labelText: 'Password',
+                            obscureText: !_isPasswordVisible,
+                            prefixIcon: Icons.lock_outline,
+                            suffixIcon: IconButton(
+                              onPressed: () {
+                                setState(() {
+                                  _isPasswordVisible = !_isPasswordVisible;
+                                });
                               },
+                              icon: Icon(
+                                _isPasswordVisible
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
                             ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please enter your password';
+                              }
+                              if (value.length < 6) {
+                                return 'Password must be at least 6 characters';
+                              }
+                              return null;
+                            },
+                          ),
 
-                            SizedBox(
-                                height: ResponsiveHelper.spacing(context, 20)),
+                          SizedBox(
+                              height: ResponsiveHelper.spacing(context, 12)),
 
-                            // Password field
-                            StandardTextFormField(
-                              controller: _passwordController,
-                              labelText: 'Password',
-                              obscureText: !_isPasswordVisible,
-                              prefixIcon: Icons.lock_outline,
-                              suffixIcon: IconButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _isPasswordVisible = !_isPasswordVisible;
-                                  });
-                                },
-                                icon: Icon(
-                                  _isPasswordVisible
-                                      ? Icons.visibility_off_outlined
-                                      : Icons.visibility_outlined,
-                                  color: colorScheme.onSurfaceVariant,
+                          // Forgot password link
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed:
+                                  _isLoading ? null : _showForgotPasswordDialog,
+                              style: TextButton.styleFrom(
+                                padding: ResponsiveHelper.edgeInsetsSymmetric(
+                                    context, 8, 4),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: Text(
+                                'Forgot Password?',
+                                style: GoogleFonts.manrope(
+                                  fontSize:
+                                      ResponsiveHelper.fontSize(context, 14),
+                                  fontWeight: FontWeight.w600,
+                                  color: colorScheme.primary,
                                 ),
                               ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter your password';
-                                }
-                                if (value.length < 6) {
-                                  return 'Password must be at least 6 characters';
-                                }
-                                return null;
-                              },
                             ),
+                          ),
 
-                            SizedBox(
-                                height: ResponsiveHelper.spacing(context, 12)),
+                          SizedBox(
+                              height: ResponsiveHelper.spacing(context, 20)),
 
-                            // Forgot password link
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton(
-                                onPressed: _isLoading
-                                    ? null
-                                    : _showForgotPasswordDialog,
-                                style: TextButton.styleFrom(
-                                  padding: ResponsiveHelper.edgeInsetsSymmetric(
-                                      context, 8, 4),
-                                  minimumSize: Size.zero,
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                ),
+                          // Login button
+                          FilledButton(
+                            onPressed: _isLoading ? null : _login,
+                            style: FilledButton.styleFrom(
+                              padding: EdgeInsets.symmetric(
+                                  vertical: ResponsiveHelper.buttonHeight(
+                                      context, 16)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                    ResponsiveHelper.radius(context, 16)),
+                              ),
+                            ),
+                            child: _isLoading
+                                ? SizedBox(
+                                    height:
+                                        ResponsiveHelper.iconSize(context, 20),
+                                    width:
+                                        ResponsiveHelper.iconSize(context, 20),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        colorScheme.onPrimary,
+                                      ),
+                                    ),
+                                  )
+                                : Text(
+                                    'Sign In',
+                                    style: GoogleFonts.manrope(
+                                      fontSize: ResponsiveHelper.fontSize(
+                                          context, 17),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                          ),
+
+                          SizedBox(
+                              height: ResponsiveHelper.spacing(context, 24)),
+
+                          // Divider with "OR"
+                          Row(
+                            children: [
+                              Expanded(
+                                  child: Divider(color: colorScheme.outline)),
+                              Padding(
+                                padding: ResponsiveHelper.edgeInsetsSymmetric(
+                                    context, 16, 0),
                                 child: Text(
-                                  'Forgot Password?',
-                                  style: GoogleFonts.inter(
+                                  'OR',
+                                  style: GoogleFonts.manrope(
                                     fontSize:
                                         ResponsiveHelper.fontSize(context, 14),
-                                    fontWeight: FontWeight.w600,
-                                    color: colorScheme.primary,
+                                    color: colorScheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ),
-                            ),
+                              Expanded(
+                                  child: Divider(color: colorScheme.outline)),
+                            ],
+                          ),
 
-                            SizedBox(
-                                height: ResponsiveHelper.spacing(context, 20)),
+                          SizedBox(
+                              height: ResponsiveHelper.spacing(context, 24)),
 
-                            // Login button
-                            FilledButton(
-                              onPressed: _isLoading ? null : _login,
-                              style: FilledButton.styleFrom(
-                                padding: EdgeInsets.symmetric(
-                                    vertical: ResponsiveHelper.buttonHeight(
-                                        context, 16)),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                      ResponsiveHelper.radius(context, 16)),
-                                ),
+                          // Google Sign-In button
+                          OutlinedButton.icon(
+                            onPressed: _isLoading ? null : _signInWithGoogle,
+                            style: OutlinedButton.styleFrom(
+                              padding: EdgeInsets.symmetric(
+                                  vertical: ResponsiveHelper.buttonHeight(
+                                      context, 16)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                    ResponsiveHelper.radius(context, 16)),
                               ),
-                              child: _isLoading
-                                  ? SizedBox(
-                                      height: ResponsiveHelper.iconSize(
-                                          context, 20),
-                                      width: ResponsiveHelper.iconSize(
-                                          context, 20),
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                          colorScheme.onPrimary,
-                                        ),
-                                      ),
-                                    )
-                                  : Text(
-                                      'Sign In',
-                                      style: GoogleFonts.inter(
-                                        fontSize: ResponsiveHelper.fontSize(
-                                            context, 17),
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                            ),
-
-                            SizedBox(
-                                height: ResponsiveHelper.spacing(context, 24)),
-
-                            // Divider with "OR"
-                            Row(
-                              children: [
-                                Expanded(
-                                    child: Divider(color: colorScheme.outline)),
-                                Padding(
-                                  padding: ResponsiveHelper.edgeInsetsSymmetric(
-                                      context, 16, 0),
-                                  child: Text(
-                                    'OR',
-                                    style: GoogleFonts.inter(
-                                      fontSize: ResponsiveHelper.fontSize(
-                                          context, 14),
-                                      color: colorScheme.onSurfaceVariant,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                    child: Divider(color: colorScheme.outline)),
-                              ],
-                            ),
-
-                            SizedBox(
-                                height: ResponsiveHelper.spacing(context, 24)),
-
-                            // Google Sign-In button
-                            OutlinedButton.icon(
-                              onPressed: _isLoading ? null : _signInWithGoogle,
-                              style: OutlinedButton.styleFrom(
-                                padding: EdgeInsets.symmetric(
-                                    vertical: ResponsiveHelper.buttonHeight(
-                                        context, 16)),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                      ResponsiveHelper.radius(context, 16)),
-                                ),
-                                side: BorderSide(
-                                  color: colorScheme.outline,
-                                  width: 1.5,
-                                ),
-                              ),
-                              icon: Image.asset(
-                                'assets/google_logo.png',
-                                height: 20,
-                                width: 20,
-                                errorBuilder: (context, error, stackTrace) {
-                                  // Fallback if Google logo asset doesn't exist
-                                  return const Icon(Icons.g_mobiledata,
-                                      size: 24);
-                                },
-                              ),
-                              label: Text(
-                                'Continue with Google',
-                                style: GoogleFonts.inter(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                              side: BorderSide(
+                                color: colorScheme.outline,
+                                width: 1.5,
                               ),
                             ),
-                          ],
-                        ),
+                            icon: Image.asset(
+                              'assets/google_logo.png',
+                              height: 20,
+                              width: 20,
+                              errorBuilder: (context, error, stackTrace) {
+                                // Fallback if Google logo asset doesn't exist
+                                return const Icon(Icons.g_mobiledata, size: 24);
+                              },
+                            ),
+                            label: Text(
+                              'Continue with Google',
+                              style: GoogleFonts.manrope(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+                  ),
 
-                    const SizedBox(height: 32),
+                  const SizedBox(height: 32),
 
-                    // Sign up link with modern design
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          "Don't have an account? ",
-                          style: GoogleFonts.inter(
-                            fontSize: 15,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
+                  // Sign up link with modern design
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "Don't have an account? ",
+                        style: GoogleFonts.manrope(
+                          fontSize: 15,
+                          color: colorScheme.onSurfaceVariant,
                         ),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => const SignUpScreen(),
-                              ),
-                            );
-                          },
-                          child: Text(
-                            'Sign Up',
-                            style: GoogleFonts.inter(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: colorScheme.primary,
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const SignUpScreen(),
                             ),
+                          );
+                        },
+                        child: Text(
+                          'Sign Up',
+                          style: GoogleFonts.manrope(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.primary,
                           ),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),

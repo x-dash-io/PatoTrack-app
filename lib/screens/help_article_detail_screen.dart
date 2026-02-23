@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/help_article.dart';
+import '../widgets/app_screen_background.dart';
 
 class HelpArticleDetailScreen extends StatelessWidget {
   final HelpArticle article;
@@ -21,7 +22,7 @@ class HelpArticleDetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           'Help Article',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
         ),
         systemOverlayStyle: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
@@ -30,18 +31,8 @@ class HelpArticleDetailScreen extends StatelessWidget {
         ),
         elevation: 0,
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.primaryContainer.withOpacity(0.2),
-              colorScheme.surface,
-              colorScheme.surface,
-            ],
-          ),
-        ),
+      body: AppScreenBackground(
+        includeSafeArea: false,
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -56,13 +47,13 @@ class HelpArticleDetailScreen extends StatelessWidget {
                     end: Alignment.bottomRight,
                     colors: [
                       colorScheme.primaryContainer,
-                      colorScheme.primaryContainer.withOpacity(0.7),
+                      colorScheme.primaryContainer.withValues(alpha: 0.7),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: colorScheme.primary.withOpacity(0.2),
+                      color: colorScheme.primary.withValues(alpha: 0.2),
                       blurRadius: 20,
                       spreadRadius: 2,
                     ),
@@ -73,7 +64,8 @@ class HelpArticleDetailScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: colorScheme.onPrimaryContainer.withOpacity(0.2),
+                        color: colorScheme.onPrimaryContainer
+                            .withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Icon(
@@ -86,7 +78,7 @@ class HelpArticleDetailScreen extends StatelessWidget {
                     Expanded(
                       child: Text(
                         article.title,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                           color: colorScheme.onPrimaryContainer,
@@ -102,7 +94,7 @@ class HelpArticleDetailScreen extends StatelessWidget {
               // Content
               Text(
                 article.content,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontSize: 16,
                   height: 1.6,
                   color: colorScheme.onSurface,
@@ -129,7 +121,7 @@ class HelpArticleDetailScreen extends StatelessWidget {
                     const SizedBox(width: 12),
                     Text(
                       'Steps',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
@@ -149,12 +141,13 @@ class HelpArticleDetailScreen extends StatelessWidget {
                         end: Alignment.bottomRight,
                         colors: [
                           colorScheme.surfaceContainerHighest,
-                          colorScheme.surfaceContainerHighest.withOpacity(0.7),
+                          colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.7),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: colorScheme.outline.withOpacity(0.1),
+                        color: colorScheme.outline.withValues(alpha: 0.1),
                         width: 1,
                       ),
                     ),
@@ -170,7 +163,7 @@ class HelpArticleDetailScreen extends StatelessWidget {
                               end: Alignment.bottomRight,
                               colors: [
                                 colorScheme.primary,
-                                colorScheme.primary.withOpacity(0.8),
+                                colorScheme.primary.withValues(alpha: 0.8),
                               ],
                             ),
                             shape: BoxShape.circle,
@@ -178,7 +171,7 @@ class HelpArticleDetailScreen extends StatelessWidget {
                           child: Center(
                             child: Text(
                               '${index + 1}',
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.manrope(
                                 color: colorScheme.onPrimary,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
@@ -190,7 +183,7 @@ class HelpArticleDetailScreen extends StatelessWidget {
                         Expanded(
                           child: Text(
                             step,
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.manrope(
                               fontSize: 15,
                               height: 1.5,
                               color: colorScheme.onSurface,
@@ -211,7 +204,7 @@ class HelpArticleDetailScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.amber.withOpacity(0.2),
+                        color: Colors.amber.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
@@ -223,7 +216,7 @@ class HelpArticleDetailScreen extends StatelessWidget {
                     const SizedBox(width: 12),
                     Text(
                       'Tips',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
@@ -236,10 +229,10 @@ class HelpArticleDetailScreen extends StatelessWidget {
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.amber.withOpacity(0.1),
+                      color: Colors.amber.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Colors.amber.withOpacity(0.3),
+                        color: Colors.amber.withValues(alpha: 0.3),
                         width: 1,
                       ),
                     ),
@@ -255,7 +248,7 @@ class HelpArticleDetailScreen extends StatelessWidget {
                         Expanded(
                           child: Text(
                             tip,
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.manrope(
                               fontSize: 14,
                               height: 1.5,
                               color: colorScheme.onSurface,

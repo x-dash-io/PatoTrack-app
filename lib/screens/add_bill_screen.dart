@@ -12,6 +12,7 @@ import '../models/bill.dart';
 import '../models/frequency.dart';
 import '../widgets/modern_date_picker.dart';
 import '../widgets/input_fields.dart';
+import '../widgets/app_screen_background.dart';
 import 'manage_frequencies_screen.dart';
 
 class AddBillScreen extends StatefulWidget {
@@ -212,21 +213,11 @@ class _AddBillScreenState extends State<AddBillScreen> {
         elevation: 0,
         title: Text(
           widget.billToEdit != null ? 'Edit Bill' : 'Add New Bill',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
         ),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.primaryContainer.withOpacity(0.2),
-              colorScheme.surface,
-              colorScheme.surface,
-            ],
-          ),
-        ),
+      body: AppScreenBackground(
+        includeSafeArea: false,
         child: Form(
           key: _formKey,
           child: ListView(
@@ -262,13 +253,10 @@ class _AddBillScreenState extends State<AddBillScreen> {
                 },
               ),
               const SizedBox(height: 20),
-              StandardTextFormField(
-                controller: TextEditingController(
-                  text: DateFormat('MMMM dd, yyyy').format(_selectedDate),
-                ),
-                labelText: 'Due Date',
-                prefixIcon: Icons.calendar_today_rounded,
-                readOnly: true,
+              StandardDateSelectorTile(
+                label: 'Due Date',
+                valueText: DateFormat('MMMM dd, yyyy').format(_selectedDate),
+                helperText: 'Tap to select a due date',
                 onTap: _pickDate,
               ),
               const SizedBox(height: 24),
@@ -281,12 +269,13 @@ class _AddBillScreenState extends State<AddBillScreen> {
                     end: Alignment.bottomRight,
                     colors: [
                       colorScheme.surfaceContainerHighest,
-                      colorScheme.surfaceContainerHighest.withOpacity(0.7),
+                      colorScheme.surfaceContainerHighest
+                          .withValues(alpha: 0.7),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: colorScheme.outline.withOpacity(0.1),
+                    color: colorScheme.outline.withValues(alpha: 0.1),
                     width: 1,
                   ),
                 ),
@@ -316,7 +305,7 @@ class _AddBillScreenState extends State<AddBillScreen> {
                               children: [
                                 Text(
                                   'Make this a recurring bill',
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.manrope(
                                     fontSize: 17,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -326,7 +315,7 @@ class _AddBillScreenState extends State<AddBillScreen> {
                                     padding: const EdgeInsets.only(top: 6),
                                     child: Text(
                                       _getRecurrenceDescription(),
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.manrope(
                                         fontSize: 13,
                                         color: colorScheme.onSurfaceVariant,
                                       ),
@@ -430,7 +419,7 @@ class _AddBillScreenState extends State<AddBillScreen> {
                       )
                     : Text(
                         widget.billToEdit != null ? 'Update Bill' : 'Save Bill',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),

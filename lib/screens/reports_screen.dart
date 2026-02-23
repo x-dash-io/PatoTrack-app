@@ -11,6 +11,7 @@ import '../helpers/responsive_helper.dart';
 import '../models/transaction.dart' as model;
 import '../widgets/loading_widgets.dart';
 import '../helpers/notification_helper.dart';
+import '../widgets/app_screen_background.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -58,31 +59,107 @@ class _ReportsScreenState extends State<ReportsScreen> {
     return {'transactions': transactions, 'categoryMap': categoryMap};
   }
 
+  ({DateTime start, DateTime end, String label}) _periodRangeForFilter(
+      String filter) {
+    final now = DateTime.now();
+    final end = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      23,
+      59,
+      59,
+      999,
+      999,
+    );
+
+    DateTime start;
+    String label;
+
+    switch (filter) {
+      case 'week':
+        start = now.subtract(Duration(days: now.weekday - 1));
+        start = DateTime(start.year, start.month, start.day);
+        label = 'This Week';
+        break;
+      case 'year':
+        start = DateTime(now.year, 1, 1);
+        label = 'This Year';
+        break;
+      case 'month':
+      default:
+        start = DateTime(now.year, now.month, 1);
+        label = 'This Month';
+        break;
+    }
+
+    return (start: start, end: end, label: label);
+  }
+
+  bool _isInInclusiveRange(DateTime value, DateTime start, DateTime end) {
+    return !value.isBefore(start) && !value.isAfter(end);
+  }
+
+  Future<bool> _confirmPdfExport({
+    required int transactionCount,
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        final colorScheme = Theme.of(dialogContext).colorScheme;
+        return AlertDialog(
+          title: const Text('Confirm Export Scope'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Business transactions only',
+                style: GoogleFonts.manrope(
+                  fontWeight: FontWeight.w700,
+                  color: colorScheme.primary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Period: ${DateFormat('MMM d, yyyy').format(start)} - ${DateFormat('MMM d, yyyy').format(end)} (inclusive)',
+              ),
+              const SizedBox(height: 4),
+              Text('Transactions included: $transactionCount'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Export PDF'),
+            ),
+          ],
+        );
+      },
+    );
+
+    return result ?? false;
+  }
+
   ({double profitLoss, String tip, Color color}) _getProfitLossAndTip(
       List<model.Transaction> transactions, String timeFilter) {
     final businessTransactions =
         transactions.where((t) => t.tag == 'business').toList();
-
-    DateTime now = DateTime.now();
-    DateTime startDate;
-
-    switch (timeFilter) {
-      case 'week':
-        startDate = now.subtract(Duration(days: now.weekday - 1));
-        startDate = DateTime(startDate.year, startDate.month, startDate.day);
-        break;
-      case 'year':
-        startDate = DateTime(now.year, 1, 1);
-        break;
-      case 'month':
-      default:
-        startDate = DateTime(now.year, now.month, 1);
-        break;
-    }
+    final periodRange = _periodRangeForFilter(timeFilter);
 
     final periodTransactions = businessTransactions.where((t) {
       try {
-        return DateTime.parse(t.date).isAfter(startDate);
+        return _isInInclusiveRange(
+          DateTime.parse(t.date),
+          periodRange.start,
+          periodRange.end,
+        );
       } catch (e) {
         return false;
       }
@@ -160,7 +237,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       appBar: AppBar(
         title: Text(
           'Business Reports',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
         ),
         elevation: 0,
         systemOverlayStyle: SystemUiOverlayStyle(
@@ -176,7 +253,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
           ),
         ],
       ),
-      body: SafeArea(
+      body: AppScreenBackground(
+        includeSafeArea: false,
         child: FutureBuilder<Map<String, dynamic>>(
           future: _reportDataFuture,
           builder: (context, snapshot) {
@@ -193,27 +271,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 snapshot.data!['transactions'] as List<model.Transaction>;
             final categoryMap =
                 snapshot.data!['categoryMap'] as Map<int, String>;
-
-            DateTime now = DateTime.now();
-            DateTime startDate;
-            switch (_selectedTimeFilter) {
-              case 'week':
-                startDate = now.subtract(Duration(days: now.weekday - 1));
-                startDate =
-                    DateTime(startDate.year, startDate.month, startDate.day);
-                break;
-              case 'year':
-                startDate = DateTime(now.year, 1, 1);
-                break;
-              case 'month':
-              default:
-                startDate = DateTime(now.year, now.month, 1);
-                break;
-            }
+            final periodRange = _periodRangeForFilter(_selectedTimeFilter);
 
             final timeFilteredTransactions = allTransactions.where((t) {
               try {
-                return DateTime.parse(t.date).isAfter(startDate);
+                return _isInInclusiveRange(
+                  DateTime.parse(t.date),
+                  periodRange.start,
+                  periodRange.end,
+                );
               } catch (e) {
                 return false;
               }
@@ -254,7 +320,46 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     ],
                   ),
                 ),
-                // Tag filter removed - only business transactions now
+                Padding(
+                  padding: ResponsiveHelper.edgeInsets(context, 0, 16, 10, 16),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          theme.colorScheme.surfaceContainerHighest.withValues(
+                        alpha: 0.75,
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: theme.colorScheme.outline.withValues(alpha: 0.1),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.filter_alt_rounded,
+                          size: 18,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Scope: Business transactions only • ${DateFormat('MMM d').format(periodRange.start)} - ${DateFormat('MMM d, yyyy').format(periodRange.end)} (inclusive)',
+                            style: GoogleFonts.manrope(
+                              fontSize: ResponsiveHelper.fontSize(context, 12),
+                              color: theme.colorScheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
                 Expanded(
                   child: ListView(
                     padding:
@@ -267,27 +372,28 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              profitLossData.color.withOpacity(0.25),
-                              profitLossData.color.withOpacity(0.12),
-                              profitLossData.color.withOpacity(0.05),
+                              profitLossData.color.withValues(alpha: 0.25),
+                              profitLossData.color.withValues(alpha: 0.12),
+                              profitLossData.color.withValues(alpha: 0.05),
                             ],
                             stops: const [0.0, 0.5, 1.0],
                           ),
                           borderRadius: BorderRadius.circular(
                               ResponsiveHelper.radius(context, 28)),
                           border: Border.all(
-                            color: profitLossData.color.withOpacity(0.4),
+                            color: profitLossData.color.withValues(alpha: 0.4),
                             width: 1.5,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: profitLossData.color.withOpacity(0.2),
+                              color:
+                                  profitLossData.color.withValues(alpha: 0.2),
                               blurRadius: 20,
                               offset: const Offset(0, 8),
                               spreadRadius: 0,
                             ),
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -305,8 +411,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                   padding: ResponsiveHelper.edgeInsetsAll(
                                       context, 8),
                                   decoration: BoxDecoration(
-                                    color:
-                                        profitLossData.color.withOpacity(0.2),
+                                    color: profitLossData.color
+                                        .withValues(alpha: 0.2),
                                     borderRadius: BorderRadius.circular(
                                         ResponsiveHelper.radius(context, 10)),
                                   ),
@@ -325,7 +431,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                 Flexible(
                                   child: Text(
                                     'Business Profit/Loss',
-                                    style: GoogleFonts.inter(
+                                    style: GoogleFonts.manrope(
                                       fontSize: ResponsiveHelper.fontSize(
                                           context, 15),
                                       fontWeight: FontWeight.w600,
@@ -343,7 +449,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                               fit: BoxFit.scaleDown,
                               child: Text(
                                 '$_currencySymbol ${NumberFormat.currency(locale: 'en_US', symbol: '').format(profitLossData.profitLoss.abs())}',
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.manrope(
                                   fontSize:
                                       ResponsiveHelper.fontSize(context, 32),
                                   fontWeight: FontWeight.bold,
@@ -361,17 +467,19 @@ class _ReportsScreenState extends State<ReportsScreen> {
                               padding: ResponsiveHelper.edgeInsetsSymmetric(
                                   context, 14, 10),
                               decoration: BoxDecoration(
-                                color: profitLossData.color.withOpacity(0.18),
+                                color: profitLossData.color
+                                    .withValues(alpha: 0.18),
                                 borderRadius: BorderRadius.circular(
                                     ResponsiveHelper.radius(context, 12)),
                                 border: Border.all(
-                                  color: profitLossData.color.withOpacity(0.3),
+                                  color: profitLossData.color
+                                      .withValues(alpha: 0.3),
                                   width: 1,
                                 ),
                               ),
                               child: Text(
                                 _selectedTimeFilter.toUpperCase(),
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.manrope(
                                   fontSize:
                                       ResponsiveHelper.fontSize(context, 11),
                                   fontWeight: FontWeight.w700,
@@ -387,12 +495,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                   context, 14, 12, 12, 12),
                               decoration: BoxDecoration(
                                 color: theme.colorScheme.surfaceContainerHighest
-                                    .withOpacity(0.8),
+                                    .withValues(alpha: 0.8),
                                 borderRadius: BorderRadius.circular(
                                     ResponsiveHelper.radius(context, 14)),
                                 border: Border.all(
                                   color: theme.colorScheme.outline
-                                      .withOpacity(0.1),
+                                      .withValues(alpha: 0.1),
                                   width: 1,
                                 ),
                               ),
@@ -404,7 +512,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                         context, 6),
                                     decoration: BoxDecoration(
                                       color: theme.colorScheme.primaryContainer
-                                          .withOpacity(0.5),
+                                          .withValues(alpha: 0.5),
                                       borderRadius: BorderRadius.circular(
                                           ResponsiveHelper.radius(context, 8)),
                                     ),
@@ -421,7 +529,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                   Expanded(
                                     child: Text(
                                       profitLossData.tip,
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.manrope(
                                         fontSize: ResponsiveHelper.fontSize(
                                             context, 12.5),
                                         color:
@@ -448,7 +556,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                               ResponsiveHelper.radius(context, 28)),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 15,
                               offset: const Offset(0, 5),
                               spreadRadius: 0,
@@ -483,7 +591,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                 Expanded(
                                   child: Text(
                                     'Income vs Expenses',
-                                    style: GoogleFonts.inter(
+                                    style: GoogleFonts.manrope(
                                       fontSize: ResponsiveHelper.fontSize(
                                           context, 20),
                                       fontWeight: FontWeight.bold,
@@ -551,10 +659,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                                 showTitles: true,
                                                 getTitlesWidget: (value, meta) {
                                                   String text = '';
-                                                  if (value.toInt() == 0)
+                                                  if (value.toInt() == 0) {
                                                     text = 'Income';
-                                                  if (value.toInt() == 1)
+                                                  }
+                                                  if (value.toInt() == 1) {
                                                     text = 'Expenses';
+                                                  }
                                                   return Padding(
                                                     padding: EdgeInsets.only(
                                                         top: ResponsiveHelper
@@ -562,7 +672,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                                                 context, 8.0)),
                                                     child: Text(
                                                       text,
-                                                      style: GoogleFonts.inter(
+                                                      style:
+                                                          GoogleFonts.manrope(
                                                         fontSize:
                                                             ResponsiveHelper
                                                                 .fontSize(
@@ -583,8 +694,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                                     ResponsiveHelper.width(
                                                         context, 60),
                                                 getTitlesWidget: (value, meta) {
-                                                  if (value == 0)
+                                                  if (value == 0) {
                                                     return const Text('');
+                                                  }
                                                   return Padding(
                                                     padding: EdgeInsets.only(
                                                         right: ResponsiveHelper
@@ -593,7 +705,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                                     child: Text(
                                                       compactFormatter
                                                           .format(value),
-                                                      style: GoogleFonts.inter(
+                                                      style:
+                                                          GoogleFonts.manrope(
                                                         fontSize:
                                                             ResponsiveHelper
                                                                 .fontSize(
@@ -622,12 +735,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                             border: Border(
                                               bottom: BorderSide(
                                                 color: theme.colorScheme.outline
-                                                    .withOpacity(0.3),
+                                                    .withValues(alpha: 0.3),
                                                 width: 1.5,
                                               ),
                                               left: BorderSide(
                                                 color: theme.colorScheme.outline
-                                                    .withOpacity(0.3),
+                                                    .withValues(alpha: 0.3),
                                                 width: 1.5,
                                               ),
                                             ),
@@ -639,7 +752,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                             getDrawingHorizontalLine: (value) =>
                                                 FlLine(
                                               color: theme.colorScheme.outline
-                                                  .withOpacity(0.15),
+                                                  .withValues(alpha: 0.15),
                                               strokeWidth: 1,
                                               dashArray: [5, 5],
                                             ),
@@ -650,7 +763,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                                 BarTouchTooltipData(
                                               getTooltipColor: (group) =>
                                                   theme.colorScheme.surface,
-                                              tooltipRoundedRadius: 8,
+                                              tooltipBorderRadius:
+                                                  BorderRadius.circular(8),
                                               tooltipPadding:
                                                   const EdgeInsets.all(8),
                                               tooltipMargin: 8,
@@ -658,7 +772,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                                   groupIndex, rod, rodIndex) {
                                                 return BarTooltipItem(
                                                   '$_currencySymbol${NumberFormat.currency(locale: 'en_US', symbol: '').format(rod.toY)}',
-                                                  GoogleFonts.inter(
+                                                  GoogleFonts.manrope(
                                                     color: theme
                                                         .colorScheme.onSurface,
                                                     fontWeight: FontWeight.bold,
@@ -712,7 +826,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                 ResponsiveHelper.radius(context, 28)),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 15,
                                 offset: const Offset(0, 5),
                                 spreadRadius: 0,
@@ -748,7 +862,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                   Expanded(
                                     child: Text(
                                       'Expense Breakdown',
-                                      style: GoogleFonts.inter(
+                                      style: GoogleFonts.manrope(
                                         fontSize: ResponsiveHelper.fontSize(
                                             context, 20),
                                         fontWeight: FontWeight.bold,
@@ -809,7 +923,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                                     ? '${percentage.toStringAsFixed(1)}%'
                                                     : '',
                                                 radius: radius,
-                                                titleStyle: GoogleFonts.inter(
+                                                titleStyle: GoogleFonts.manrope(
                                                   fontSize:
                                                       ResponsiveHelper.fontSize(
                                                           context, 11),
@@ -832,8 +946,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                                         ),
                                                         child: Text(
                                                           '${percentage.toStringAsFixed(0)}%',
-                                                          style:
-                                                              GoogleFonts.inter(
+                                                          style: GoogleFonts
+                                                              .manrope(
                                                             fontSize:
                                                                 ResponsiveHelper
                                                                     .fontSize(
@@ -899,7 +1013,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                 ResponsiveHelper.radius(context, 28)),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 15,
                                 offset: const Offset(0, 5),
                                 spreadRadius: 0,
@@ -912,14 +1026,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                 Icons.bar_chart_rounded,
                                 size: ResponsiveHelper.iconSize(context, 64),
                                 color: theme.colorScheme.onSurfaceVariant
-                                    .withOpacity(0.4),
+                                    .withValues(alpha: 0.4),
                               ),
                               SizedBox(
                                   height:
                                       ResponsiveHelper.spacing(context, 16)),
                               Text(
                                 'No Business Expense Data',
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.manrope(
                                   fontSize:
                                       ResponsiveHelper.fontSize(context, 18),
                                   fontWeight: FontWeight.w600,
@@ -930,11 +1044,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                   height: ResponsiveHelper.spacing(context, 8)),
                               Text(
                                 'Add transactions to see your expense breakdown',
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.manrope(
                                   fontSize:
                                       ResponsiveHelper.fontSize(context, 14),
                                   color: theme.colorScheme.onSurfaceVariant
-                                      .withOpacity(0.7),
+                                      .withValues(alpha: 0.7),
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -956,11 +1070,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             end: Alignment.bottomRight,
                             colors: [
                               theme.colorScheme.primaryContainer
-                                  .withOpacity(0.7),
+                                  .withValues(alpha: 0.7),
                               theme.colorScheme.primaryContainer
-                                  .withOpacity(0.4),
+                                  .withValues(alpha: 0.4),
                               theme.colorScheme.primaryContainer
-                                  .withOpacity(0.3),
+                                  .withValues(alpha: 0.3),
                             ],
                             stops: const [0.0, 0.5, 1.0],
                           ),
@@ -968,13 +1082,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
                               ResponsiveHelper.radius(context, 24)),
                           border: Border.all(
                             color: theme.colorScheme.primaryContainer
-                                .withOpacity(0.5),
+                                .withValues(alpha: 0.5),
                             width: 1.5,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color:
-                                  theme.colorScheme.primary.withOpacity(0.15),
+                              color: theme.colorScheme.primary
+                                  .withValues(alpha: 0.15),
                               blurRadius: 15,
                               offset: const Offset(0, 5),
                               spreadRadius: 0,
@@ -1006,15 +1120,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                     children: [
                                       Text(
                                         'Export Business Report',
-                                        style: GoogleFonts.inter(
+                                        style: GoogleFonts.manrope(
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        'PDF with clean descriptions',
-                                        style: GoogleFonts.inter(
+                                        'Scope: ${periodRange.label} • ${DateFormat('MMM d').format(periodRange.start)} - ${DateFormat('MMM d, yyyy').format(periodRange.end)}',
+                                        style: GoogleFonts.manrope(
                                           fontSize: 13,
                                           color: theme
                                               .colorScheme.onSurfaceVariant,
@@ -1032,54 +1146,63 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                 onPressed: _isExportingPDF
                                     ? null
                                     : () async {
-                                        if (_currentUser != null &&
-                                            !_isExportingPDF) {
-                                          setState(
-                                              () => _isExportingPDF = true);
-                                          try {
-                                            // Filter to only business transactions for PDF
-                                            final businessTransactions =
-                                                fullyFilteredTransactions
-                                                    .where((t) =>
-                                                        t.tag == 'business')
-                                                    .toList();
+                                        if (_currentUser == null ||
+                                            _isExportingPDF) {
+                                          return;
+                                        }
 
-                                            if (businessTransactions.isEmpty) {
-                                              if (mounted) {
-                                                setState(() =>
-                                                    _isExportingPDF = false);
-                                                NotificationHelper.showWarning(
-                                                    this.context,
-                                                    message:
-                                                        'No business transactions found in the selected period. Cannot generate report.');
-                                              }
-                                              return;
-                                            }
+                                        final businessTransactions =
+                                            fullyFilteredTransactions
+                                                .where(
+                                                    (t) => t.tag == 'business')
+                                                .toList();
 
-                                            final dateStr =
-                                                DateFormat('yyyy-MM-dd')
-                                                    .format(DateTime.now());
-                                            final fileName =
-                                                'PatoTrack_Business_Report_$dateStr.pdf';
+                                        if (businessTransactions.isEmpty) {
+                                          NotificationHelper.showWarning(
+                                            this.context,
+                                            message:
+                                                'No business transactions found in the selected period. Cannot generate report.',
+                                          );
+                                          return;
+                                        }
 
-                                            await PdfHelper.generateAndSharePdf(
-                                                businessTransactions,
-                                                _currentUser.displayName ??
-                                                    'User',
-                                                fileName);
-                                            if (mounted) {
-                                              setState(() =>
-                                                  _isExportingPDF = false);
-                                            }
-                                          } catch (e) {
-                                            if (mounted) {
-                                              setState(() =>
-                                                  _isExportingPDF = false);
-                                              NotificationHelper.showError(
-                                                  this.context,
-                                                  message:
-                                                      'Error generating report: $e');
-                                            }
+                                        final confirmed =
+                                            await _confirmPdfExport(
+                                          transactionCount:
+                                              businessTransactions.length,
+                                          start: periodRange.start,
+                                          end: periodRange.end,
+                                        );
+                                        if (!confirmed || !mounted) {
+                                          return;
+                                        }
+
+                                        setState(() => _isExportingPDF = true);
+
+                                        try {
+                                          final dateStr =
+                                              DateFormat('yyyy-MM-dd')
+                                                  .format(DateTime.now());
+                                          final fileName =
+                                              'PatoTrack_Business_Report_$dateStr.pdf';
+
+                                          await PdfHelper.generateAndSharePdf(
+                                            businessTransactions,
+                                            _currentUser.displayName ?? 'User',
+                                            fileName,
+                                          );
+                                        } catch (e) {
+                                          if (mounted) {
+                                            NotificationHelper.showError(
+                                              this.context,
+                                              message:
+                                                  'Error generating report: $e',
+                                            );
+                                          }
+                                        } finally {
+                                          if (mounted) {
+                                            setState(
+                                                () => _isExportingPDF = false);
                                           }
                                         }
                                       },
@@ -1102,7 +1225,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                   _isExportingPDF
                                       ? 'Generating...'
                                       : 'Generate PDF Report',
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.manrope(
                                     fontSize:
                                         ResponsiveHelper.fontSize(context, 16),
                                     fontWeight: FontWeight.w600,
@@ -1175,10 +1298,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
     return Container(
       padding: ResponsiveHelper.edgeInsetsSymmetric(context, 16, 10),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius:
             BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
-        border: Border.all(color: color.withOpacity(0.3), width: 1),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1197,7 +1320,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               SizedBox(width: ResponsiveHelper.spacing(context, 8)),
               Text(
                 label,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontSize: ResponsiveHelper.fontSize(context, 13),
                   fontWeight: FontWeight.w600,
                 ),
@@ -1207,7 +1330,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           SizedBox(height: ResponsiveHelper.spacing(context, 4)),
           Text(
             '$_currencySymbol${NumberFormat.currency(locale: 'en_US', symbol: '').format(value)}',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.manrope(
               fontSize: ResponsiveHelper.fontSize(context, 14),
               fontWeight: FontWeight.bold,
               color: color,
@@ -1226,11 +1349,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
         return Container(
           padding: ResponsiveHelper.edgeInsetsSymmetric(context, 12, 10),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius:
                 BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
             border: Border.all(
-              color: color.withOpacity(0.3),
+              color: color.withValues(alpha: 0.3),
               width: 1,
             ),
           ),
@@ -1245,7 +1368,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: color.withOpacity(0.4),
+                      color: color.withValues(alpha: 0.4),
                       blurRadius: 3,
                       offset: const Offset(0, 1),
                     ),
@@ -1260,7 +1383,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   children: [
                     Text(
                       category,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: ResponsiveHelper.fontSize(context, 13),
                         fontWeight: FontWeight.w600,
                       ),
@@ -1270,7 +1393,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     SizedBox(height: ResponsiveHelper.spacing(context, 2)),
                     Text(
                       '${percentage.toStringAsFixed(1)}% · $_currencySymbol${value.toStringAsFixed(0)}',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: ResponsiveHelper.fontSize(context, 11),
                         color: theme.colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w500,
@@ -1287,12 +1410,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   Widget _buildReportsLoadingState() {
-    return SingleChildScrollView(
+    return const SingleChildScrollView(
       child: Column(
         children: [
-          const ReportsProfitLossShimmer(),
-          const ChartShimmer(height: 320),
-          const ChartShimmer(height: 320),
+          ReportsProfitLossShimmer(),
+          ChartShimmer(height: 320),
+          ChartShimmer(height: 320),
         ],
       ),
     );

@@ -3,15 +3,24 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 /// Service for handling Google Sign-In authentication
 class GoogleSignInService {
-  static final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: ['email', 'profile'],
-  );
+  static final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+  static bool _isInitialized = false;
 
   static final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  static Future<void> _ensureInitialized() async {
+    if (_isInitialized) {
+      return;
+    }
+    await _googleSignIn.initialize();
+    _isInitialized = true;
+  }
 
   /// Signs in with Google and returns a UserCredential
   /// Returns null if sign-in is cancelled or fails
   static Future<UserCredential?> signInWithGoogle() async {
+    await _ensureInitialized();
+
     try {
       // Always sign out first to force account selection
       // This ensures the account picker is shown every time
@@ -19,25 +28,20 @@ class GoogleSignInService {
 
       // Trigger the Google Sign-In flow with account selection
       // This will show the account picker if multiple accounts exist
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-
-      // User cancelled the sign-in (closed the account picker without selecting)
-      if (googleUser == null) {
-        return null;
-      }
+      final GoogleSignInAccount googleUser = await _googleSignIn.authenticate(
+        scopeHint: const ['email', 'profile'],
+      );
 
       // Obtain the auth details from the request
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
 
       // Verify we have valid tokens
-      if (googleAuth.accessToken == null || googleAuth.idToken == null) {
+      if (googleAuth.idToken == null) {
         throw Exception('Failed to obtain authentication tokens from Google');
       }
 
       // Create a new credential
       final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
@@ -45,17 +49,15 @@ class GoogleSignInService {
       final userCredential = await _auth.signInWithCredential(credential);
 
       return userCredential;
+    } on GoogleSignInException catch (e) {
+      if (e.code == GoogleSignInExceptionCode.canceled) {
+        return null;
+      }
+      throw Exception('Google Sign-In failed: ${e.description}');
     } on FirebaseAuthException catch (e) {
       // Handle Firebase Auth errors
       throw _handleAuthException(e);
     } catch (e) {
-      // Handle other errors (network, cancellation, etc.)
-      // Don't throw if user cancelled - return null instead
-      if (e.toString().contains('sign_in_canceled') ||
-          e.toString().contains('cancelled') ||
-          e.toString().contains('canceled')) {
-        return null;
-      }
       throw Exception('Google Sign-In failed: $e');
     }
   }
@@ -63,6 +65,7 @@ class GoogleSignInService {
   /// Signs out from Google
   static Future<void> signOut() async {
     try {
+      await _ensureInitialized();
       await _googleSignIn.signOut();
       await _auth.signOut();
     } catch (e) {

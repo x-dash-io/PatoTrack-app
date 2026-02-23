@@ -188,7 +188,7 @@ class PdfHelper {
 
     const tableHeaders = ['Date', 'Description', 'Type', 'Amount'];
 
-    return pw.Table.fromTextArray(
+    return pw.TableHelper.fromTextArray(
       headers: tableHeaders,
       data: sortedTransactions.map((transaction) {
         final date = DateTime.parse(transaction.date);

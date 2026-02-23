@@ -33,15 +33,20 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  static const String _smsLastSyncPreferenceKey = 'sms_last_sync_epoch_ms';
+
   final dbHelper = DatabaseHelper();
   final SmsService _smsService = SmsService();
   List<model.Transaction> _transactions = [];
   List<Bill> _bills = [];
   bool _isLoading = true;
+  bool _isSmsSyncing = false;
   double _totalIncome = 0.0;
   double _totalExpenses = 0.0;
   double _balance = 0.0;
   String _currencySymbol = 'KSh';
+  PermissionStatus _smsPermissionStatus = PermissionStatus.denied;
+  DateTime? _lastSmsSyncAt;
 
   final User? _currentUser = FirebaseAuth.instance.currentUser;
 
@@ -52,36 +57,109 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _initHome() async {
-    await _requestSmsPermission();
+    await _loadSmsImportState();
     if (!mounted) return;
-    if (_currentUser != null) {
-      // Sync M-Pesa messages to add any new transactions.
-      try {
-        print('Starting M-Pesa message sync...');
-        await _smsService.syncMpesaMessages(_currentUser.uid);
-        print('M-Pesa message sync completed');
-      } catch (e) {
-        print('Error syncing M-Pesa messages: $e');
-        // Continue even if sync fails
-      }
-
-      // Finally, refresh the UI with all data (Firestore + local)
-      if (mounted) {
-        await _refreshData();
-        print(
-            'Data refresh completed. Transactions: ${_transactions.length}, Income: $_totalIncome, Expenses: $_totalExpenses');
-      }
-    } else {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+    if (_currentUser == null) {
+      setState(() => _isLoading = false);
+      return;
     }
+    await _refreshData();
   }
 
-  Future<void> _requestSmsPermission() async {
-    var status = await Permission.sms.status;
-    if (!status.isGranted) {
-      await Permission.sms.request();
+  Future<void> _loadSmsImportState() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastSyncEpoch = prefs.getInt(_smsLastSyncPreferenceKey);
+    final smsPermissionStatus = await Permission.sms.status;
+    if (!mounted) return;
+    setState(() {
+      _smsPermissionStatus = smsPermissionStatus;
+      _lastSmsSyncAt = lastSyncEpoch != null
+          ? DateTime.fromMillisecondsSinceEpoch(lastSyncEpoch)
+          : null;
+    });
+  }
+
+  Future<void> _handleSmsImportAction() async {
+    if (_currentUser == null || _isSmsSyncing) return;
+
+    if (_smsPermissionStatus.isPermanentlyDenied) {
+      final opened = await openAppSettings();
+      if (opened) {
+        await _loadSmsImportState();
+      }
+      return;
+    }
+
+    if (_smsPermissionStatus.isDenied || _smsPermissionStatus.isRestricted) {
+      final requestedStatus = await Permission.sms.request();
+      if (!mounted) return;
+      setState(() {
+        _smsPermissionStatus = requestedStatus;
+      });
+
+      if (!requestedStatus.isGranted) {
+        NotificationHelper.showWarning(
+          context,
+          message: requestedStatus.isPermanentlyDenied
+              ? 'SMS access is blocked. Open Settings to enable SMS import.'
+              : 'SMS permission is required to import M-Pesa transactions.',
+        );
+        return;
+      }
+    }
+
+    await _syncMpesaMessagesNow();
+  }
+
+  Future<void> _syncMpesaMessagesNow() async {
+    if (_currentUser == null || _isSmsSyncing) return;
+
+    setState(() => _isSmsSyncing = true);
+
+    try {
+      final status = await Permission.sms.status;
+      if (!status.isGranted) {
+        if (mounted) {
+          setState(() {
+            _smsPermissionStatus = status;
+          });
+        }
+        if (!mounted) return;
+        NotificationHelper.showWarning(
+          context,
+          message: 'Enable SMS permission first to import M-Pesa messages.',
+        );
+        return;
+      }
+
+      await _smsService.syncMpesaMessages(_currentUser.uid);
+
+      final now = DateTime.now();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_smsLastSyncPreferenceKey, now.millisecondsSinceEpoch);
+
+      if (!mounted) return;
+      setState(() {
+        _smsPermissionStatus = status;
+        _lastSmsSyncAt = now;
+      });
+
+      await _refreshData();
+      if (!mounted) return;
+      NotificationHelper.showSuccess(
+        context,
+        message: 'M-Pesa import complete. Recent transactions are updated.',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      NotificationHelper.showError(
+        context,
+        message: 'Unable to sync M-Pesa messages right now. Try again.',
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSmsSyncing = false);
+      }
     }
   }
 
@@ -103,11 +181,12 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       await Future.wait([
         _loadCurrencyPreference(),
+        _loadSmsImportState(),
         _loadBills(_currentUser.uid),
         _loadTransactions(_currentUser.uid),
       ]);
     } catch (e) {
-      print("Error refreshing data: $e");
+      debugPrint('Error refreshing data: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -163,21 +242,176 @@ class _HomeScreenState extends State<HomeScreen> {
     _refreshData();
   }
 
+  String _smsSyncSubtitle() {
+    if (_lastSmsSyncAt == null) {
+      return 'No sync yet';
+    }
+    return 'Last sync ${DateFormat('MMM d, h:mm a').format(_lastSmsSyncAt!)}';
+  }
+
+  Widget _buildSmsImportSection(User? currentUser) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isPermissionGranted = _smsPermissionStatus.isGranted;
+    final isPermanentlyDenied = _smsPermissionStatus.isPermanentlyDenied;
+
+    final actionLabel = _isSmsSyncing
+        ? 'Syncing now...'
+        : isPermissionGranted
+            ? 'Sync M-Pesa Now'
+            : isPermanentlyDenied
+                ? 'Open Settings'
+                : 'Enable SMS Import';
+
+    final trustMessage = isPermissionGranted
+        ? 'M-Pesa import is on-demand. Nothing runs until you tap sync.'
+        : 'SMS access is requested only when you enable import.';
+
+    return Padding(
+      padding: ResponsiveHelper.edgeInsets(context, 8, 20, 12, 20),
+      child: Container(
+        padding: ResponsiveHelper.edgeInsets(context, 18, 18, 16, 18),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              colorScheme.primaryContainer.withValues(alpha: 0.85),
+              colorScheme.surfaceContainerHigh,
+            ],
+          ),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: colorScheme.primary.withValues(alpha: 0.16),
+            width: 1.2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.primary.withValues(alpha: 0.08),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.sms_rounded,
+                    color: colorScheme.primary,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'M-Pesa SMS Import',
+                    style: GoogleFonts.manrope(
+                      fontWeight: FontWeight.w800,
+                      fontSize: ResponsiveHelper.fontSize(context, 16),
+                    ),
+                  ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isPermissionGranted
+                        ? Colors.green.withValues(alpha: 0.16)
+                        : colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    isPermissionGranted ? 'Enabled' : 'Disabled',
+                    style: GoogleFonts.manrope(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: isPermissionGranted
+                          ? Colors.green.shade700
+                          : colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              trustMessage,
+              style: GoogleFonts.manrope(
+                fontSize: ResponsiveHelper.fontSize(context, 13),
+                color: colorScheme.onSurfaceVariant,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              _smsSyncSubtitle(),
+              style: GoogleFonts.manrope(
+                fontSize: ResponsiveHelper.fontSize(context, 12),
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: (_isSmsSyncing || currentUser == null)
+                    ? null
+                    : _handleSmsImportAction,
+                icon: _isSmsSyncing
+                    ? SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            colorScheme.onPrimary,
+                          ),
+                        ),
+                      )
+                    : Icon(
+                        isPermissionGranted
+                            ? Icons.sync_rounded
+                            : Icons.verified_user_outlined,
+                      ),
+                label: Text(actionLabel),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   ({IconData icon, Color color}) _getBillStyling(String billName) {
     final name = billName.toLowerCase();
     final colorScheme = Theme.of(context).colorScheme;
-    if (name.contains('rent'))
+    if (name.contains('rent')) {
       return (icon: Icons.home_outlined, color: Colors.orange);
-    if (name.contains('netflix') || name.contains('movie'))
+    }
+    if (name.contains('netflix') || name.contains('movie')) {
       return (icon: Icons.movie_outlined, color: Colors.red);
-    if (name.contains('wifi') || name.contains('internet'))
+    }
+    if (name.contains('wifi') || name.contains('internet')) {
       return (icon: Icons.wifi_outlined, color: Colors.blue);
-    if (name.contains('electricity') || name.contains('power'))
+    }
+    if (name.contains('electricity') || name.contains('power')) {
       return (icon: Icons.lightbulb_outline, color: Colors.amber);
-    if (name.contains('water'))
+    }
+    if (name.contains('water')) {
       return (icon: Icons.water_drop_outlined, color: Colors.lightBlue);
-    if (name.contains('loan') || name.contains('debt'))
+    }
+    if (name.contains('loan') || name.contains('debt')) {
       return (icon: Icons.credit_card_outlined, color: Colors.purple);
+    }
     return (
       icon: Icons.receipt_long_outlined,
       color: colorScheme.onSurfaceVariant
@@ -228,7 +462,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: ResponsiveHelper.width(context, 40),
                 height: 4,
                 decoration: BoxDecoration(
-                  color: colorScheme.onSurfaceVariant.withOpacity(0.4),
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(
                       ResponsiveHelper.radius(context, 2)),
                 ),
@@ -259,7 +493,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           Text(
                             bill.name,
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.manrope(
                               fontSize: ResponsiveHelper.fontSize(context, 18),
                               fontWeight: FontWeight.bold,
                             ),
@@ -268,7 +502,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               height: ResponsiveHelper.spacing(context, 4)),
                           Text(
                             '$_currencySymbol${bill.amount.toStringAsFixed(0)}',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.manrope(
                               fontSize: ResponsiveHelper.fontSize(context, 16),
                               color: colorScheme.onSurfaceVariant,
                               fontWeight: FontWeight.w600,
@@ -298,7 +532,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 title: Text(
                   'Edit Bill',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: ResponsiveHelper.fontSize(context, 16),
                     fontWeight: FontWeight.w600,
                   ),
@@ -317,12 +551,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   });
                 },
               ),
-              Divider(height: 1, indent: 70, endIndent: 20),
+              const Divider(height: 1, indent: 70, endIndent: 20),
               ListTile(
                 leading: Container(
                   padding: ResponsiveHelper.edgeInsetsAll(context, 10),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
+                    color: Colors.red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(
                         ResponsiveHelper.radius(context, 10)),
                   ),
@@ -334,7 +568,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 title: Text(
                   'Delete Bill',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: ResponsiveHelper.fontSize(context, 16),
                     fontWeight: FontWeight.w600,
                     color: Colors.red,
@@ -364,8 +598,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     showDialog(
                       context: parentContext,
                       barrierDismissible: false,
-                      builder: (dialogContext) => WillPopScope(
-                        onWillPop: () async => false,
+                      builder: (dialogContext) => PopScope(
+                        canPop: false,
                         child: Dialog(
                           backgroundColor: Colors.transparent,
                           child: Container(
@@ -376,7 +610,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               borderRadius: BorderRadius.circular(
                                   ResponsiveHelper.radius(parentContext, 20)),
                             ),
-                            child: Column(
+                            child: const Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 ModernLoadingIndicator(
@@ -402,7 +636,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           await notificationService
                               .cancelNotification(bill.id!);
                         } catch (e) {
-                          print('Error canceling notification: $e');
+                          debugPrint('Error canceling notification: $e');
                         }
 
                         if (parentContext.mounted) {
@@ -497,8 +731,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.userChanges(),
@@ -506,197 +739,213 @@ class _HomeScreenState extends State<HomeScreen> {
         final currentUser = snapshot.data;
 
         return Scaffold(
-          body: SafeArea(
-            child: _isLoading
-                ? _buildLoadingState()
-                : RefreshIndicator(
-                    onRefresh: _refreshData,
-                    child: CustomScrollView(
-                      slivers: [
-                        // Modern Header
-                        SliverToBoxAdapter(
-                          child: Padding(
-                            padding: ResponsiveHelper.edgeInsets(
-                                context, 24, 20, 16, 20),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  '${_getGreeting()} 👋',
-                                  style: GoogleFonts.inter(
-                                    fontSize:
-                                        ResponsiveHelper.fontSize(context, 16),
-                                    color: colorScheme.onSurfaceVariant,
-                                    fontWeight: FontWeight.w500,
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  colorScheme.primaryContainer.withValues(alpha: 0.32),
+                  colorScheme.surfaceContainerLowest,
+                  colorScheme.surface,
+                ],
+              ),
+            ),
+            child: SafeArea(
+              child: _isLoading
+                  ? _buildLoadingState()
+                  : RefreshIndicator(
+                      onRefresh: _refreshData,
+                      child: CustomScrollView(
+                        slivers: [
+                          // Modern Header
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: ResponsiveHelper.edgeInsets(
+                                  context, 24, 20, 16, 20),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    '${_getGreeting()} 👋',
+                                    style: GoogleFonts.manrope(
+                                      fontSize: ResponsiveHelper.fontSize(
+                                          context, 16),
+                                      color: colorScheme.onSurfaceVariant,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
-                                ),
-                                SizedBox(
-                                    height:
-                                        ResponsiveHelper.spacing(context, 4)),
-                                Text(
-                                  currentUser?.displayName ?? 'User',
-                                  style: GoogleFonts.inter(
-                                    fontSize:
-                                        ResponsiveHelper.fontSize(context, 28),
-                                    fontWeight: FontWeight.bold,
-                                    color: colorScheme.onSurface,
+                                  SizedBox(
+                                      height:
+                                          ResponsiveHelper.spacing(context, 4)),
+                                  Text(
+                                    currentUser?.displayName ?? 'User',
+                                    style: GoogleFonts.manrope(
+                                      fontSize: ResponsiveHelper.fontSize(
+                                          context, 28),
+                                      fontWeight: FontWeight.bold,
+                                      color: colorScheme.onSurface,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
                                   ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                        // Enhanced Summary Cards Section
-                        SliverToBoxAdapter(
-                          child: Padding(
-                            padding: ResponsiveHelper.edgeInsets(
-                                context, 16, 20, 12, 20),
-                            child: Column(
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: _EnhancedSummaryCard(
-                                        title: 'Income',
-                                        amount: _totalIncome,
-                                        icon: Icons.trending_up_rounded,
-                                        color: Colors.green,
-                                        currencySymbol: _currencySymbol,
-                                        percentage: _totalIncome > 0 &&
-                                                _totalExpenses > 0
-                                            ? (_totalIncome /
-                                                (_totalIncome +
-                                                    _totalExpenses) *
-                                                100)
-                                            : 0,
-                                      ),
-                                    ),
-                                    SizedBox(
-                                        width: ResponsiveHelper.spacing(
-                                            context, 12)),
-                                    Expanded(
-                                      child: _EnhancedSummaryCard(
-                                        title: 'Expenses',
-                                        amount: _totalExpenses,
-                                        icon: Icons.trending_down_rounded,
-                                        color: Colors.red,
-                                        currencySymbol: _currencySymbol,
-                                        percentage: _totalIncome > 0 &&
-                                                _totalExpenses > 0
-                                            ? (_totalExpenses /
-                                                (_totalIncome +
-                                                    _totalExpenses) *
-                                                100)
-                                            : 0,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(
-                                    height:
-                                        ResponsiveHelper.spacing(context, 12)),
-                                _EnhancedSummaryCard(
-                                  title: 'Balance',
-                                  amount: _balance,
-                                  icon: Icons.account_balance_wallet_rounded,
-                                  color: _balance >= 0
-                                      ? Colors.blue
-                                      : Colors.orange,
-                                  currencySymbol: _currencySymbol,
-                                  isFullWidth: true,
-                                  showTrend: true,
-                                  isPositive: _balance >= 0,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        // Upcoming Bills Section
-                        SliverToBoxAdapter(
-                          child: _buildUpcomingBillsSection(currentUser),
-                        ),
-                        // Recent Transactions Section
-                        SliverToBoxAdapter(
-                          child: Padding(
-                            padding: ResponsiveHelper.edgeInsets(
-                                context, 16, 20, 8, 20),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Flexible(
-                                      child: Text(
-                                        'Recent Transactions',
-                                        style: GoogleFonts.inter(
-                                          fontSize: ResponsiveHelper.fontSize(
-                                              context, 20),
-                                          fontWeight: FontWeight.bold,
+                          // Enhanced Summary Cards Section
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: ResponsiveHelper.edgeInsets(
+                                  context, 16, 20, 12, 20),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: _EnhancedSummaryCard(
+                                          title: 'Income',
+                                          amount: _totalIncome,
+                                          icon: Icons.trending_up_rounded,
+                                          color: Colors.green,
+                                          currencySymbol: _currencySymbol,
+                                          percentage: _totalIncome > 0 &&
+                                                  _totalExpenses > 0
+                                              ? (_totalIncome /
+                                                  (_totalIncome +
+                                                      _totalExpenses) *
+                                                  100)
+                                              : 0,
                                         ),
-                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                    ),
-                                    TextButton(
-                                      onPressed: () {
-                                        if (currentUser == null) return;
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                const AllTransactionsScreen(),
+                                      SizedBox(
+                                          width: ResponsiveHelper.spacing(
+                                              context, 12)),
+                                      Expanded(
+                                        child: _EnhancedSummaryCard(
+                                          title: 'Expenses',
+                                          amount: _totalExpenses,
+                                          icon: Icons.trending_down_rounded,
+                                          color: Colors.red,
+                                          currencySymbol: _currencySymbol,
+                                          percentage: _totalIncome > 0 &&
+                                                  _totalExpenses > 0
+                                              ? (_totalExpenses /
+                                                  (_totalIncome +
+                                                      _totalExpenses) *
+                                                  100)
+                                              : 0,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(
+                                      height: ResponsiveHelper.spacing(
+                                          context, 12)),
+                                  _EnhancedSummaryCard(
+                                    title: 'Balance',
+                                    amount: _balance,
+                                    icon: Icons.account_balance_wallet_rounded,
+                                    color: _balance >= 0
+                                        ? Colors.blue
+                                        : Colors.orange,
+                                    currencySymbol: _currencySymbol,
+                                    isFullWidth: true,
+                                    showTrend: true,
+                                    isPositive: _balance >= 0,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          SliverToBoxAdapter(
+                            child: _buildSmsImportSection(currentUser),
+                          ),
+                          // Upcoming Bills Section
+                          SliverToBoxAdapter(
+                            child: _buildUpcomingBillsSection(currentUser),
+                          ),
+                          // Recent Transactions Section
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: ResponsiveHelper.edgeInsets(
+                                  context, 16, 20, 8, 20),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          'Recent Transactions',
+                                          style: GoogleFonts.manrope(
+                                            fontSize: ResponsiveHelper.fontSize(
+                                                context, 20),
+                                            fontWeight: FontWeight.bold,
                                           ),
-                                        ).then((_) => _refreshData());
-                                      },
-                                      child: Text(
-                                        'See All',
-                                        style: GoogleFonts.inter(
-                                          fontWeight: FontWeight.w600,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(
-                                    height:
-                                        ResponsiveHelper.spacing(context, 6)),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.swipe_rounded,
-                                      size: ResponsiveHelper.iconSize(
-                                          context, 14),
-                                      color: colorScheme.onSurfaceVariant
-                                          .withOpacity(0.6),
-                                    ),
-                                    SizedBox(
-                                        width: ResponsiveHelper.spacing(
-                                            context, 6)),
-                                    Text(
-                                      'Swipe right to edit, swipe left to delete',
-                                      style: GoogleFonts.inter(
-                                        fontSize: ResponsiveHelper.fontSize(
-                                            context, 12),
-                                        color: colorScheme.onSurfaceVariant
-                                            .withOpacity(0.7),
-                                        fontStyle: FontStyle.italic,
+                                      TextButton(
+                                        onPressed: () {
+                                          if (currentUser == null) return;
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  const AllTransactionsScreen(),
+                                            ),
+                                          ).then((_) => _refreshData());
+                                        },
+                                        child: Text(
+                                          'See All',
+                                          style: GoogleFonts.manrope(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                                    ],
+                                  ),
+                                  SizedBox(
+                                      height:
+                                          ResponsiveHelper.spacing(context, 6)),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.swipe_rounded,
+                                        size: ResponsiveHelper.iconSize(
+                                            context, 14),
+                                        color: colorScheme.onSurfaceVariant
+                                            .withValues(alpha: 0.6),
+                                      ),
+                                      SizedBox(
+                                          width: ResponsiveHelper.spacing(
+                                              context, 6)),
+                                      Text(
+                                        'Swipe right to edit, swipe left to delete',
+                                        style: GoogleFonts.manrope(
+                                          fontSize: ResponsiveHelper.fontSize(
+                                              context, 12),
+                                          color: colorScheme.onSurfaceVariant
+                                              .withValues(alpha: 0.7),
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                        // Transaction List
-                        _buildTransactionList(currentUser),
-                      ],
+                          // Transaction List
+                          _buildTransactionList(currentUser),
+                        ],
+                      ),
                     ),
-                  ),
+            ),
           ),
           floatingActionButton: Container(
             margin: ResponsiveHelper.edgeInsets(context, 0, 20, 16, 20),
@@ -705,13 +954,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   BorderRadius.circular(ResponsiveHelper.radius(context, 20)),
               boxShadow: [
                 BoxShadow(
-                  color: colorScheme.primary.withOpacity(0.3),
+                  color: colorScheme.primary.withValues(alpha: 0.3),
                   blurRadius: 12,
                   offset: const Offset(0, 6),
                   spreadRadius: 0,
                 ),
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -735,7 +984,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               label: Text(
                 'Add Transaction',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontWeight: FontWeight.w700,
                   fontSize: ResponsiveHelper.fontSize(context, 16),
                   letterSpacing: 0.3,
@@ -792,30 +1041,29 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           // Summary cards shimmer
-          SliverToBoxAdapter(
+          const SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
                   Expanded(child: _ShimmerCard(height: 120)),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Expanded(child: _ShimmerCard(height: 120)),
                 ],
               ),
             ),
           ),
-          SliverToBoxAdapter(
+          const SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+              padding: EdgeInsets.fromLTRB(20, 12, 20, 16),
               child: _ShimmerCard(height: 100),
             ),
           ),
           // Transactions shimmer
           SliverList(
             delegate: SliverChildBuilderDelegate(
-              (context, index) => Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+              (context, index) => const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 4),
                 child: _ShimmerCard(height: 80),
               ),
               childCount: 5,
@@ -840,7 +1088,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Flexible(
                 child: Text(
                   'Upcoming Bills',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: ResponsiveHelper.fontSize(context, 20),
                     fontWeight: FontWeight.bold,
                   ),
@@ -864,7 +1112,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     size: ResponsiveHelper.iconSize(context, 18)),
                 label: Text(
                   'Add Bill',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: ResponsiveHelper.fontSize(context, 14),
                     fontWeight: FontWeight.w600,
                   ),
@@ -882,12 +1130,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       Icon(
                         Icons.event_note_outlined,
                         size: ResponsiveHelper.iconSize(context, 64),
-                        color: colorScheme.onSurfaceVariant.withOpacity(0.4),
+                        color:
+                            colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
                       ),
                       SizedBox(height: ResponsiveHelper.spacing(context, 16)),
                       Text(
                         'No upcoming bills',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: ResponsiveHelper.fontSize(context, 18),
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurfaceVariant,
@@ -896,7 +1145,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       SizedBox(height: ResponsiveHelper.spacing(context, 4)),
                       Text(
                         'Add a bill to track payments',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: ResponsiveHelper.fontSize(context, 14),
                           color: colorScheme.onSurfaceVariant,
                         ),
@@ -951,7 +1200,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 elevation: 2,
                                 shape: RoundedRectangleBorder(
                                   side: BorderSide(
-                                    color: status.color.withOpacity(0.2),
+                                    color: status.color.withValues(alpha: 0.2),
                                     width: 1,
                                   ),
                                   borderRadius: BorderRadius.circular(
@@ -964,7 +1213,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       end: Alignment.bottomRight,
                                       colors: [
                                         colorScheme.surfaceContainerHighest
-                                            .withOpacity(0.5),
+                                            .withValues(alpha: 0.5),
                                         colorScheme.surface,
                                       ],
                                     ),
@@ -1062,7 +1311,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                         colors: [
                                                           styling.color,
                                                           styling.color
-                                                              .withOpacity(0.8),
+                                                              .withValues(
+                                                                  alpha: 0.8),
                                                         ],
                                                       ),
                                                       borderRadius:
@@ -1074,8 +1324,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       boxShadow: [
                                                         BoxShadow(
                                                           color: styling.color
-                                                              .withOpacity(
-                                                                  0.35),
+                                                              .withValues(
+                                                                  alpha: 0.35),
                                                           blurRadius: 4,
                                                           offset: Offset(
                                                               0,
@@ -1104,12 +1354,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       decoration: BoxDecoration(
                                                         color: colorScheme
                                                             .primaryContainer
-                                                            .withOpacity(0.6),
+                                                            .withValues(
+                                                                alpha: 0.6),
                                                         shape: BoxShape.circle,
                                                         border: Border.all(
                                                           color: colorScheme
                                                               .primaryContainer
-                                                              .withOpacity(0.3),
+                                                              .withValues(
+                                                                  alpha: 0.3),
                                                           width: 1,
                                                         ),
                                                       ),
@@ -1131,7 +1383,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       Alignment.centerLeft,
                                                   child: Text(
                                                     bill.name,
-                                                    style: GoogleFonts.inter(
+                                                    style: GoogleFonts.manrope(
                                                       fontWeight:
                                                           FontWeight.w600,
                                                       fontSize: fontSizeName,
@@ -1153,7 +1405,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 alignment: Alignment.centerLeft,
                                                 child: Text(
                                                   '$_currencySymbol${bill.amount.toStringAsFixed(0)}',
-                                                  style: GoogleFonts.inter(
+                                                  style: GoogleFonts.manrope(
                                                     fontSize: fontSizeAmount,
                                                     fontWeight: FontWeight.w700,
                                                     color:
@@ -1179,7 +1431,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 ),
                                                 decoration: BoxDecoration(
                                                   color: status.color
-                                                      .withOpacity(0.18),
+                                                      .withValues(alpha: 0.18),
                                                   borderRadius:
                                                       BorderRadius.circular(
                                                           ResponsiveHelper
@@ -1187,7 +1439,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                                   context, 8)),
                                                   border: Border.all(
                                                     color: status.color
-                                                        .withOpacity(0.4),
+                                                        .withValues(alpha: 0.4),
                                                     width: 1,
                                                   ),
                                                 ),
@@ -1215,7 +1467,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       child: Text(
                                                         status.text,
                                                         style:
-                                                            GoogleFonts.inter(
+                                                            GoogleFonts.manrope(
                                                           color: status.color,
                                                           fontSize:
                                                               fontSizeStatus,
@@ -1269,8 +1521,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   ),
                                                   onPressed: () async {
                                                     // Stop event propagation to prevent card tap
-                                                    if (currentUser == null)
+                                                    if (currentUser == null) {
                                                       return;
+                                                    }
 
                                                     final billTransaction =
                                                         model.Transaction(
@@ -1329,7 +1582,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   },
                                                   child: Text(
                                                     'Pay Bill',
-                                                    style: GoogleFonts.inter(
+                                                    style: GoogleFonts.manrope(
                                                       fontSize: ResponsiveHelper
                                                           .fontSize(
                                                               context, 14),
@@ -1376,12 +1629,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: Theme.of(context)
                       .colorScheme
                       .onSurfaceVariant
-                      .withOpacity(0.4),
+                      .withValues(alpha: 0.4),
                 ),
                 const SizedBox(height: 24),
                 Text(
                   'No transactions yet',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -1391,7 +1644,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   'Tap the button below to add your first transaction',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 14,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -1488,7 +1741,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ? Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.green.withOpacity(0.1),
+                                color: Colors.green.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Image.asset(
@@ -1500,7 +1753,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           : Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: amountColor.withOpacity(0.1),
+                                color: amountColor.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(
@@ -1522,7 +1775,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               transaction.description.isNotEmpty
                                   ? transaction.description
                                   : transaction.type.capitalize(),
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.manrope(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 15,
                               ),
@@ -1532,7 +1785,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             const SizedBox(height: 4),
                             Text(
                               transaction.date.split('T')[0],
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.manrope(
                                 color: Theme.of(context)
                                     .colorScheme
                                     .onSurfaceVariant,
@@ -1549,7 +1802,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Flexible(
                         child: Text(
                           '$amountPrefix$_currencySymbol ${currencyFormatter.format(transaction.amount)}',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.manrope(
                             color: amountColor,
                             fontWeight: FontWeight.bold,
                             fontSize: 15,
@@ -1610,23 +1863,23 @@ class _EnhancedSummaryCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            color.withOpacity(isDark ? 0.25 : 0.15),
-            color.withOpacity(isDark ? 0.15 : 0.08),
-            color.withOpacity(isDark ? 0.10 : 0.05),
+            color.withValues(alpha: isDark ? 0.25 : 0.15),
+            color.withValues(alpha: isDark ? 0.15 : 0.08),
+            color.withValues(alpha: isDark ? 0.10 : 0.05),
           ],
           stops: const [0.0, 0.5, 1.0],
         ),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.15),
+            color: color.withValues(alpha: 0.15),
             blurRadius: 12,
             offset: const Offset(0, 4),
             spreadRadius: 0,
           ),
           BoxShadow(
             color: isDark
-                ? Colors.black.withOpacity(0.3)
-                : Colors.black.withOpacity(0.05),
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1657,14 +1910,14 @@ class _EnhancedSummaryCard extends StatelessWidget {
                           end: Alignment.bottomRight,
                           colors: [
                             color,
-                            color.withOpacity(0.8),
+                            color.withValues(alpha: 0.8),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(
                             ResponsiveHelper.radius(context, 12)),
                         boxShadow: [
                           BoxShadow(
-                            color: color.withOpacity(0.4),
+                            color: color.withValues(alpha: 0.4),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -1683,10 +1936,10 @@ class _EnhancedSummaryCard extends StatelessWidget {
                         children: [
                           Text(
                             title,
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.manrope(
                               fontSize: ResponsiveHelper.fontSize(context, 13),
-                              color:
-                                  colorScheme.onSurfaceVariant.withOpacity(0.8),
+                              color: colorScheme.onSurfaceVariant
+                                  .withValues(alpha: 0.8),
                               fontWeight: FontWeight.w600,
                               letterSpacing: 0.3,
                             ),
@@ -1697,11 +1950,11 @@ class _EnhancedSummaryCard extends StatelessWidget {
                                   top: ResponsiveHelper.spacing(context, 2)),
                               child: Text(
                                 '${percentage!.toStringAsFixed(1)}%',
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.manrope(
                                   fontSize:
                                       ResponsiveHelper.fontSize(context, 10),
                                   color: colorScheme.onSurfaceVariant
-                                      .withOpacity(0.6),
+                                      .withValues(alpha: 0.6),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -1715,7 +1968,7 @@ class _EnhancedSummaryCard extends StatelessWidget {
                             ResponsiveHelper.edgeInsetsSymmetric(context, 6, 8),
                         decoration: BoxDecoration(
                           color: (isPositive! ? Colors.green : Colors.orange)
-                              .withOpacity(0.15),
+                              .withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(
                               ResponsiveHelper.radius(context, 8)),
                         ),
@@ -1733,7 +1986,7 @@ class _EnhancedSummaryCard extends StatelessWidget {
                                 width: ResponsiveHelper.spacing(context, 2)),
                             Text(
                               isPositive! ? 'Good' : 'Low',
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.manrope(
                                 fontSize:
                                     ResponsiveHelper.fontSize(context, 10),
                                 color:
@@ -1752,7 +2005,7 @@ class _EnhancedSummaryCard extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     '$currencySymbol ${currencyFormatter.format(amount)}',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: ResponsiveHelper.fontSize(context, 20),
                       fontWeight: FontWeight.bold,
                       color: color,

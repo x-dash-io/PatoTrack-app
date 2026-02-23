@@ -24,7 +24,7 @@ class NotificationHelper {
             Expanded(
               child: Text(
                 message,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontWeight: FontWeight.w600,
                   fontSize: ResponsiveHelper.fontSize(context, 15),
                   color: Colors.white,
@@ -64,7 +64,7 @@ class NotificationHelper {
             Expanded(
               child: Text(
                 message,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontWeight: FontWeight.w600,
                   fontSize: ResponsiveHelper.fontSize(context, 15),
                   color: Colors.white,
@@ -106,7 +106,7 @@ class NotificationHelper {
             Expanded(
               child: Text(
                 message,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontWeight: FontWeight.w600,
                   fontSize: ResponsiveHelper.fontSize(context, 15),
                   color: Colors.white,
@@ -146,7 +146,7 @@ class NotificationHelper {
             Expanded(
               child: Text(
                 message,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontWeight: FontWeight.w600,
                   fontSize: ResponsiveHelper.fontSize(context, 15),
                   color: Colors.white,
@@ -188,7 +188,7 @@ class NotificationHelper {
             Expanded(
               child: Text(
                 message,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontWeight: FontWeight.w600,
                   fontSize: ResponsiveHelper.fontSize(context, 15),
                   color: Colors.white,

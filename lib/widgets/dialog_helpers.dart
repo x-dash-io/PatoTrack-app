@@ -23,18 +23,18 @@ Future<bool?> showModernConfirmDialog({
       ),
       title: Text(
         title,
-        style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+        style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
       ),
       content: Text(
         message,
-        style: GoogleFonts.inter(),
+        style: GoogleFonts.manrope(),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
           child: Text(
             cancelText,
-            style: GoogleFonts.inter(),
+            style: GoogleFonts.manrope(),
           ),
         ),
         FilledButton(
@@ -47,7 +47,7 @@ Future<bool?> showModernConfirmDialog({
           ),
           child: Text(
             confirmText,
-            style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+            style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
           ),
         ),
       ],
@@ -70,18 +70,18 @@ Future<void> showModernInfoDialog({
       ),
       title: Text(
         title,
-        style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+        style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
       ),
       content: Text(
         message,
-        style: GoogleFonts.inter(),
+        style: GoogleFonts.manrope(),
       ),
       actions: [
         FilledButton(
           onPressed: () => Navigator.of(context).pop(),
           child: Text(
             buttonText,
-            style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+            style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
           ),
         ),
       ],
@@ -104,12 +104,12 @@ Future<T?> showModernAlertDialog<T>({
       ),
       title: Text(
         title,
-        style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+        style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
       ),
       content: message != null
           ? Text(
               message,
-              style: GoogleFonts.inter(),
+              style: GoogleFonts.manrope(),
             )
           : null,
       actions: actions ??
@@ -118,7 +118,7 @@ Future<T?> showModernAlertDialog<T>({
               onPressed: () => Navigator.of(context).pop(),
               child: Text(
                 'OK',
-                style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -190,7 +190,7 @@ Future<T?> showActionSheet<T>({
             height: 4,
             margin: const EdgeInsets.symmetric(vertical: 12),
             decoration: BoxDecoration(
-              color: colorScheme.onSurfaceVariant.withOpacity(0.4),
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -198,7 +198,7 @@ Future<T?> showActionSheet<T>({
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Text(
               title,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.manrope(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
               ),
@@ -212,7 +212,7 @@ Future<T?> showActionSheet<T>({
                 ...actions.where((a) => !a.isCancel).map((action) => ListTile(
                       title: Text(
                         action.label,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           color:
                               action.isDestructive ? colorScheme.error : null,
                           fontWeight: FontWeight.w500,
@@ -225,7 +225,7 @@ Future<T?> showActionSheet<T>({
                   ListTile(
                     title: Text(
                       cancelText,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontWeight: FontWeight.w600,
                       ),
                       textAlign: TextAlign.center,

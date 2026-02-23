@@ -151,7 +151,7 @@ class _ModernDatePickerBottomSheetState
             height: 4,
             margin: const EdgeInsets.symmetric(vertical: 12),
             decoration: BoxDecoration(
-              color: colorScheme.onSurfaceVariant.withOpacity(0.4),
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -163,7 +163,7 @@ class _ModernDatePickerBottomSheetState
               children: [
                 Text(
                   widget.title,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
                   ),
@@ -172,7 +172,7 @@ class _ModernDatePickerBottomSheetState
                   onPressed: widget.onConfirm,
                   child: Text(
                     'Done',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -280,7 +280,7 @@ class _PresetButton extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.manrope(
             color: isSelected ? colorScheme.onPrimary : colorScheme.onSurface,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
             fontSize: 14,
@@ -343,7 +343,7 @@ class _ModernDateRangePickerBottomSheetState
             height: 4,
             margin: const EdgeInsets.symmetric(vertical: 12),
             decoration: BoxDecoration(
-              color: colorScheme.onSurfaceVariant.withOpacity(0.4),
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -355,7 +355,7 @@ class _ModernDateRangePickerBottomSheetState
               children: [
                 Text(
                   widget.title,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
                   ),
@@ -364,7 +364,7 @@ class _ModernDateRangePickerBottomSheetState
                   onPressed: widget.onConfirm,
                   child: Text(
                     'Done',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -382,7 +382,7 @@ class _ModernDateRangePickerBottomSheetState
                   children: [
                     Text(
                       'Start Date',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 12,
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -394,7 +394,7 @@ class _ModernDateRangePickerBottomSheetState
                       },
                       child: Text(
                         DateFormat('MMM d, yyyy').format(startDate),
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: 16,
                           fontWeight: selectingStart
                               ? FontWeight.w600
@@ -415,7 +415,7 @@ class _ModernDateRangePickerBottomSheetState
                   children: [
                     Text(
                       'End Date',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 12,
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -427,7 +427,7 @@ class _ModernDateRangePickerBottomSheetState
                       },
                       child: Text(
                         DateFormat('MMM d, yyyy').format(endDate),
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: 16,
                           fontWeight: !selectingStart
                               ? FontWeight.w600

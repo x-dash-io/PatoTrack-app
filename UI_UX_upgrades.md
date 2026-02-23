@@ -1,5 +1,53 @@
 # UI/UX Upgrades for Production Readiness
 
+## Implementation Progress (2026-02-23)
+
+### Completed in this pass
+
+- Global premium design system:
+  - Updated `lib/main.dart` theme tokens (typography, component radii, button/input/navigation styles).
+  - Migrated app typography usage from `Inter` to `Manrope` with `Sora` headlines in the core theme.
+- Home (`lib/screens/home_screen.dart`):
+  - Removed startup SMS permission prompt and automatic SMS sync.
+  - Added explicit `M-Pesa SMS Import` card with trust copy, enable/sync CTA, status badge, and last-sync timestamp.
+  - Added richer gradient shell to align with premium visual language.
+- Reports (`lib/screens/reports_screen.dart`):
+  - Added explicit period scope messaging with inclusive boundaries.
+  - Clarified business-only filtering in UI.
+  - Added PDF export confirmation dialog with scope preview (period + transaction count).
+- Profile (`lib/screens/profile_screen.dart`):
+  - Added cloud restore transparency via persisted last-restore timestamp in Data & Sync section.
+- Forms:
+  - Added reusable `StandardDateSelectorTile` (`lib/widgets/input_fields.dart`) to replace transient date controllers.
+  - Applied to:
+    - `lib/screens/add_transaction_screen.dart`
+    - `lib/screens/add_bill_screen.dart`
+    - `lib/screens/transaction_detail_screen.dart`
+- Screen shell consistency:
+  - Added reusable premium background component `lib/widgets/app_screen_background.dart`.
+  - Applied across onboarding/auth/profile/transactions/reporting core surfaces.
+
+### Validation status
+
+- `flutter test`: passed.
+- `flutter analyze`: no errors/warnings; infos remain (legacy lint/deprecation backlog).
+
+### Remaining for next UI pass
+
+- Full screen-by-screen polish on:
+  - `help_screen.dart`
+  - `faq_screen.dart`
+  - `manage_categories_screen.dart`
+  - `manage_frequencies_screen.dart`
+  - `passcode_screen.dart`
+- Accessibility hardening:
+  - semantic labels for icon-only actions
+  - large-text overflow audit
+  - contrast checks on tinted/gradient surfaces
+- Motion pass:
+  - staged entry transitions on key cards
+  - consistent interaction feedback across list rows and bottom sheets
+
 ## Priority UX upgrades
 
 1. Permission trust flow redesign.

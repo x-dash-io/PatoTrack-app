@@ -17,7 +17,8 @@ class ResponsiveHelper {
   }
 
   static double _getTextScaleFactor(BuildContext context) {
-    return MediaQuery.of(context).textScaleFactor.clamp(0.8, 1.2);
+    final scale = MediaQuery.textScalerOf(context).scale(1);
+    return scale.clamp(0.8, 1.2);
   }
 
   // Calculate responsive width factor (much more aggressive scaling for small screens)

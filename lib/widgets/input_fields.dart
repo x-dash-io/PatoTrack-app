@@ -55,15 +55,15 @@ class StandardTextFormField extends StatelessWidget {
       readOnly: readOnly,
       autofocus: autofocus,
       onTap: onTap,
-      style: GoogleFonts.inter(),
+      style: GoogleFonts.manrope(),
       inputFormatters: inputFormatters,
       validator: validator,
       onChanged: onChanged,
       decoration: InputDecoration(
         labelText: labelText,
         hintText: hintText,
-        labelStyle: GoogleFonts.inter(),
-        hintStyle: GoogleFonts.inter(),
+        labelStyle: GoogleFonts.manrope(),
+        hintStyle: GoogleFonts.manrope(),
         prefixIcon: prefixIcon != null
             ? Icon(
                 prefixIcon,
@@ -76,7 +76,7 @@ class StandardTextFormField extends StatelessWidget {
           borderSide: BorderSide(
             color: theme.brightness == Brightness.dark
                 ? Colors.transparent
-                : colorScheme.outline.withOpacity(0.3),
+                : colorScheme.outline.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -85,7 +85,7 @@ class StandardTextFormField extends StatelessWidget {
           borderSide: BorderSide(
             color: theme.brightness == Brightness.dark
                 ? Colors.transparent
-                : colorScheme.outline.withOpacity(0.3),
+                : colorScheme.outline.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -118,7 +118,7 @@ class StandardTextFormField extends StatelessWidget {
           horizontal: 16,
           vertical: maxLines == null || maxLines! > 1 ? 16 : 16,
         ),
-        errorStyle: GoogleFonts.inter(
+        errorStyle: GoogleFonts.manrope(
           fontSize: 12,
           color: colorScheme.error,
         ),
@@ -154,11 +154,11 @@ class StandardDropdownFormField<T> extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return DropdownButtonFormField<T>(
-      value: value,
+      initialValue: value,
       items: items,
       onChanged: enabled ? onChanged : null,
       validator: validator,
-      style: GoogleFonts.inter(
+      style: GoogleFonts.manrope(
         color: colorScheme.onSurface,
       ),
       dropdownColor: theme.brightness == Brightness.dark
@@ -175,7 +175,7 @@ class StandardDropdownFormField<T> extends StatelessWidget {
       isExpanded: true,
       decoration: InputDecoration(
         labelText: labelText,
-        labelStyle: GoogleFonts.inter(),
+        labelStyle: GoogleFonts.manrope(),
         prefixIcon: prefixIcon != null
             ? Icon(
                 prefixIcon,
@@ -187,7 +187,7 @@ class StandardDropdownFormField<T> extends StatelessWidget {
           borderSide: BorderSide(
             color: theme.brightness == Brightness.dark
                 ? Colors.transparent
-                : colorScheme.outline.withOpacity(0.3),
+                : colorScheme.outline.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -196,7 +196,7 @@ class StandardDropdownFormField<T> extends StatelessWidget {
           borderSide: BorderSide(
             color: theme.brightness == Brightness.dark
                 ? Colors.transparent
-                : colorScheme.outline.withOpacity(0.3),
+                : colorScheme.outline.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -229,9 +229,70 @@ class StandardDropdownFormField<T> extends StatelessWidget {
           horizontal: 16,
           vertical: 16,
         ),
-        errorStyle: GoogleFonts.inter(
+        errorStyle: GoogleFonts.manrope(
           fontSize: 12,
           color: colorScheme.error,
+        ),
+      ),
+    );
+  }
+}
+
+class StandardDateSelectorTile extends StatelessWidget {
+  final String label;
+  final String valueText;
+  final IconData icon;
+  final String? helperText;
+  final VoidCallback? onTap;
+  final bool enabled;
+  final String? semanticsLabel;
+
+  const StandardDateSelectorTile({
+    super.key,
+    required this.label,
+    required this.valueText,
+    this.icon = Icons.calendar_today_rounded,
+    this.helperText,
+    this.onTap,
+    this.enabled = true,
+    this.semanticsLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Semantics(
+      button: enabled,
+      label: semanticsLabel ?? '$label: $valueText',
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(16),
+        child: InputDecorator(
+          isFocused: false,
+          isEmpty: false,
+          decoration: InputDecoration(
+            labelText: label,
+            helperText: helperText,
+            prefixIcon: Icon(icon),
+            suffixIcon: Icon(
+              Icons.expand_more_rounded,
+              color: enabled
+                  ? colorScheme.onSurfaceVariant
+                  : colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+            ),
+            enabled: enabled,
+          ),
+          child: Text(
+            valueText,
+            style: GoogleFonts.manrope(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: enabled
+                  ? colorScheme.onSurface
+                  : colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+            ),
+          ),
         ),
       ),
     );

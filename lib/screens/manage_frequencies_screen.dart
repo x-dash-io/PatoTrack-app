@@ -8,6 +8,7 @@ import '../widgets/input_fields.dart';
 import '../widgets/dialog_helpers.dart';
 import '../widgets/loading_widgets.dart';
 import '../helpers/notification_helper.dart';
+import '../widgets/app_screen_background.dart';
 
 class ManageFrequenciesScreen extends StatefulWidget {
   const ManageFrequenciesScreen({super.key});
@@ -80,13 +81,13 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
                   color: Theme.of(context)
                       .colorScheme
                       .onSurfaceVariant
-                      .withOpacity(0.4),
+                      .withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               Text(
                 'Add Frequency',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
@@ -192,7 +193,7 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
                 ),
                 child: Text(
                   'Add Frequency',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -266,7 +267,7 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
       appBar: AppBar(
         title: Text(
           'Manage Frequencies',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
         ),
         systemOverlayStyle: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
@@ -281,93 +282,98 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const FrequencyShimmerList(itemCount: 8)
-          : _frequencies.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.repeat_rounded,
-                        size: 64,
-                        color: colorScheme.onSurfaceVariant.withOpacity(0.4),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No Frequencies',
-                        style: GoogleFonts.inter(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.onSurfaceVariant,
+      body: AppScreenBackground(
+        includeSafeArea: false,
+        child: _isLoading
+            ? const FrequencyShimmerList(itemCount: 8)
+            : _frequencies.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.repeat_rounded,
+                          size: 64,
+                          color: colorScheme.onSurfaceVariant
+                              .withValues(alpha: 0.4),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Tap + to add a frequency',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: colorScheme.onSurfaceVariant.withOpacity(0.7),
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(20),
-                  itemCount: _frequencies.length,
-                  itemBuilder: (context, index) {
-                    final frequency = _frequencies[index];
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: colorScheme.outline.withOpacity(0.1),
-                          width: 1,
-                        ),
-                      ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 8,
-                        ),
-                        leading: Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            Icons.repeat_rounded,
-                            color: colorScheme.onPrimaryContainer,
-                            size: 24,
-                          ),
-                        ),
-                        title: Text(
-                          frequency.displayName,
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
+                        const SizedBox(height: 16),
+                        Text(
+                          'No Frequencies',
+                          style: GoogleFonts.manrope(
+                            fontSize: 18,
                             fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        subtitle: Text(
-                          '${frequency.value} days · ${frequency.type}',
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
                             color: colorScheme.onSurfaceVariant,
                           ),
                         ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete_outline_rounded),
-                          color: Colors.red,
-                          onPressed: () => _deleteFrequency(frequency),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Tap + to add a frequency',
+                          style: GoogleFonts.manrope(
+                            fontSize: 14,
+                            color: colorScheme.onSurfaceVariant
+                                .withValues(alpha: 0.7),
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(20),
+                    itemCount: _frequencies.length,
+                    itemBuilder: (context, index) {
+                      final frequency = _frequencies[index];
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: colorScheme.outline.withValues(alpha: 0.1),
+                            width: 1,
+                          ),
+                        ),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 8,
+                          ),
+                          leading: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: colorScheme.primaryContainer,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              Icons.repeat_rounded,
+                              color: colorScheme.onPrimaryContainer,
+                              size: 24,
+                            ),
+                          ),
+                          title: Text(
+                            frequency.displayName,
+                            style: GoogleFonts.manrope(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          subtitle: Text(
+                            '${frequency.value} days · ${frequency.type}',
+                            style: GoogleFonts.manrope(
+                              fontSize: 13,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete_outline_rounded),
+                            color: Colors.red,
+                            onPressed: () => _deleteFrequency(frequency),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+      ),
     );
   }
 }

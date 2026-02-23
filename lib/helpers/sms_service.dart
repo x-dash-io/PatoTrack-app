@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter_sms_inbox/flutter_sms_inbox.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'database_helper.dart';
@@ -101,7 +103,7 @@ class SmsService {
     );
 
     await dbHelper.addTransaction(newTransaction, userId);
-    print("MPESA transaction ($transactionCode) automatically synced!");
+    developer.log("MPESA transaction ($transactionCode) automatically synced!");
   }
 
   // UPDATED: This now correctly specifies the category type

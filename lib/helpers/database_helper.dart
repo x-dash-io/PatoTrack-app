@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sqflite/sqflite.dart' hide Transaction;
 import 'package:path/path.dart';
@@ -183,7 +185,7 @@ class DatabaseHelper {
           .doc(newId.toString())
           .set(docData);
     } catch (e) {
-      print('Firestore sync failed for addTransaction: $e');
+      developer.log('Firestore sync failed for addTransaction: $e');
     }
     return newId;
   }
@@ -214,7 +216,7 @@ class DatabaseHelper {
           .doc(transaction.id.toString())
           .update(transaction.toMap());
     } catch (e) {
-      print('Firestore sync failed for updateTransaction: $e');
+      developer.log('Firestore sync failed for updateTransaction: $e');
     }
     return result;
   }
@@ -231,7 +233,7 @@ class DatabaseHelper {
           .doc(id.toString())
           .delete();
     } catch (e) {
-      print('Firestore sync failed for deleteTransaction: $e');
+      developer.log('Firestore sync failed for deleteTransaction: $e');
     }
     return result;
   }
@@ -254,7 +256,7 @@ class DatabaseHelper {
             .doc(newId.toString())
             .set(docData);
       } catch (e) {
-        print('Firestore sync failed for addCategory: $e');
+        developer.log('Firestore sync failed for addCategory: $e');
       }
     }
     return newId;
@@ -272,7 +274,7 @@ class DatabaseHelper {
           .doc(category.id.toString())
           .update(category.toMap());
     } catch (e) {
-      print('Firestore sync failed for updateCategory: $e');
+      developer.log('Firestore sync failed for updateCategory: $e');
     }
     return result;
   }
@@ -304,7 +306,7 @@ class DatabaseHelper {
           .doc(id.toString())
           .delete();
     } catch (e) {
-      print('Firestore sync failed for deleteCategory: $e');
+      developer.log('Firestore sync failed for deleteCategory: $e');
     }
     return result;
   }
@@ -350,7 +352,7 @@ class DatabaseHelper {
           .doc(newId.toString())
           .set(docData);
     } catch (e) {
-      print('Firestore sync failed for addBill: $e');
+      developer.log('Firestore sync failed for addBill: $e');
     }
     return newId;
   }
@@ -374,7 +376,7 @@ class DatabaseHelper {
           .doc(id.toString())
           .delete();
     } catch (e) {
-      print('Firestore sync failed for deleteBill: $e');
+      developer.log('Firestore sync failed for deleteBill: $e');
     }
     return result;
   }
@@ -393,7 +395,7 @@ class DatabaseHelper {
           .doc(bill.id.toString())
           .update(billMap);
     } catch (e) {
-      print('Firestore sync failed for updateBill: $e');
+      developer.log('Firestore sync failed for updateBill: $e');
     }
     return result;
   }
@@ -583,7 +585,7 @@ class DatabaseHelper {
           .doc(newId.toString())
           .set(docData);
     } catch (e) {
-      print('Firestore sync failed for addFrequency: $e');
+      developer.log('Firestore sync failed for addFrequency: $e');
     }
     return newId;
   }
@@ -604,7 +606,7 @@ class DatabaseHelper {
           .doc(frequency.id.toString())
           .update(frequency.toMap());
     } catch (e) {
-      print('Firestore sync failed for updateFrequency: $e');
+      developer.log('Firestore sync failed for updateFrequency: $e');
     }
     return result;
   }
@@ -624,7 +626,7 @@ class DatabaseHelper {
           .doc(id.toString())
           .delete();
     } catch (e) {
-      print('Firestore sync failed for deleteFrequency: $e');
+      developer.log('Firestore sync failed for deleteFrequency: $e');
     }
     return result;
   }

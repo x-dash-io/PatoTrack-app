@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -17,6 +18,7 @@ import '../helpers/responsive_helper.dart';
 import '../theme_provider.dart';
 import '../widgets/dialog_helpers.dart';
 import '../widgets/input_fields.dart';
+import '../widgets/app_screen_background.dart';
 import '../services/google_sign_in_service.dart';
 import 'passcode_screen.dart';
 import 'help_screen.dart';
@@ -30,6 +32,8 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  static const _lastCloudRestorePreferenceKey = 'cloud_restore_last_epoch_ms';
+
   final dbHelper = DatabaseHelper();
   final PasscodeService _passcodeService = PasscodeService();
   final _auth = FirebaseAuth.instance;
@@ -44,6 +48,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isDeletingAccount = false;
   String _selectedCurrency = 'KSh';
   bool _isPasscodeEnabled = false;
+  DateTime? _lastCloudRestoreAt;
 
   @override
   void initState() {
@@ -66,7 +71,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           });
         }
       } catch (e) {
-        print('Warning: Failed to reload user data: $e');
+        debugPrint('Warning: Failed to reload user data: $e');
         // Continue even if reload fails
       }
     }
@@ -128,7 +133,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             });
           }
         } catch (e) {
-          print('Warning: Failed to reload user data after photo update: $e');
+          debugPrint(
+              'Warning: Failed to reload user data after photo update: $e');
         }
 
         if (!mounted) return;
@@ -136,7 +142,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             message: 'Profile picture updated!');
       } else {
         final errorData = await response.stream.bytesToString();
-        print('Cloudinary Error: $errorData');
+        debugPrint('Cloudinary Error: $errorData');
         if (!mounted) return;
         NotificationHelper.showError(
           context,
@@ -145,7 +151,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       }
     } catch (e) {
-      print('Error uploading to Cloudinary: $e');
+      debugPrint('Error uploading to Cloudinary: $e');
       if (!mounted) return;
       NotificationHelper.showError(context,
           message: 'Failed to upload image: $e');
@@ -162,6 +168,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         _selectedCurrency = prefs.getString('currency') ?? 'KSh';
         _isPasscodeEnabled = isPasscodeEnabled;
+        final lastRestoreEpoch = prefs.getInt(_lastCloudRestorePreferenceKey);
+        _lastCloudRestoreAt = lastRestoreEpoch == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(lastRestoreEpoch);
       });
     }
   }
@@ -200,7 +210,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 navigator.pop();
                 if (!mounted) return;
                 NotificationHelper.showSuccess(
-                  this.context,
+                  context,
                   message: 'Name updated successfully!',
                 );
                 setState(() {});
@@ -336,7 +346,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             await GoogleSignInService.signOut();
           } catch (e) {
             // Ignore Google sign out errors - Firebase sign out already succeeded
-            print('Google sign out error (non-critical): $e');
+            debugPrint('Google sign out error (non-critical): $e');
           }
         }
 
@@ -351,8 +361,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
       } catch (e, stackTrace) {
         // Log the error for debugging
-        print('Logout error: $e');
-        print('Stack trace: $stackTrace');
+        debugPrint('Logout error: $e');
+        debugPrint('Stack trace: $stackTrace');
 
         if (mounted) {
           setState(() => _isLoggingOut = false);
@@ -361,10 +371,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           try {
             await _auth.signOut();
           } catch (signOutError) {
-            print('Secondary sign out attempt also failed: $signOutError');
+            debugPrint('Secondary sign out attempt also failed: $signOutError');
           }
           if (!mounted) return;
-          NotificationHelper.showSuccess(this.context,
+          NotificationHelper.showSuccess(context,
               message: 'Signed out successfully');
         }
       }
@@ -416,21 +426,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() => _isRestoring = true);
       try {
         await dbHelper.restoreFromFirestore(currentUser!.uid);
+        final now = DateTime.now();
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt(
+          _lastCloudRestorePreferenceKey,
+          now.millisecondsSinceEpoch,
+        );
+        if (mounted) {
+          setState(() => _lastCloudRestoreAt = now);
+        }
         if (!mounted) return;
         NotificationHelper.showSuccess(
-          this.context,
+          context,
           message:
               "Data restored successfully! Please restart the app to see all changes.",
           duration: const Duration(seconds: 5),
         );
       } catch (e) {
         if (!mounted) return;
-        NotificationHelper.showError(this.context,
+        NotificationHelper.showError(context,
             message: "Error restoring data: $e");
       } finally {
         if (mounted) setState(() => _isRestoring = false);
       }
     }
+  }
+
+  String _cloudRestoreSubtitle() {
+    const baseMessage = 'Replace local data with your latest cloud backup.';
+    if (_lastCloudRestoreAt == null) {
+      return '$baseMessage Last restore: not yet run.';
+    }
+    return '$baseMessage Last restore: ${DateFormat('MMM d, yyyy h:mm a').format(_lastCloudRestoreAt!)}.';
   }
 
   @override
@@ -440,597 +467,581 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.primaryContainer.withOpacity(0.3),
-              colorScheme.surface,
-              colorScheme.surface,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              if (currentUser != null)
-                Container(
-                  width: double.infinity,
-                  padding: ResponsiveHelper.edgeInsets(context, 32, 24, 32, 24),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        colorScheme.primaryContainer,
-                        colorScheme.primaryContainer.withOpacity(0.8),
-                        colorScheme.primaryContainer.withOpacity(0.6),
-                      ],
-                      stops: const [0.0, 0.5, 1.0],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: colorScheme.primary.withOpacity(0.2),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                        spreadRadius: 0,
-                      ),
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
+      body: AppScreenBackground(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            if (currentUser != null)
+              Container(
+                width: double.infinity,
+                padding: ResponsiveHelper.edgeInsets(context, 32, 24, 32, 24),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      colorScheme.primaryContainer,
+                      colorScheme.primaryContainer.withValues(alpha: 0.8),
+                      colorScheme.primaryContainer.withValues(alpha: 0.6),
                     ],
+                    stops: const [0.0, 0.5, 1.0],
                   ),
-                  child: Column(
-                    children: [
-                      SizedBox(height: ResponsiveHelper.spacing(context, 8)),
-                      // Modern Profile Image with Edit Badge
-                      GestureDetector(
-                        onTap: _pickAndUploadImage,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            // Outer ring with gradient
+                  boxShadow: [
+                    BoxShadow(
+                      color: colorScheme.primary.withValues(alpha: 0.2),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                      spreadRadius: 0,
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    SizedBox(height: ResponsiveHelper.spacing(context, 8)),
+                    // Modern Profile Image with Edit Badge
+                    GestureDetector(
+                      onTap: _pickAndUploadImage,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Outer ring with gradient
+                          Container(
+                            width: ResponsiveHelper.width(context, 120),
+                            height: ResponsiveHelper.width(context, 120),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Colors.white.withValues(alpha: 0.9),
+                                  Colors.white.withValues(alpha: 0.7),
+                                ],
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.15),
+                                  blurRadius: 20,
+                                  spreadRadius: 2,
+                                  offset: const Offset(0, 4),
+                                ),
+                                BoxShadow(
+                                  color: colorScheme.primary
+                                      .withValues(alpha: 0.3),
+                                  blurRadius: 15,
+                                  spreadRadius: 1,
+                                ),
+                              ],
+                            ),
+                            padding: const EdgeInsets.all(4),
+                            child: CircleAvatar(
+                              radius: ResponsiveHelper.width(context, 56),
+                              backgroundImage: (currentUser!.photoURL != null)
+                                  ? NetworkImage(currentUser!.photoURL!)
+                                  : null,
+                              backgroundColor: colorScheme.primary,
+                              child: (currentUser!.photoURL == null)
+                                  ? Icon(
+                                      Icons.person_rounded,
+                                      size: ResponsiveHelper.iconSize(
+                                          context, 60),
+                                      color: colorScheme.onPrimary,
+                                    )
+                                  : null,
+                            ),
+                          ),
+                          // Camera icon badge
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              padding:
+                                  ResponsiveHelper.edgeInsetsAll(context, 8),
+                              decoration: BoxDecoration(
+                                color: colorScheme.primary,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 3,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.2),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                Icons.camera_alt_rounded,
+                                size: ResponsiveHelper.iconSize(context, 18),
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                          // Uploading overlay
+                          if (_isUploading)
                             Container(
                               width: ResponsiveHelper.width(context, 120),
                               height: ResponsiveHelper.width(context, 120),
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    Colors.white.withOpacity(0.9),
-                                    Colors.white.withOpacity(0.7),
-                                  ],
+                                color: Colors.black.withValues(alpha: 0.6),
+                              ),
+                              child: const CircularProgressIndicator(
+                                strokeWidth: 3,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: ResponsiveHelper.spacing(context, 24)),
+                    // Name with Edit Button
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            currentUser!.displayName ?? 'User',
+                            style: GoogleFonts.manrope(
+                              fontSize: ResponsiveHelper.fontSize(context, 28),
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onPrimaryContainer,
+                              letterSpacing: -0.5,
+                              height: 1.2,
+                            ),
+                            textAlign: TextAlign.center,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ),
+                        SizedBox(width: ResponsiveHelper.spacing(context, 10)),
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: _showUpdateNameDialog,
+                            borderRadius: BorderRadius.circular(
+                                ResponsiveHelper.radius(context, 12)),
+                            child: Container(
+                              padding:
+                                  ResponsiveHelper.edgeInsetsAll(context, 8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.25),
+                                borderRadius: BorderRadius.circular(
+                                    ResponsiveHelper.radius(context, 12)),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.4),
+                                  width: 1.5,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.15),
-                                    blurRadius: 20,
-                                    spreadRadius: 2,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                  BoxShadow(
-                                    color: colorScheme.primary.withOpacity(0.3),
-                                    blurRadius: 15,
-                                    spreadRadius: 1,
+                                    color: Colors.black.withValues(alpha: 0.1),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
                                   ),
                                 ],
                               ),
-                              padding: const EdgeInsets.all(4),
-                              child: CircleAvatar(
-                                radius: ResponsiveHelper.width(context, 56),
-                                backgroundImage: (currentUser!.photoURL != null)
-                                    ? NetworkImage(currentUser!.photoURL!)
-                                    : null,
-                                backgroundColor: colorScheme.primary,
-                                child: (currentUser!.photoURL == null)
-                                    ? Icon(
-                                        Icons.person_rounded,
-                                        size: ResponsiveHelper.iconSize(
-                                            context, 60),
-                                        color: colorScheme.onPrimary,
-                                      )
-                                    : null,
-                              ),
-                            ),
-                            // Camera icon badge
-                            Positioned(
-                              bottom: 0,
-                              right: 0,
-                              child: Container(
-                                padding:
-                                    ResponsiveHelper.edgeInsetsAll(context, 8),
-                                decoration: BoxDecoration(
-                                  color: colorScheme.primary,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.white,
-                                    width: 3,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.2),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Icon(
-                                  Icons.camera_alt_rounded,
-                                  size: ResponsiveHelper.iconSize(context, 18),
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                            // Uploading overlay
-                            if (_isUploading)
-                              Container(
-                                width: ResponsiveHelper.width(context, 120),
-                                height: ResponsiveHelper.width(context, 120),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.black.withOpacity(0.6),
-                                ),
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 3,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.white,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: ResponsiveHelper.spacing(context, 24)),
-                      // Name with Edit Button
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              currentUser!.displayName ?? 'User',
-                              style: GoogleFonts.inter(
-                                fontSize:
-                                    ResponsiveHelper.fontSize(context, 28),
-                                fontWeight: FontWeight.bold,
+                              child: Icon(
+                                Icons.edit_rounded,
+                                size: ResponsiveHelper.iconSize(context, 18),
                                 color: colorScheme.onPrimaryContainer,
-                                letterSpacing: -0.5,
-                                height: 1.2,
-                              ),
-                              textAlign: TextAlign.center,
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          ),
-                          SizedBox(
-                              width: ResponsiveHelper.spacing(context, 10)),
-                          Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: _showUpdateNameDialog,
-                              borderRadius: BorderRadius.circular(
-                                  ResponsiveHelper.radius(context, 12)),
-                              child: Container(
-                                padding:
-                                    ResponsiveHelper.edgeInsetsAll(context, 8),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.25),
-                                  borderRadius: BorderRadius.circular(
-                                      ResponsiveHelper.radius(context, 12)),
-                                  border: Border.all(
-                                    color: Colors.white.withOpacity(0.4),
-                                    width: 1.5,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Icon(
-                                  Icons.edit_rounded,
-                                  size: ResponsiveHelper.iconSize(context, 18),
-                                  color: colorScheme.onPrimaryContainer,
-                                ),
                               ),
                             ),
                           ),
-                        ],
-                      ),
-                      SizedBox(height: ResponsiveHelper.spacing(context, 10)),
-                      // Email with icon
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.email_outlined,
-                            size: ResponsiveHelper.iconSize(context, 16),
-                            color:
-                                colorScheme.onPrimaryContainer.withOpacity(0.7),
-                          ),
-                          SizedBox(width: ResponsiveHelper.spacing(context, 6)),
-                          Flexible(
-                            child: Text(
-                              currentUser!.email ?? 'No email',
-                              style: GoogleFonts.inter(
-                                fontSize:
-                                    ResponsiveHelper.fontSize(context, 14),
-                                color: colorScheme.onPrimaryContainer
-                                    .withOpacity(0.85),
-                                fontWeight: FontWeight.w500,
-                              ),
-                              textAlign: TextAlign.center,
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-                child: Text(
-                  'App Settings',
-                  style: GoogleFonts.inter(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Card(
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Column(
-                    children: [
-                      _buildModernListTile(
-                        context: context,
-                        icon: Icons.dark_mode_rounded,
-                        title: 'Dark Mode',
-                        trailing: Switch(
-                          value: themeProvider.themeMode == ThemeMode.dark,
-                          onChanged: (value) =>
-                              themeProvider.toggleTheme(value),
-                        ),
-                      ),
-                      Divider(
-                          height: 1,
-                          indent: 60,
-                          color: colorScheme.outline.withOpacity(0.1)),
-                      _buildModernListTile(
-                        context: context,
-                        icon: Icons.lock_rounded,
-                        title: 'Passcode Lock',
-                        subtitle: 'Secure your app with a passcode',
-                        trailing: Switch(
-                          value: _isPasscodeEnabled,
-                          onChanged: (value) async {
-                            if (value) {
-                              final navigator = Navigator.of(context);
-                              final success =
-                                  await navigator.push<bool>(MaterialPageRoute(
-                                builder: (context) => const PasscodeScreen(
-                                    isSettingPasscode: true),
-                              ));
-                              if (success == true && mounted) {
-                                setState(() => _isPasscodeEnabled = true);
-                              }
-                            } else {
-                              final navigator = Navigator.of(context);
-                              final success =
-                                  await navigator.push<bool>(MaterialPageRoute(
-                                builder: (context) => const PasscodeScreen(
-                                  isSettingPasscode: false,
-                                ),
-                              ));
-                              if (success == true && mounted) {
-                                await _passcodeService.clearPasscode();
-                                setState(() => _isPasscodeEnabled = false);
-                              }
-                            }
-                          },
-                        ),
-                      ),
-                      if (_isPasscodeEnabled) ...[
-                        Divider(
-                            height: 1,
-                            indent: 60,
-                            color: colorScheme.outline.withOpacity(0.1)),
-                        _buildModernListTile(
-                          context: context,
-                          icon: Icons.phonelink_lock_rounded,
-                          title: 'Change Passcode',
-                          onTap: () async {
-                            final navigator = Navigator.of(context);
-                            final verified =
-                                await navigator.push<bool>(MaterialPageRoute(
-                              builder: (context) => const PasscodeScreen(
-                                  isSettingPasscode: false),
-                            ));
-                            if (verified != true || !mounted) return;
-                            await navigator.push<bool>(
-                              MaterialPageRoute(
-                                builder: (context) => const PasscodeScreen(
-                                    isSettingPasscode: true),
-                              ),
-                            );
-                          },
                         ),
                       ],
-                      Divider(
-                          height: 1,
-                          indent: 60,
-                          color: colorScheme.outline.withOpacity(0.1)),
-                      _buildModernListTile(
-                        context: context,
-                        icon: Icons.currency_exchange_rounded,
-                        title: 'Currency',
-                        trailing: DropdownButton<String>(
-                          value: _selectedCurrency,
-                          underline: const SizedBox(),
-                          dropdownColor: theme.brightness == Brightness.dark
-                              ? colorScheme.surfaceContainerHighest
-                              : Colors.white,
-                          icon: Icon(
-                            Icons.arrow_drop_down_rounded,
-                            color: colorScheme.onSurfaceVariant,
-                            size: 24,
-                          ),
-                          iconSize: 24,
-                          borderRadius: BorderRadius.circular(12),
-                          menuMaxHeight: 200,
-                          items: <String>['KSh', 'USD', 'EUR', 'GBP']
-                              .map<DropdownMenuItem<String>>(
-                                  (String value) => DropdownMenuItem<String>(
-                                      value: value,
-                                      child: Text(
-                                        value,
-                                        style: GoogleFonts.inter(
-                                          fontWeight: FontWeight.w500,
-                                          color: colorScheme.onSurface,
-                                        ),
-                                      )))
-                              .toList(),
-                          selectedItemBuilder: (BuildContext context) {
-                            return <String>['KSh', 'USD', 'EUR', 'GBP']
-                                .map<Widget>((String value) {
-                              return Text(
-                                value,
-                                style: GoogleFonts.inter(
-                                  fontWeight: FontWeight.w600,
-                                  color: colorScheme.primary,
-                                ),
-                              );
-                            }).toList();
-                          },
-                          onChanged: (String? newValue) {
-                            if (newValue != null && mounted) {
-                              _saveCurrencyPreference(newValue);
-                              NotificationHelper.showSuccess(context,
-                                  message: 'Currency updated!');
-                            }
-                          },
+                    ),
+                    SizedBox(height: ResponsiveHelper.spacing(context, 10)),
+                    // Email with icon
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.email_outlined,
+                          size: ResponsiveHelper.iconSize(context, 16),
+                          color: colorScheme.onPrimaryContainer
+                              .withValues(alpha: 0.7),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-                child: Text(
-                  'Account',
-                  style: GoogleFonts.inter(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Card(
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Column(
-                    children: [
-                      _buildModernListTile(
-                        context: context,
-                        icon: Icons.password_rounded,
-                        title: 'Change Password',
-                        trailing: _isSendingPasswordReset
-                            ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    colorScheme.primary,
-                                  ),
-                                ),
-                              )
-                            : null,
-                        onTap: _isSendingPasswordReset
-                            ? null
-                            : _sendPasswordResetEmail,
-                      ),
-                      Divider(
-                          height: 1,
-                          indent: 60,
-                          color: colorScheme.outline.withOpacity(0.1)),
-                      _buildModernListTile(
-                        context: context,
-                        icon: Icons.delete_forever_rounded,
-                        title: 'Delete Account',
-                        titleColor: Colors.red,
-                        iconColor: Colors.red,
-                        trailing: _isDeletingAccount
-                            ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.red,
-                                  ),
-                                ),
-                              )
-                            : null,
-                        onTap: _isDeletingAccount ? null : _deleteAccount,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-                child: Text(
-                  'Data & Sync',
-                  style: GoogleFonts.inter(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Card(
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: _buildModernListTile(
-                    context: context,
-                    icon: Icons.cloud_download_rounded,
-                    title: 'Restore from Cloud',
-                    subtitle: 'Download your backup on a new device',
-                    trailing: _isRestoring
-                        ? SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 3,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                colorScheme.primary,
-                              ),
+                        SizedBox(width: ResponsiveHelper.spacing(context, 6)),
+                        Flexible(
+                          child: Text(
+                            currentUser!.email ?? 'No email',
+                            style: GoogleFonts.manrope(
+                              fontSize: ResponsiveHelper.fontSize(context, 14),
+                              color: colorScheme.onPrimaryContainer
+                                  .withValues(alpha: 0.85),
+                              fontWeight: FontWeight.w500,
                             ),
-                          )
-                        : const Icon(Icons.chevron_right_rounded, size: 24),
-                    onTap: _isRestoring ? null : _handleRestore,
-                  ),
+                            textAlign: TextAlign.center,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-                child: Text(
-                  'Help & Support',
-                  style: GoogleFonts.inter(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
-                  ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+              child: Text(
+                'App Settings',
+                style: GoogleFonts.manrope(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Card(
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Column(
-                    children: [
-                      _buildModernListTile(
-                        context: context,
-                        icon: Icons.question_answer_rounded,
-                        title: 'FAQ',
-                        onTap: _showFaqScreen,
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  children: [
+                    _buildModernListTile(
+                      context: context,
+                      icon: Icons.dark_mode_rounded,
+                      title: 'Dark Mode',
+                      trailing: Switch(
+                        value: themeProvider.themeMode == ThemeMode.dark,
+                        onChanged: (value) => themeProvider.toggleTheme(value),
                       ),
+                    ),
+                    Divider(
+                        height: 1,
+                        indent: 60,
+                        color: colorScheme.outline.withValues(alpha: 0.1)),
+                    _buildModernListTile(
+                      context: context,
+                      icon: Icons.lock_rounded,
+                      title: 'Passcode Lock',
+                      subtitle: 'Secure your app with a passcode',
+                      trailing: Switch(
+                        value: _isPasscodeEnabled,
+                        onChanged: (value) async {
+                          if (value) {
+                            final navigator = Navigator.of(context);
+                            final success =
+                                await navigator.push<bool>(MaterialPageRoute(
+                              builder: (context) =>
+                                  const PasscodeScreen(isSettingPasscode: true),
+                            ));
+                            if (success == true && mounted) {
+                              setState(() => _isPasscodeEnabled = true);
+                            }
+                          } else {
+                            final navigator = Navigator.of(context);
+                            final success =
+                                await navigator.push<bool>(MaterialPageRoute(
+                              builder: (context) => const PasscodeScreen(
+                                isSettingPasscode: false,
+                              ),
+                            ));
+                            if (success == true && mounted) {
+                              await _passcodeService.clearPasscode();
+                              setState(() => _isPasscodeEnabled = false);
+                            }
+                          }
+                        },
+                      ),
+                    ),
+                    if (_isPasscodeEnabled) ...[
                       Divider(
                           height: 1,
                           indent: 60,
-                          color: colorScheme.outline.withOpacity(0.1)),
+                          color: colorScheme.outline.withValues(alpha: 0.1)),
                       _buildModernListTile(
                         context: context,
-                        icon: Icons.help_outline_rounded,
-                        title: 'Help & Support',
-                        onTap: () {
-                          Navigator.of(context).push(
+                        icon: Icons.phonelink_lock_rounded,
+                        title: 'Change Passcode',
+                        onTap: () async {
+                          final navigator = Navigator.of(context);
+                          final verified =
+                              await navigator.push<bool>(MaterialPageRoute(
+                            builder: (context) =>
+                                const PasscodeScreen(isSettingPasscode: false),
+                          ));
+                          if (verified != true || !mounted) return;
+                          await navigator.push<bool>(
                             MaterialPageRoute(
-                                builder: (context) => const HelpScreen()),
+                              builder: (context) =>
+                                  const PasscodeScreen(isSettingPasscode: true),
+                            ),
                           );
                         },
                       ),
-                      Divider(
-                          height: 1,
-                          indent: 60,
-                          color: colorScheme.outline.withOpacity(0.1)),
-                      _buildModernListTile(
-                        context: context,
-                        icon: Icons.support_agent_rounded,
-                        title: 'Contact via WhatsApp',
-                        onTap: _launchWhatsApp,
-                      ),
                     ],
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 32, 20, 32),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: _isLoggingOut ? null : _logout,
-                    icon: _isLoggingOut
-                        ? SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 3,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                colorScheme.onPrimary,
+                    Divider(
+                        height: 1,
+                        indent: 60,
+                        color: colorScheme.outline.withValues(alpha: 0.1)),
+                    _buildModernListTile(
+                      context: context,
+                      icon: Icons.currency_exchange_rounded,
+                      title: 'Currency',
+                      trailing: DropdownButton<String>(
+                        value: _selectedCurrency,
+                        underline: const SizedBox(),
+                        dropdownColor: theme.brightness == Brightness.dark
+                            ? colorScheme.surfaceContainerHighest
+                            : Colors.white,
+                        icon: Icon(
+                          Icons.arrow_drop_down_rounded,
+                          color: colorScheme.onSurfaceVariant,
+                          size: 24,
+                        ),
+                        iconSize: 24,
+                        borderRadius: BorderRadius.circular(12),
+                        menuMaxHeight: 200,
+                        items: <String>['KSh', 'USD', 'EUR', 'GBP']
+                            .map<DropdownMenuItem<String>>(
+                                (String value) => DropdownMenuItem<String>(
+                                    value: value,
+                                    child: Text(
+                                      value,
+                                      style: GoogleFonts.manrope(
+                                        fontWeight: FontWeight.w500,
+                                        color: colorScheme.onSurface,
+                                      ),
+                                    )))
+                            .toList(),
+                        selectedItemBuilder: (BuildContext context) {
+                          return <String>['KSh', 'USD', 'EUR', 'GBP']
+                              .map<Widget>((String value) {
+                            return Text(
+                              value,
+                              style: GoogleFonts.manrope(
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.primary,
                               ),
-                            ),
-                          )
-                        : const Icon(Icons.logout_rounded),
-                    label: Text(
-                      'Logout',
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                            );
+                          }).toList();
+                        },
+                        onChanged: (String? newValue) {
+                          if (newValue != null && mounted) {
+                            _saveCurrencyPreference(newValue);
+                            NotificationHelper.showSuccess(context,
+                                message: 'Currency updated!');
+                          }
+                        },
                       ),
                     ),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+              child: Text(
+                'Account',
+                style: GoogleFonts.manrope(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  children: [
+                    _buildModernListTile(
+                      context: context,
+                      icon: Icons.password_rounded,
+                      title: 'Change Password',
+                      trailing: _isSendingPasswordReset
+                          ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  colorScheme.primary,
+                                ),
+                              ),
+                            )
+                          : null,
+                      onTap: _isSendingPasswordReset
+                          ? null
+                          : _sendPasswordResetEmail,
+                    ),
+                    Divider(
+                        height: 1,
+                        indent: 60,
+                        color: colorScheme.outline.withValues(alpha: 0.1)),
+                    _buildModernListTile(
+                      context: context,
+                      icon: Icons.delete_forever_rounded,
+                      title: 'Delete Account',
+                      titleColor: Colors.red,
+                      iconColor: Colors.red,
+                      trailing: _isDeletingAccount
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.red,
+                                ),
+                              ),
+                            )
+                          : null,
+                      onTap: _isDeletingAccount ? null : _deleteAccount,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+              child: Text(
+                'Data & Sync',
+                style: GoogleFonts.manrope(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: _buildModernListTile(
+                  context: context,
+                  icon: Icons.cloud_download_rounded,
+                  title: 'Restore from Cloud',
+                  subtitle: _cloudRestoreSubtitle(),
+                  trailing: _isRestoring
+                      ? SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              colorScheme.primary,
+                            ),
+                          ),
+                        )
+                      : const Icon(Icons.chevron_right_rounded, size: 24),
+                  onTap: _isRestoring ? null : _handleRestore,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+              child: Text(
+                'Help & Support',
+                style: GoogleFonts.manrope(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  children: [
+                    _buildModernListTile(
+                      context: context,
+                      icon: Icons.question_answer_rounded,
+                      title: 'FAQ',
+                      onTap: _showFaqScreen,
+                    ),
+                    Divider(
+                        height: 1,
+                        indent: 60,
+                        color: colorScheme.outline.withValues(alpha: 0.1)),
+                    _buildModernListTile(
+                      context: context,
+                      icon: Icons.help_outline_rounded,
+                      title: 'Help & Support',
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                              builder: (context) => const HelpScreen()),
+                        );
+                      },
+                    ),
+                    Divider(
+                        height: 1,
+                        indent: 60,
+                        color: colorScheme.outline.withValues(alpha: 0.1)),
+                    _buildModernListTile(
+                      context: context,
+                      icon: Icons.support_agent_rounded,
+                      title: 'Contact via WhatsApp',
+                      onTap: _launchWhatsApp,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 32, 20, 32),
+              child: SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: _isLoggingOut ? null : _logout,
+                  icon: _isLoggingOut
+                      ? SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              colorScheme.onPrimary,
+                            ),
+                          ),
+                        )
+                      : const Icon(Icons.logout_rounded),
+                  label: Text(
+                    'Logout',
+                    style: GoogleFonts.manrope(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -1054,7 +1065,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       leading: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: (iconColor ?? colorScheme.primary).withOpacity(0.1),
+          color: (iconColor ?? colorScheme.primary).withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(
@@ -1065,7 +1076,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       title: Text(
         title,
-        style: GoogleFonts.inter(
+        style: GoogleFonts.manrope(
           fontSize: 16,
           fontWeight: FontWeight.w600,
           color: titleColor ?? colorScheme.onSurface,
@@ -1074,7 +1085,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       subtitle: subtitle != null
           ? Text(
               subtitle,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.manrope(
                 fontSize: 13,
                 color: colorScheme.onSurfaceVariant,
               ),

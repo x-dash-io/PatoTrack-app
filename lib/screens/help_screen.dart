@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'faq_screen.dart';
 import '../widgets/dialog_helpers.dart';
+import '../widgets/app_screen_background.dart';
 import '../models/help_article.dart';
 import 'help_article_detail_screen.dart';
 
@@ -21,7 +22,7 @@ class HelpScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           'Help & Support',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
         ),
         elevation: 0,
         systemOverlayStyle: SystemUiOverlayStyle(
@@ -30,18 +31,8 @@ class HelpScreen extends StatelessWidget {
           statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
         ),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.primaryContainer.withOpacity(0.2),
-              colorScheme.surface,
-              colorScheme.surface,
-            ],
-          ),
-        ),
+      body: AppScreenBackground(
+        includeSafeArea: false,
         child: SafeArea(
           child: ListView(
             padding: const EdgeInsets.all(20),
@@ -58,13 +49,13 @@ class HelpScreen extends StatelessWidget {
                       end: Alignment.bottomRight,
                       colors: [
                         colorScheme.primaryContainer,
-                        colorScheme.primaryContainer.withOpacity(0.7),
+                        colorScheme.primaryContainer.withValues(alpha: 0.7),
                       ],
                     ),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: colorScheme.primary.withOpacity(0.3),
+                        color: colorScheme.primary.withValues(alpha: 0.3),
                         blurRadius: 20,
                         spreadRadius: 2,
                       ),
@@ -134,7 +125,7 @@ class HelpScreen extends StatelessWidget {
                     const SizedBox(width: 12),
                     Text(
                       'Help Articles',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                       ),
@@ -164,7 +155,7 @@ class HelpScreen extends StatelessWidget {
               Center(
                 child: Text(
                   'PatoTrack v1.0.0',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 14,
                     color: colorScheme.onSurfaceVariant,
                   ),
@@ -359,7 +350,7 @@ class HelpScreen extends StatelessWidget {
                   color: Theme.of(context)
                       .colorScheme
                       .onSurfaceVariant
-                      .withOpacity(0.4),
+                      .withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -371,7 +362,7 @@ class HelpScreen extends StatelessWidget {
                   children: [
                     Text(
                       'Quick Start Guide',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
                       ),
@@ -380,7 +371,7 @@ class HelpScreen extends StatelessWidget {
                       onPressed: () => Navigator.of(context).pop(),
                       child: Text(
                         'Done',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -460,17 +451,17 @@ class _HelpSection extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [
             colorScheme.surfaceContainerHighest,
-            colorScheme.surfaceContainerHighest.withOpacity(0.7),
+            colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
           ],
         ),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withValues(alpha: 0.1),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -493,13 +484,13 @@ class _HelpSection extends StatelessWidget {
                       end: Alignment.bottomRight,
                       colors: [
                         colorScheme.primaryContainer,
-                        colorScheme.primaryContainer.withOpacity(0.7),
+                        colorScheme.primaryContainer.withValues(alpha: 0.7),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: colorScheme.primary.withOpacity(0.2),
+                        color: colorScheme.primary.withValues(alpha: 0.2),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -518,7 +509,7 @@ class _HelpSection extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: 17,
                           fontWeight: FontWeight.w600,
                         ),
@@ -526,7 +517,7 @@ class _HelpSection extends StatelessWidget {
                       const SizedBox(height: 6),
                       Text(
                         description,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: 14,
                           color: colorScheme.onSurfaceVariant,
                           height: 1.4,
@@ -538,7 +529,7 @@ class _HelpSection extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer.withOpacity(0.3),
+                    color: colorScheme.primaryContainer.withValues(alpha: 0.3),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -578,17 +569,17 @@ class _HelpArticleCard extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [
             colorScheme.surfaceContainerHighest,
-            colorScheme.surfaceContainerHighest.withOpacity(0.7),
+            colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withValues(alpha: 0.1),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -611,13 +602,13 @@ class _HelpArticleCard extends StatelessWidget {
                       end: Alignment.bottomRight,
                       colors: [
                         colorScheme.primaryContainer,
-                        colorScheme.primaryContainer.withOpacity(0.8),
+                        colorScheme.primaryContainer.withValues(alpha: 0.8),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
-                        color: colorScheme.primary.withOpacity(0.2),
+                        color: colorScheme.primary.withValues(alpha: 0.2),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -636,7 +627,7 @@ class _HelpArticleCard extends StatelessWidget {
                     children: [
                       Text(
                         article.title,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
@@ -644,7 +635,7 @@ class _HelpArticleCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         article.description,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: 13,
                           color: colorScheme.onSurfaceVariant,
                           height: 1.4,
@@ -656,7 +647,7 @@ class _HelpArticleCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer.withOpacity(0.3),
+                    color: colorScheme.primaryContainer.withValues(alpha: 0.3),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -699,12 +690,12 @@ class _GuideStep extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [
             colorScheme.surfaceContainerHighest,
-            colorScheme.surfaceContainerHighest.withOpacity(0.5),
+            colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
+          color: colorScheme.outline.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -720,13 +711,13 @@ class _GuideStep extends StatelessWidget {
                 end: Alignment.bottomRight,
                 colors: [
                   colorScheme.primary,
-                  colorScheme.primary.withOpacity(0.8),
+                  colorScheme.primary.withValues(alpha: 0.8),
                 ],
               ),
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: colorScheme.primary.withOpacity(0.3),
+                  color: colorScheme.primary.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -735,7 +726,7 @@ class _GuideStep extends StatelessWidget {
             child: Center(
               child: Text(
                 '$number',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   color: colorScheme.onPrimary,
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
@@ -750,7 +741,7 @@ class _GuideStep extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                   ),
@@ -758,7 +749,7 @@ class _GuideStep extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   description,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 15,
                     color: colorScheme.onSurfaceVariant,
                     height: 1.6,

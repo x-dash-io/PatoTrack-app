@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../main.dart';
 import '../helpers/passcode_service.dart';
 import '../helpers/notification_helper.dart';
+import '../widgets/app_screen_background.dart';
 
 class PasscodeScreen extends StatefulWidget {
   final bool isSettingPasscode;
@@ -210,7 +211,7 @@ class _PasscodeScreenState extends State<PasscodeScreen>
           : AppBar(
               title: Text(
                 _title,
-                style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
               ),
               elevation: 0,
               systemOverlayStyle: SystemUiOverlayStyle(
@@ -223,249 +224,236 @@ class _PasscodeScreenState extends State<PasscodeScreen>
             ),
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                colorScheme.primaryContainer.withValues(alpha: 0.3),
-                colorScheme.surface,
-                colorScheme.surface,
-              ],
-            ),
-          ),
-          child: SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: 40),
+        child: AppScreenBackground(
+          includeSafeArea: true,
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 40),
 
-                    // Lock Icon
-                    AnimatedBuilder(
-                      animation: _shakeAnimation,
-                      builder: (context, child) {
-                        return Transform.translate(
-                          offset: Offset(_shakeAnimation.value, 0),
-                          child: Container(
-                            width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  colorScheme.primary,
-                                  colorScheme.primary.withValues(alpha: 0.7),
-                                ],
-                              ),
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: colorScheme.primary
-                                      .withValues(alpha: 0.3),
-                                  blurRadius: 20,
-                                  spreadRadius: 2,
-                                  offset: const Offset(0, 8),
-                                ),
+                  // Lock Icon
+                  AnimatedBuilder(
+                    animation: _shakeAnimation,
+                    builder: (context, child) {
+                      return Transform.translate(
+                        offset: Offset(_shakeAnimation.value, 0),
+                        child: Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                colorScheme.primary,
+                                colorScheme.primary.withValues(alpha: 0.7),
                               ],
                             ),
-                            child: Icon(
-                              Icons.lock_outline_rounded,
-                              size: 50,
-                              color: colorScheme.onPrimary,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-
-                    const SizedBox(height: 48),
-
-                    // Title
-                    Text(
-                      _title,
-                      style: GoogleFonts.inter(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // Subtitle
-                    Text(
-                      _subtitle,
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        color: colorScheme.onSurfaceVariant,
-                        height: 1.4,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-
-                    const SizedBox(height: 48),
-
-                    // PIN Input Fields - Individual fields without wrapper container
-                    AnimatedBuilder(
-                      animation: _shakeAnimation,
-                      builder: (context, child) {
-                        return Transform.translate(
-                          offset: Offset(_shakeAnimation.value, 0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(4, (index) {
-                              return Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 8),
-                                child: SizedBox(
-                                  width: 68,
-                                  height: 68,
-                                  child: TextField(
-                                    controller: _pinControllers[index],
-                                    focusNode: _focusNodes[index],
-                                    textAlign: TextAlign.center,
-                                    keyboardType: TextInputType.number,
-                                    obscureText: true,
-                                    maxLength: 1,
-                                    style: GoogleFonts.inter(
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.bold,
-                                      color: colorScheme.onSurface,
-                                    ),
-                                    decoration: InputDecoration(
-                                      counterText: '',
-                                      contentPadding: EdgeInsets.zero,
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                        borderSide: BorderSide(
-                                          color: _hasError
-                                              ? colorScheme.error
-                                              : colorScheme.outline
-                                                  .withValues(alpha: 0.3),
-                                          width: 2.5,
-                                        ),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                        borderSide: BorderSide(
-                                          color: _hasError
-                                              ? colorScheme.error
-                                                  .withValues(alpha: 0.5)
-                                              : colorScheme.outline
-                                                  .withValues(alpha: 0.3),
-                                          width: 2.5,
-                                        ),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                        borderSide: BorderSide(
-                                          color: _hasError
-                                              ? colorScheme.error
-                                              : colorScheme.primary,
-                                          width: 2.5,
-                                        ),
-                                      ),
-                                      filled: false,
-                                    ),
-                                    inputFormatters: [
-                                      FilteringTextInputFormatter.digitsOnly,
-                                    ],
-                                    onChanged: (value) {
-                                      if (value.isNotEmpty && index < 3) {
-                                        _focusNodes[index + 1].requestFocus();
-                                      }
-                                      _onPinChanged();
-                                    },
-                                    onTap: () {
-                                      _pinControllers[index].selection =
-                                          TextSelection.fromPosition(
-                                        TextPosition(
-                                            offset: _pinControllers[index]
-                                                .text
-                                                .length),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              );
-                            }),
-                          ),
-                        );
-                      },
-                    ),
-
-                    // Progress Indicator
-                    if (widget.isSettingPasscode && _pinToConfirm != null) ...[
-                      const SizedBox(height: 32),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colorScheme.primaryContainer
-                              .withValues(alpha: 0.5),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.check_circle_rounded,
-                              size: 16,
-                              color: colorScheme.primary,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Step 2 of 2',
-                              style: GoogleFonts.inter(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                color: colorScheme.onPrimaryContainer,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color:
+                                    colorScheme.primary.withValues(alpha: 0.3),
+                                blurRadius: 20,
+                                spreadRadius: 2,
+                                offset: const Offset(0, 8),
                               ),
+                            ],
+                          ),
+                          child: Icon(
+                            Icons.lock_outline_rounded,
+                            size: 50,
+                            color: colorScheme.onPrimary,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 48),
+
+                  // Title
+                  Text(
+                    _title,
+                    style: GoogleFonts.manrope(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Subtitle
+                  Text(
+                    _subtitle,
+                    style: GoogleFonts.manrope(
+                      fontSize: 16,
+                      color: colorScheme.onSurfaceVariant,
+                      height: 1.4,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: 48),
+
+                  // PIN Input Fields - Individual fields without wrapper container
+                  AnimatedBuilder(
+                    animation: _shakeAnimation,
+                    builder: (context, child) {
+                      return Transform.translate(
+                        offset: Offset(_shakeAnimation.value, 0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(4, (index) {
+                            return Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8),
+                              child: SizedBox(
+                                width: 68,
+                                height: 68,
+                                child: TextField(
+                                  controller: _pinControllers[index],
+                                  focusNode: _focusNodes[index],
+                                  textAlign: TextAlign.center,
+                                  keyboardType: TextInputType.number,
+                                  obscureText: true,
+                                  maxLength: 1,
+                                  style: GoogleFonts.manrope(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                    color: colorScheme.onSurface,
+                                  ),
+                                  decoration: InputDecoration(
+                                    counterText: '',
+                                    contentPadding: EdgeInsets.zero,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                      borderSide: BorderSide(
+                                        color: _hasError
+                                            ? colorScheme.error
+                                            : colorScheme.outline
+                                                .withValues(alpha: 0.3),
+                                        width: 2.5,
+                                      ),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                      borderSide: BorderSide(
+                                        color: _hasError
+                                            ? colorScheme.error
+                                                .withValues(alpha: 0.5)
+                                            : colorScheme.outline
+                                                .withValues(alpha: 0.3),
+                                        width: 2.5,
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                      borderSide: BorderSide(
+                                        color: _hasError
+                                            ? colorScheme.error
+                                            : colorScheme.primary,
+                                        width: 2.5,
+                                      ),
+                                    ),
+                                    filled: false,
+                                  ),
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                  ],
+                                  onChanged: (value) {
+                                    if (value.isNotEmpty && index < 3) {
+                                      _focusNodes[index + 1].requestFocus();
+                                    }
+                                    _onPinChanged();
+                                  },
+                                  onTap: () {
+                                    _pinControllers[index].selection =
+                                        TextSelection.fromPosition(
+                                      TextPosition(
+                                          offset: _pinControllers[index]
+                                              .text
+                                              .length),
+                                    );
+                                  },
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                      );
+                    },
+                  ),
+
+                  // Progress Indicator
+                  if (widget.isSettingPasscode && _pinToConfirm != null) ...[
+                    const SizedBox(height: 32),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            colorScheme.primaryContainer.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.check_circle_rounded,
+                            size: 16,
+                            color: colorScheme.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Step 2 of 2',
+                            style: GoogleFonts.manrope(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: colorScheme.onPrimaryContainer,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-
-                    const SizedBox(height: 48),
-
-                    // Helper Text
-                    if (!_hasError)
-                      Text(
-                        widget.isSettingPasscode
-                            ? 'Remember this passcode. You\'ll need it to unlock your app.'
-                            : 'Enter your 4-digit passcode',
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          color: colorScheme.onSurfaceVariant
-                              .withValues(alpha: 0.7),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-
-                    if (_hasError)
-                      Text(
-                        'Please try again',
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          color: colorScheme.error,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-
-                    const SizedBox(height: 40),
+                    ),
                   ],
-                ),
+
+                  const SizedBox(height: 48),
+
+                  // Helper Text
+                  if (!_hasError)
+                    Text(
+                      widget.isSettingPasscode
+                          ? 'Remember this passcode. You\'ll need it to unlock your app.'
+                          : 'Enter your 4-digit passcode',
+                      style: GoogleFonts.manrope(
+                        fontSize: 13,
+                        color:
+                            colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+
+                  if (_hasError)
+                    Text(
+                      'Please try again',
+                      style: GoogleFonts.manrope(
+                        fontSize: 13,
+                        color: colorScheme.error,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+
+                  const SizedBox(height: 40),
+                ],
               ),
             ),
           ),

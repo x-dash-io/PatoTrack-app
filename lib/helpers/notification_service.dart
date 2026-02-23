@@ -16,7 +16,9 @@ class NotificationService {
     const InitializationSettings initializationSettings =
         InitializationSettings(android: initializationSettingsAndroid);
 
-    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+    await flutterLocalNotificationsPlugin.initialize(
+      settings: initializationSettings,
+    );
     tz.initializeTimeZones();
   }
 
@@ -55,18 +57,17 @@ class NotificationService {
         NotificationDetails(android: androidNotificationDetails);
 
     await flutterLocalNotificationsPlugin.zonedSchedule(
-      bill.id!,
-      'Upcoming Bill Reminder',
-      'Your bill "${bill.name}" for KSh ${bill.amount.toStringAsFixed(0)} is due tomorrow.',
-      scheduleTime,
-      notificationDetails,
+      id: bill.id!,
+      title: 'Upcoming Bill Reminder',
+      body:
+          'Your bill "${bill.name}" for KSh ${bill.amount.toStringAsFixed(0)} is due tomorrow.',
+      scheduledDate: scheduleTime,
+      notificationDetails: notificationDetails,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
     );
   }
 
   Future<void> cancelNotification(int id) async {
-    await flutterLocalNotificationsPlugin.cancel(id);
+    await flutterLocalNotificationsPlugin.cancel(id: id);
   }
 }

@@ -8,6 +8,7 @@ import '../widgets/dialog_helpers.dart';
 import '../widgets/loading_widgets.dart';
 import '../widgets/input_fields.dart';
 import '../helpers/notification_helper.dart';
+import '../widgets/app_screen_background.dart';
 
 class ManageCategoriesScreen extends StatefulWidget {
   const ManageCategoriesScreen({super.key});
@@ -131,7 +132,8 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                       height: 4,
                       margin: const EdgeInsets.only(bottom: 20),
                       decoration: BoxDecoration(
-                        color: colorScheme.onSurfaceVariant.withOpacity(0.4),
+                        color:
+                            colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -141,7 +143,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                     category == null
                         ? 'Add New ${type.capitalize()} Category'
                         : 'Edit Category',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
@@ -157,7 +159,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                   // Icon Selection
                   Text(
                     'Select Icon',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
@@ -187,7 +189,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                         Expanded(
                           child: Text(
                             'Tap to change icon',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.manrope(
                               fontSize: 15,
                               color: colorScheme.onSurfaceVariant,
                             ),
@@ -229,7 +231,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                           ),
                           child: Text(
                             'Cancel',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.manrope(
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -284,8 +286,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                                           setDialogState(
                                               () => _isSavingCategory = false);
                                         }
-                                        NotificationHelper.showError(
-                                            this.context,
+                                        NotificationHelper.showError(context,
                                             message:
                                                 'Failed to save category: $e');
                                       }
@@ -311,7 +312,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                                 )
                               : Text(
                                   category == null ? 'Add' : 'Save',
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.manrope(
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -348,14 +349,14 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
               height: 4,
               margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
-                color: colorScheme.onSurfaceVariant.withOpacity(0.4),
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
           ),
           Text(
             'Select an Icon',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.manrope(
               fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
@@ -411,12 +412,12 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
               Icon(
                 Icons.category_outlined,
                 size: 64,
-                color: colorScheme.onSurfaceVariant.withOpacity(0.4),
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
               ),
               const SizedBox(height: 16),
               Text(
                 'No $type categories yet',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: colorScheme.onSurfaceVariant,
@@ -425,7 +426,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
               const SizedBox(height: 8),
               Text(
                 'Tap the "+" button to add one!',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontSize: 14,
                   color: colorScheme.onSurfaceVariant,
                 ),
@@ -467,7 +468,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
             ),
             title: Text(
               category.name,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.manrope(
                 fontWeight: FontWeight.w600,
                 fontSize: 16,
               ),
@@ -528,7 +529,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
         elevation: 0,
         title: Text(
           'Manage Categories',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
         ),
         systemOverlayStyle: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
@@ -537,7 +538,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
         ),
         bottom: TabBar(
           controller: _tabController,
-          labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          labelStyle: GoogleFonts.manrope(fontWeight: FontWeight.w600),
           tabs: const [
             Tab(
               icon: Icon(Icons.arrow_upward_rounded),
@@ -550,12 +551,15 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildCategoryList(_expenseCategories, 'expense'),
-          _buildCategoryList(_incomeCategories, 'income'),
-        ],
+      body: AppScreenBackground(
+        includeSafeArea: false,
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            _buildCategoryList(_expenseCategories, 'expense'),
+            _buildCategoryList(_incomeCategories, 'income'),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
@@ -565,7 +569,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
         icon: const Icon(Icons.add_rounded),
         label: Text(
           'Add Category',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
         ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),

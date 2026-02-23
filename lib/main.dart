@@ -32,249 +32,213 @@ Future<void> main() async {
   );
 }
 
-/// Modern Material Design 3 theme configurations
-ThemeData _buildLightTheme() {
-  final colorScheme = ColorScheme.fromSeed(
-    seedColor: const Color(0xFF009688), // Modern teal
-    brightness: Brightness.light,
-  );
+ThemeData _buildLightTheme() => _buildTheme(Brightness.light);
+ThemeData _buildDarkTheme() => _buildTheme(Brightness.dark);
 
-  final baseTextTheme = ThemeData.light().textTheme;
+ThemeData _buildTheme(Brightness brightness) {
+  final isDark = brightness == Brightness.dark;
+  final colorScheme = ColorScheme.fromSeed(
+    seedColor: isDark ? const Color(0xFF7EC6D6) : const Color(0xFF0D6A7A),
+    brightness: brightness,
+  );
+  final baseTextTheme =
+      isDark ? ThemeData.dark().textTheme : ThemeData.light().textTheme;
+  final textTheme = _buildTextTheme(baseTextTheme, colorScheme);
+
+  final fieldBorder = OutlineInputBorder(
+    borderRadius: BorderRadius.circular(18),
+    borderSide: BorderSide(
+      color: colorScheme.outline.withValues(alpha: 0.2),
+      width: 1,
+    ),
+  );
 
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
-
-    // Typography
-    textTheme: GoogleFonts.interTextTheme(baseTextTheme).apply(
-      bodyColor: colorScheme.onSurface,
-      displayColor: colorScheme.onSurface,
-    ),
-
-    // Card Theme - Modern with subtle elevation
+    textTheme: textTheme,
+    scaffoldBackgroundColor: colorScheme.surface,
+    dividerColor: colorScheme.outline.withValues(alpha: 0.12),
+    visualDensity: VisualDensity.adaptivePlatformDensity,
     cardTheme: CardThemeData(
       elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      color: colorScheme.surfaceContainerHighest,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      color: colorScheme.surfaceContainerHigh,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      clipBehavior: Clip.antiAlias,
     ),
-
-    // Input Decoration Theme - Modern rounded inputs
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: colorScheme.surfaceContainerHighest,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide.none,
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide.none,
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(
-          color: colorScheme.primary,
-          width: 2,
+      fillColor: isDark
+          ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.8)
+          : colorScheme.surfaceContainerLowest,
+      border: fieldBorder,
+      enabledBorder: fieldBorder,
+      disabledBorder: fieldBorder.copyWith(
+        borderSide: fieldBorder.borderSide.copyWith(
+          color: colorScheme.outline.withValues(alpha: 0.1),
         ),
       ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(
-          color: colorScheme.error,
-          width: 1,
-        ),
+      focusedBorder: fieldBorder.copyWith(
+        borderSide: BorderSide(color: colorScheme.primary, width: 1.6),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      errorBorder: fieldBorder.copyWith(
+        borderSide: BorderSide(color: colorScheme.error, width: 1.2),
+      ),
+      focusedErrorBorder: fieldBorder.copyWith(
+        borderSide: BorderSide(color: colorScheme.error, width: 1.6),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
     ),
-
-    // Elevated Button Theme
+    appBarTheme: AppBarTheme(
+      elevation: 0,
+      scrolledUnderElevation: 0.6,
+      centerTitle: false,
+      backgroundColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      foregroundColor: colorScheme.onSurface,
+      titleTextStyle: textTheme.titleLarge?.copyWith(
+        color: colorScheme.onSurface,
+        fontWeight: FontWeight.w700,
+      ),
+      iconTheme: IconThemeData(color: colorScheme.onSurface),
+    ),
+    navigationBarTheme: NavigationBarThemeData(
+      backgroundColor: colorScheme.surface.withValues(alpha: 0.96),
+      indicatorColor: colorScheme.primaryContainer.withValues(alpha: 0.9),
+      labelTextStyle: WidgetStatePropertyAll(
+        textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700),
+      ),
+      iconTheme: WidgetStateProperty.resolveWith((states) {
+        final selected = states.contains(WidgetState.selected);
+        return IconThemeData(
+          color: selected ? colorScheme.primary : colorScheme.onSurfaceVariant,
+          size: selected ? 24 : 22,
+        );
+      }),
+    ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         elevation: 0,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: colorScheme.surfaceContainerHighest,
+        foregroundColor: colorScheme.onSurface,
       ),
     ),
-
-    // Filled Button Theme
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
+        elevation: 0,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        textStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.22)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      ),
+    ),
+    segmentedButtonTheme: SegmentedButtonThemeData(
+      style: ButtonStyle(
+        textStyle: WidgetStatePropertyAll(
+          textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
       ),
     ),
-
-    // App Bar Theme - Transparent with elevation
-    appBarTheme: AppBarTheme(
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
       elevation: 0,
-      scrolledUnderElevation: 1,
-      centerTitle: false,
-      backgroundColor: Colors.transparent,
-      foregroundColor: colorScheme.onSurface,
-      iconTheme: IconThemeData(color: colorScheme.onSurface),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: colorScheme.primary,
+      foregroundColor: colorScheme.onPrimary,
     ),
-
-    // Bottom Sheet Theme - Modern rounded
     bottomSheetTheme: const BottomSheetThemeData(
+      showDragHandle: true,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      elevation: 8,
+      elevation: 0,
     ),
-
-    // Dialog Theme - Modern rounded dialogs
     dialogTheme: DialogThemeData(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(28),
-      ),
-      elevation: 8,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      elevation: 0,
+      backgroundColor: colorScheme.surfaceContainerHigh,
     ),
-
-    // Floating Action Button Theme
-    floatingActionButtonTheme: FloatingActionButtonThemeData(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-    ),
-
-    // Chip Theme
     chipTheme: ChipThemeData(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      side: BorderSide(color: colorScheme.outline.withValues(alpha: 0.18)),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     ),
   );
 }
 
-ThemeData _buildDarkTheme() {
-  final colorScheme = ColorScheme.fromSeed(
-    seedColor: const Color(0xFF00BFA5), // Brighter teal for dark mode
-    brightness: Brightness.dark,
+TextTheme _buildTextTheme(TextTheme base, ColorScheme colorScheme) {
+  final body = GoogleFonts.manropeTextTheme(base).apply(
+    bodyColor: colorScheme.onSurface,
+    displayColor: colorScheme.onSurface,
   );
 
-  return ThemeData(
-    useMaterial3: true,
-    colorScheme: colorScheme,
-
-    // Typography
-    textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme).apply(
-      bodyColor: colorScheme.onSurface,
-      displayColor: colorScheme.onSurface,
+  return body.copyWith(
+    displayLarge: GoogleFonts.sora(
+      fontSize: 54,
+      fontWeight: FontWeight.w700,
+      letterSpacing: -1.5,
+      height: 1.02,
+      color: colorScheme.onSurface,
     ),
-
-    // Card Theme - Modern with subtle elevation
-    cardTheme: CardThemeData(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      color: colorScheme.surfaceContainerHighest,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    displayMedium: GoogleFonts.sora(
+      fontSize: 42,
+      fontWeight: FontWeight.w700,
+      letterSpacing: -1.2,
+      height: 1.05,
+      color: colorScheme.onSurface,
     ),
-
-    // Input Decoration Theme - Modern rounded inputs
-    inputDecorationTheme: InputDecorationTheme(
-      filled: true,
-      fillColor: colorScheme.surfaceContainerHighest,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide.none,
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide.none,
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(
-          color: colorScheme.primary,
-          width: 2,
-        ),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(
-          color: colorScheme.error,
-          width: 1,
-        ),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    headlineLarge: GoogleFonts.sora(
+      fontSize: 32,
+      fontWeight: FontWeight.w700,
+      letterSpacing: -0.8,
+      color: colorScheme.onSurface,
     ),
-
-    // Elevated Button Theme
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
-      ),
+    titleLarge: GoogleFonts.sora(
+      fontSize: 22,
+      fontWeight: FontWeight.w700,
+      letterSpacing: -0.3,
+      color: colorScheme.onSurface,
     ),
-
-    // Filled Button Theme
-    filledButtonTheme: FilledButtonThemeData(
-      style: FilledButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-      ),
+    titleMedium: GoogleFonts.manrope(
+      fontSize: 16,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 0.1,
+      color: colorScheme.onSurface,
     ),
-
-    // App Bar Theme - Transparent with elevation
-    appBarTheme: AppBarTheme(
-      elevation: 0,
-      scrolledUnderElevation: 1,
-      centerTitle: false,
-      backgroundColor: Colors.transparent,
-      foregroundColor: colorScheme.onSurface,
-      iconTheme: IconThemeData(color: colorScheme.onSurface),
+    labelLarge: GoogleFonts.manrope(
+      fontSize: 15,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 0.15,
+      color: colorScheme.onSurface,
     ),
-
-    // Bottom Sheet Theme - Modern rounded
-    bottomSheetTheme: const BottomSheetThemeData(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      elevation: 8,
+    bodyLarge: GoogleFonts.manrope(
+      fontSize: 16,
+      fontWeight: FontWeight.w500,
+      height: 1.45,
+      color: colorScheme.onSurface,
     ),
-
-    // Dialog Theme - Modern rounded dialogs
-    dialogTheme: DialogThemeData(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(28),
-      ),
-      elevation: 8,
+    bodyMedium: GoogleFonts.manrope(
+      fontSize: 14,
+      fontWeight: FontWeight.w500,
+      height: 1.42,
+      color: colorScheme.onSurface,
     ),
-
-    // Floating Action Button Theme
-    floatingActionButtonTheme: FloatingActionButtonThemeData(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-    ),
-
-    // Chip Theme
-    chipTheme: ChipThemeData(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    bodySmall: GoogleFonts.manrope(
+      fontSize: 12,
+      fontWeight: FontWeight.w500,
+      height: 1.35,
+      color: colorScheme.onSurfaceVariant,
     ),
   );
 }
@@ -333,40 +297,48 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       body: SafeArea(
         child: _widgetOptions.elementAt(_selectedIndex),
       ),
-
-      // UPDATED: Replaced BottomNavigationBar with the modern NavigationBar
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: _onItemTapped,
-
-        // --- Style Customizations ---
-        height: 70,
-        indicatorColor: Theme.of(context).colorScheme.primaryContainer,
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        elevation: 0,
-        // --------------------------
-
-        destinations: const <NavigationDestination>[
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.analytics_outlined),
-            selectedIcon: Icon(Icons.analytics_rounded),
-            label: 'Reports',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded),
-            selectedIcon: Icon(Icons.person_rounded),
-            label: 'Profile',
-          ),
-        ],
+      bottomNavigationBar: Container(
+        margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(26),
+          boxShadow: [
+            BoxShadow(
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+              blurRadius: 26,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: NavigationBar(
+          selectedIndex: _selectedIndex,
+          onDestinationSelected: _onItemTapped,
+          height: 72,
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          elevation: 0,
+          destinations: const <NavigationDestination>[
+            NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home_rounded),
+              label: 'Home',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.analytics_outlined),
+              selectedIcon: Icon(Icons.analytics_rounded),
+              label: 'Reports',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.person_outline_rounded),
+              selectedIcon: Icon(Icons.person_rounded),
+              label: 'Profile',
+            ),
+          ],
+        ),
       ),
     );
   }
