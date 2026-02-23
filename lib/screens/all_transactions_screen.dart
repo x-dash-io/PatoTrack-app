@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -29,6 +31,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
   bool _isLoading = true;
   bool _isLoadingMore = false; // For pagination loading indicator
   final _searchController = TextEditingController();
+  Timer? _searchDebounce;
   final User? _currentUser = FirebaseAuth.instance.currentUser;
   final ScrollController _scrollController = ScrollController();
   String _currencySymbol = 'KSh';
@@ -48,7 +51,6 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
     super.initState();
     _loadCurrencyPreference();
     _loadInitialData();
-    _searchController.addListener(_applyAllFilters);
     _scrollController.addListener(_onScroll);
   }
 
@@ -88,8 +90,8 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
           _isLoading = false;
           _currentPage = 0; // Reset pagination
           _hasMoreItems = true;
-          _applyAllFilters(); // Apply initial (empty) filters
         });
+        _applyAllFilters(); // Apply initial (empty) filters
       }
     } catch (e) {
       // Handle any errors gracefully (e.g., database issues)
@@ -99,8 +101,8 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
           _isLoading = false;
           _allTransactions = [];
           _allCategories = [];
-          _applyAllFilters(); // This will set _filteredTransactions to empty list
         });
+        _applyAllFilters(); // This sets empty filtered lists.
       }
     }
   }
@@ -126,11 +128,18 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
             _filterType == null || transaction.type == _filterType;
 
         // Date range filter
+        DateTime? transactionDate;
+        if (_filterDateRange != null) {
+          transactionDate = DateTime.tryParse(transaction.date);
+          if (transactionDate == null) {
+            return false;
+          }
+        }
         final dateMatch = _filterDateRange == null ||
-            (DateTime.parse(transaction.date)
-                    .isAfter(_filterDateRange!.start) &&
-                DateTime.parse(transaction.date).isBefore(
-                    _filterDateRange!.end.add(const Duration(days: 1))));
+            (!transactionDate!.isBefore(_filterDateRange!.start) &&
+                transactionDate.isBefore(
+                  _filterDateRange!.end.add(const Duration(days: 1)),
+                ));
 
         return searchMatch && categoryMatch && typeMatch && dateMatch;
       }).toList();
@@ -140,6 +149,15 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
       _hasMoreItems = true;
       _loadPaginatedTransactions();
     });
+  }
+
+  void _onSearchChanged(String _) {
+    if (mounted) {
+      setState(() {});
+    }
+    _searchDebounce?.cancel();
+    _searchDebounce =
+        Timer(const Duration(milliseconds: 250), _applyAllFilters);
   }
 
   // Load paginated transactions based on current page
@@ -194,6 +212,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -351,6 +370,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                     padding: const EdgeInsets.all(8.0),
                     child: TextField(
                       controller: _searchController,
+                      onChanged: _onSearchChanged,
                       decoration: InputDecoration(
                         hintText: 'Search by description or amount',
                         prefixIcon: const Icon(Icons.search),

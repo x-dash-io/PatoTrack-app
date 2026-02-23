@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
@@ -19,7 +20,10 @@ import '../theme_provider.dart';
 import '../widgets/dialog_helpers.dart';
 import '../widgets/input_fields.dart';
 import '../widgets/app_screen_background.dart';
+import '../widgets/profile/setting_list_tile.dart';
 import '../services/google_sign_in_service.dart';
+import '../styles/app_shadows.dart';
+import '../styles/app_spacing.dart';
 import 'passcode_screen.dart';
 import 'help_screen.dart';
 import 'faq_screen.dart';
@@ -476,29 +480,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 width: double.infinity,
                 padding: ResponsiveHelper.edgeInsets(context, 32, 24, 32, 24),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      colorScheme.primaryContainer,
-                      colorScheme.primaryContainer.withValues(alpha: 0.8),
-                      colorScheme.primaryContainer.withValues(alpha: 0.6),
-                    ],
-                    stops: const [0.0, 0.5, 1.0],
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: colorScheme.primary.withValues(alpha: 0.2),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                      spreadRadius: 0,
-                    ),
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  color: colorScheme.primaryContainer,
+                  boxShadow: AppShadows.subtle(colorScheme.primary),
                 ),
                 child: Column(
                   children: [
@@ -515,34 +498,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             height: ResponsiveHelper.width(context, 120),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  Colors.white.withValues(alpha: 0.9),
-                                  Colors.white.withValues(alpha: 0.7),
-                                ],
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.15),
-                                  blurRadius: 20,
-                                  spreadRadius: 2,
-                                  offset: const Offset(0, 4),
-                                ),
-                                BoxShadow(
-                                  color: colorScheme.primary
-                                      .withValues(alpha: 0.3),
-                                  blurRadius: 15,
-                                  spreadRadius: 1,
-                                ),
-                              ],
+                              color: colorScheme.surface,
+                              boxShadow: const [AppShadows.elevated],
                             ),
                             padding: const EdgeInsets.all(4),
                             child: CircleAvatar(
                               radius: ResponsiveHelper.width(context, 56),
                               backgroundImage: (currentUser!.photoURL != null)
-                                  ? NetworkImage(currentUser!.photoURL!)
+                                  ? CachedNetworkImageProvider(
+                                      currentUser!.photoURL!,
+                                    )
                                   : null,
                               backgroundColor: colorScheme.primary,
                               child: (currentUser!.photoURL == null)
@@ -569,13 +534,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   color: Colors.white,
                                   width: 3,
                                 ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.2),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
+                                boxShadow: const [AppShadows.card],
                               ),
                               child: Icon(
                                 Icons.camera_alt_rounded,
@@ -591,7 +550,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               height: ResponsiveHelper.width(context, 120),
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: Colors.black.withValues(alpha: 0.6),
+                                color: Colors.black.withValues(alpha: 0.15),
                               ),
                               child: const CircularProgressIndicator(
                                 strokeWidth: 3,
@@ -642,13 +601,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   color: Colors.white.withValues(alpha: 0.4),
                                   width: 1.5,
                                 ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.1),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
+                                boxShadow: const [AppShadows.card],
                               ),
                               child: Icon(
                                 Icons.edit_rounded,
@@ -692,18 +645,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.lg,
+                AppSpacing.lg,
+                AppSpacing.md,
+              ),
               child: Text(
                 'App Settings',
-                style: GoogleFonts.manrope(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                style: theme.textTheme.titleLarge?.copyWith(
                   color: colorScheme.onSurface,
                 ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               child: Card(
                 elevation: 0,
                 shape: RoundedRectangleBorder(
@@ -711,8 +667,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 child: Column(
                   children: [
-                    _buildModernListTile(
-                      context: context,
+                    SettingListTile(
                       icon: Icons.dark_mode_rounded,
                       title: 'Dark Mode',
                       trailing: Switch(
@@ -724,8 +679,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         height: 1,
                         indent: 60,
                         color: colorScheme.outline.withValues(alpha: 0.1)),
-                    _buildModernListTile(
-                      context: context,
+                    SettingListTile(
                       icon: Icons.lock_rounded,
                       title: 'Passcode Lock',
                       subtitle: 'Secure your app with a passcode',
@@ -763,8 +717,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           height: 1,
                           indent: 60,
                           color: colorScheme.outline.withValues(alpha: 0.1)),
-                      _buildModernListTile(
-                        context: context,
+                      SettingListTile(
                         icon: Icons.phonelink_lock_rounded,
                         title: 'Change Passcode',
                         onTap: () async {
@@ -788,8 +741,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         height: 1,
                         indent: 60,
                         color: colorScheme.outline.withValues(alpha: 0.1)),
-                    _buildModernListTile(
-                      context: context,
+                    SettingListTile(
                       icon: Icons.currency_exchange_rounded,
                       title: 'Currency',
                       trailing: DropdownButton<String>(
@@ -844,18 +796,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.lg,
+                AppSpacing.lg,
+                AppSpacing.md,
+              ),
               child: Text(
                 'Account',
-                style: GoogleFonts.manrope(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                style: theme.textTheme.titleLarge?.copyWith(
                   color: colorScheme.onSurface,
                 ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               child: Card(
                 elevation: 0,
                 shape: RoundedRectangleBorder(
@@ -863,8 +818,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 child: Column(
                   children: [
-                    _buildModernListTile(
-                      context: context,
+                    SettingListTile(
                       icon: Icons.password_rounded,
                       title: 'Change Password',
                       trailing: _isSendingPasswordReset
@@ -887,8 +841,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         height: 1,
                         indent: 60,
                         color: colorScheme.outline.withValues(alpha: 0.1)),
-                    _buildModernListTile(
-                      context: context,
+                    SettingListTile(
                       icon: Icons.delete_forever_rounded,
                       title: 'Delete Account',
                       titleColor: Colors.red,
@@ -912,25 +865,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.lg,
+                AppSpacing.lg,
+                AppSpacing.md,
+              ),
               child: Text(
                 'Data & Sync',
-                style: GoogleFonts.manrope(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                style: theme.textTheme.titleLarge?.copyWith(
                   color: colorScheme.onSurface,
                 ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               child: Card(
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: _buildModernListTile(
-                  context: context,
+                child: SettingListTile(
                   icon: Icons.cloud_download_rounded,
                   title: 'Restore from Cloud',
                   subtitle: _cloudRestoreSubtitle(),
@@ -951,18 +906,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.lg,
+                AppSpacing.lg,
+                AppSpacing.md,
+              ),
               child: Text(
                 'Help & Support',
-                style: GoogleFonts.manrope(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                style: theme.textTheme.titleLarge?.copyWith(
                   color: colorScheme.onSurface,
                 ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               child: Card(
                 elevation: 0,
                 shape: RoundedRectangleBorder(
@@ -970,8 +928,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 child: Column(
                   children: [
-                    _buildModernListTile(
-                      context: context,
+                    SettingListTile(
                       icon: Icons.question_answer_rounded,
                       title: 'FAQ',
                       onTap: _showFaqScreen,
@@ -980,8 +937,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         height: 1,
                         indent: 60,
                         color: colorScheme.outline.withValues(alpha: 0.1)),
-                    _buildModernListTile(
-                      context: context,
+                    SettingListTile(
                       icon: Icons.help_outline_rounded,
                       title: 'Help & Support',
                       onTap: () {
@@ -995,8 +951,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         height: 1,
                         indent: 60,
                         color: colorScheme.outline.withValues(alpha: 0.1)),
-                    _buildModernListTile(
-                      context: context,
+                    SettingListTile(
                       icon: Icons.support_agent_rounded,
                       title: 'Contact via WhatsApp',
                       onTap: _launchWhatsApp,
@@ -1006,7 +961,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 32, 20, 32),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.xl,
+                AppSpacing.lg,
+                AppSpacing.xl,
+              ),
               child: SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
@@ -1044,62 +1004,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildModernListTile({
-    required BuildContext context,
-    required IconData icon,
-    required String title,
-    String? subtitle,
-    Widget? trailing,
-    VoidCallback? onTap,
-    Color? titleColor,
-    Color? iconColor,
-  }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      leading: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: (iconColor ?? colorScheme.primary).withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(
-          icon,
-          color: iconColor ?? colorScheme.primary,
-          size: 24,
-        ),
-      ),
-      title: Text(
-        title,
-        style: GoogleFonts.manrope(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          color: titleColor ?? colorScheme.onSurface,
-        ),
-      ),
-      subtitle: subtitle != null
-          ? Text(
-              subtitle,
-              style: GoogleFonts.manrope(
-                fontSize: 13,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            )
-          : null,
-      trailing: trailing ??
-          (onTap != null
-              ? Icon(
-                  Icons.chevron_right_rounded,
-                  size: 24,
-                  color: colorScheme.onSurfaceVariant,
-                )
-              : null),
-      onTap: onTap,
     );
   }
 }

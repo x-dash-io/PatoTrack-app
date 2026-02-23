@@ -8,6 +8,8 @@ import '../services/google_sign_in_service.dart';
 import '../helpers/responsive_helper.dart';
 import '../helpers/notification_helper.dart';
 import '../widgets/app_screen_background.dart';
+import '../styles/app_shadows.dart';
+import '../styles/app_spacing.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -365,7 +367,10 @@ class _LoginScreenState extends State<LoginScreen> {
           isLoading: _isLoading,
           message: 'Signing in...',
           child: SingleChildScrollView(
-            padding: ResponsiveHelper.edgeInsetsSymmetric(context, 24.0, 16),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.md,
+            ),
             child: Form(
               key: _formKey,
               autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -389,14 +394,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ],
                         ),
                         shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: colorScheme.primary.withValues(alpha: 0.3),
-                            blurRadius: ResponsiveHelper.spacing(context, 20),
-                            offset: Offset(
-                                0, ResponsiveHelper.spacing(context, 10)),
-                          ),
-                        ],
+                        boxShadow: AppShadows.subtle(colorScheme.primary),
                       ),
                       child: Icon(
                         Icons.account_balance_wallet,
@@ -411,11 +409,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Modern title section
                   Text(
                     'Welcome Back',
-                    style: GoogleFonts.manrope(
-                      fontSize: ResponsiveHelper.fontSize(context, 36),
-                      fontWeight: FontWeight.bold,
+                    style: theme.textTheme.headlineMedium?.copyWith(
                       color: colorScheme.onSurface,
-                      height: 1.2,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -424,10 +419,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   Text(
                     'Sign in to continue tracking your expenses',
-                    style: GoogleFonts.manrope(
-                      fontSize: ResponsiveHelper.fontSize(context, 16),
+                    style: theme.textTheme.bodyLarge?.copyWith(
                       color: colorScheme.onSurfaceVariant,
-                      height: 1.4,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -437,12 +430,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Modern card container for form
                   Card(
                     elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                          ResponsiveHelper.radius(context, 24)),
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: AppSpacing.cardRadius,
                     ),
                     child: Padding(
-                      padding: ResponsiveHelper.edgeInsetsAll(context, 24),
+                      padding: AppSpacing.cardPaddingLarge,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [

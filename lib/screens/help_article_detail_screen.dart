@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/help_article.dart';
 import '../widgets/app_screen_background.dart';
+import '../styles/app_shadows.dart';
+import '../styles/app_spacing.dart';
 
 class HelpArticleDetailScreen extends StatelessWidget {
   final HelpArticle article;
@@ -40,24 +42,11 @@ class HelpArticleDetailScreen extends StatelessWidget {
             children: [
               // Article Header
               Container(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      colorScheme.primaryContainer,
-                      colorScheme.primaryContainer.withValues(alpha: 0.7),
-                    ],
-                  ),
+                  color: colorScheme.primaryContainer,
                   borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: colorScheme.primary.withValues(alpha: 0.2),
-                      blurRadius: 20,
-                      spreadRadius: 2,
-                    ),
-                  ],
+                  boxShadow: AppShadows.subtle(colorScheme.primary),
                 ),
                 child: Row(
                   children: [
@@ -136,15 +125,7 @@ class HelpArticleDetailScreen extends StatelessWidget {
                     margin: const EdgeInsets.only(bottom: 16),
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          colorScheme.surfaceContainerHighest,
-                          colorScheme.surfaceContainerHighest
-                              .withValues(alpha: 0.7),
-                        ],
-                      ),
+                      color: colorScheme.surfaceContainerHigh,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: colorScheme.outline.withValues(alpha: 0.1),
@@ -158,14 +139,7 @@ class HelpArticleDetailScreen extends StatelessWidget {
                           width: 32,
                           height: 32,
                           decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                colorScheme.primary,
-                                colorScheme.primary.withValues(alpha: 0.8),
-                              ],
-                            ),
+                            color: colorScheme.primary,
                             shape: BoxShape.circle,
                           ),
                           child: Center(

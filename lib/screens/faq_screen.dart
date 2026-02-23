@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../widgets/app_screen_background.dart';
+import '../styles/app_shadows.dart';
+import '../styles/app_spacing.dart';
 
 class FaqScreen extends StatefulWidget {
   const FaqScreen({super.key});
@@ -12,6 +16,7 @@ class FaqScreen extends StatefulWidget {
 
 class _FaqScreenState extends State<FaqScreen> {
   final TextEditingController _searchController = TextEditingController();
+  Timer? _searchDebounce;
   List<FAQItem> _filteredFAQs = [];
   String? _selectedCategory;
 
@@ -111,40 +116,47 @@ class _FaqScreenState extends State<FaqScreen> {
   @override
   void initState() {
     super.initState();
-    _filteredFAQs = _allFAQs;
-    _searchController.addListener(_filterFAQs);
+    _filteredFAQs = List<FAQItem>.from(_allFAQs);
   }
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.dispose();
     super.dispose();
   }
 
   void _filterFAQs() {
     final query = _searchController.text.toLowerCase();
+    final filtered = _allFAQs.where((faq) {
+      final matchesQuery = query.isEmpty ||
+          faq.question.toLowerCase().contains(query) ||
+          faq.answer.toLowerCase().contains(query) ||
+          faq.category.toLowerCase().contains(query);
+      final matchesCategory =
+          _selectedCategory == null || faq.category == _selectedCategory;
+      return matchesQuery && matchesCategory;
+    }).toList();
+
+    if (!mounted) return;
     setState(() {
-      if (query.isEmpty && _selectedCategory == null) {
-        _filteredFAQs = _allFAQs;
-      } else {
-        _filteredFAQs = _allFAQs.where((faq) {
-          final matchesQuery = query.isEmpty ||
-              faq.question.toLowerCase().contains(query) ||
-              faq.answer.toLowerCase().contains(query) ||
-              faq.category.toLowerCase().contains(query);
-          final matchesCategory =
-              _selectedCategory == null || faq.category == _selectedCategory;
-          return matchesQuery && matchesCategory;
-        }).toList();
-      }
+      _filteredFAQs = filtered;
     });
+  }
+
+  void _onSearchChanged(String _) {
+    if (mounted) {
+      setState(() {});
+    }
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 250), _filterFAQs);
   }
 
   void _selectCategory(String? category) {
     setState(() {
       _selectedCategory = category;
-      _filterFAQs();
     });
+    _filterFAQs();
   }
 
   @override
@@ -172,22 +184,17 @@ class _FaqScreenState extends State<FaqScreen> {
             children: [
               // Modern Search bar
               Padding(
-                padding: const EdgeInsets.all(20.0),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Container(
                   decoration: BoxDecoration(
                     color:
                         Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                    boxShadow: const [AppShadows.card],
                   ),
                   child: TextField(
                     controller: _searchController,
+                    onChanged: _onSearchChanged,
                     style: GoogleFonts.manrope(),
                     decoration: InputDecoration(
                       hintText: 'Search FAQ...',
@@ -384,15 +391,7 @@ class _FAQCardState extends State<_FAQCard> {
               : Colors.transparent,
           width: 1,
         ),
-        boxShadow: _isExpanded
-            ? [
-                BoxShadow(
-                  color: colorScheme.primary.withValues(alpha: 0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : null,
+        boxShadow: _isExpanded ? AppShadows.subtle(colorScheme.primary) : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -460,12 +459,7 @@ class _FAQCardState extends State<_FAQCard> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          colorScheme.primaryContainer,
-                          colorScheme.primaryContainer.withValues(alpha: 0.7),
-                        ],
-                      ),
+                      color: colorScheme.primaryContainer,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(

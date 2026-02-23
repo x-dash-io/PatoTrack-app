@@ -368,16 +368,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       // Modernized Profit/Loss Card
                       Container(
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              profitLossData.color.withValues(alpha: 0.25),
-                              profitLossData.color.withValues(alpha: 0.12),
-                              profitLossData.color.withValues(alpha: 0.05),
-                            ],
-                            stops: const [0.0, 0.5, 1.0],
-                          ),
+                          color: profitLossData.color.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(
                               ResponsiveHelper.radius(context, 28)),
                           border: Border.all(
@@ -388,13 +379,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             BoxShadow(
                               color:
                                   profitLossData.color.withValues(alpha: 0.2),
-                              blurRadius: 20,
+                              blurRadius: 6,
                               offset: const Offset(0, 8),
                               spreadRadius: 0,
                             ),
                             BoxShadow(
                               color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 10,
+                              blurRadius: 6,
                               offset: const Offset(0, 4),
                             ),
                           ],
@@ -557,7 +548,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 15,
+                              blurRadius: 6,
                               offset: const Offset(0, 5),
                               spreadRadius: 0,
                             ),
@@ -827,7 +818,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withValues(alpha: 0.05),
-                                blurRadius: 15,
+                                blurRadius: 6,
                                 offset: const Offset(0, 5),
                                 spreadRadius: 0,
                               ),
@@ -1014,7 +1005,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withValues(alpha: 0.05),
-                                blurRadius: 15,
+                                blurRadius: 6,
                                 offset: const Offset(0, 5),
                                 spreadRadius: 0,
                               ),
@@ -1065,19 +1056,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       // Modernized PDF Export Card
                       Container(
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              theme.colorScheme.primaryContainer
-                                  .withValues(alpha: 0.7),
-                              theme.colorScheme.primaryContainer
-                                  .withValues(alpha: 0.4),
-                              theme.colorScheme.primaryContainer
-                                  .withValues(alpha: 0.3),
-                            ],
-                            stops: const [0.0, 0.5, 1.0],
-                          ),
+                          color: theme.colorScheme.primaryContainer
+                              .withValues(alpha: 0.5),
                           borderRadius: BorderRadius.circular(
                               ResponsiveHelper.radius(context, 24)),
                           border: Border.all(
@@ -1089,7 +1069,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             BoxShadow(
                               color: theme.colorScheme.primary
                                   .withValues(alpha: 0.15),
-                              blurRadius: 15,
+                              blurRadius: 6,
                               offset: const Offset(0, 5),
                               spreadRadius: 0,
                             ),

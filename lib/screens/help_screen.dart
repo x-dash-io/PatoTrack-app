@@ -7,6 +7,8 @@ import '../widgets/dialog_helpers.dart';
 import '../widgets/app_screen_background.dart';
 import '../models/help_article.dart';
 import 'help_article_detail_screen.dart';
+import '../styles/app_shadows.dart';
+import '../styles/app_spacing.dart';
 
 class HelpScreen extends StatelessWidget {
   const HelpScreen({super.key});
@@ -42,24 +44,11 @@ class HelpScreen extends StatelessWidget {
               // Modern Help Header
               Center(
                 child: Container(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(AppSpacing.lg),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        colorScheme.primaryContainer,
-                        colorScheme.primaryContainer.withValues(alpha: 0.7),
-                      ],
-                    ),
+                    color: colorScheme.primaryContainer,
                     shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: colorScheme.primary.withValues(alpha: 0.3),
-                        blurRadius: 20,
-                        spreadRadius: 2,
-                      ),
-                    ],
+                    boxShadow: AppShadows.subtle(colorScheme.primary),
                   ),
                   child: Icon(
                     Icons.help_rounded,
@@ -444,28 +433,15 @@ class _HelpSection extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            colorScheme.surfaceContainerHighest,
-            colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
-          ],
-        ),
+        color: colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: colorScheme.outline.withValues(alpha: 0.1),
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: const [AppShadows.card],
       ),
       child: Material(
         color: Colors.transparent,
@@ -479,22 +455,9 @@ class _HelpSection extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        colorScheme.primaryContainer,
-                        colorScheme.primaryContainer.withValues(alpha: 0.7),
-                      ],
-                    ),
+                    color: colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: colorScheme.primary.withValues(alpha: 0.2),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                    boxShadow: AppShadows.subtle(colorScheme.primary),
                   ),
                   child: Icon(
                     icon,
@@ -562,28 +525,15 @@ class _HelpArticleCard extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            colorScheme.surfaceContainerHighest,
-            colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
-          ],
-        ),
+        color: colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: colorScheme.outline.withValues(alpha: 0.1),
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: const [AppShadows.card],
       ),
       child: Material(
         color: Colors.transparent,
@@ -597,22 +547,9 @@ class _HelpArticleCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        colorScheme.primaryContainer,
-                        colorScheme.primaryContainer.withValues(alpha: 0.8),
-                      ],
-                    ),
+                    color: colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: colorScheme.primary.withValues(alpha: 0.2),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                    boxShadow: AppShadows.subtle(colorScheme.primary),
                   ),
                   child: Icon(
                     article.icon,
@@ -682,17 +619,10 @@ class _GuideStep extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 24),
+      margin: const EdgeInsets.only(bottom: AppSpacing.lg),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            colorScheme.surfaceContainerHighest,
-            colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-          ],
-        ),
+        color: colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: colorScheme.outline.withValues(alpha: 0.1),
@@ -706,22 +636,9 @@ class _GuideStep extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  colorScheme.primary,
-                  colorScheme.primary.withValues(alpha: 0.8),
-                ],
-              ),
+              color: colorScheme.primary,
               shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: colorScheme.primary.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              boxShadow: AppShadows.subtle(colorScheme.primary),
             ),
             child: Center(
               child: Text(

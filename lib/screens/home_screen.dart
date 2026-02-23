@@ -13,6 +13,9 @@ import '../models/transaction.dart' as model;
 import '../widgets/dialog_helpers.dart';
 import '../widgets/loading_widgets.dart';
 import '../helpers/notification_helper.dart';
+import '../widgets/app_screen_background.dart';
+import '../widgets/home/summary_metric_card.dart';
+import '../styles/app_shadows.dart';
 import 'add_transaction_screen.dart';
 import 'all_transactions_screen.dart';
 import 'add_bill_screen.dart';
@@ -271,26 +274,13 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Container(
         padding: ResponsiveHelper.edgeInsets(context, 18, 18, 16, 18),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colorScheme.primaryContainer.withValues(alpha: 0.85),
-              colorScheme.surfaceContainerHigh,
-            ],
-          ),
+          color: colorScheme.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(22),
           border: Border.all(
             color: colorScheme.primary.withValues(alpha: 0.16),
             width: 1.2,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: colorScheme.primary.withValues(alpha: 0.08),
-              blurRadius: 18,
-              offset: const Offset(0, 8),
-            ),
-          ],
+          boxShadow: AppShadows.subtle(colorScheme.primary),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -739,232 +729,206 @@ class _HomeScreenState extends State<HomeScreen> {
         final currentUser = snapshot.data;
 
         return Scaffold(
-          body: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  colorScheme.primaryContainer.withValues(alpha: 0.32),
-                  colorScheme.surfaceContainerLowest,
-                  colorScheme.surface,
-                ],
-              ),
-            ),
-            child: SafeArea(
-              child: _isLoading
-                  ? _buildLoadingState()
-                  : RefreshIndicator(
-                      onRefresh: _refreshData,
-                      child: CustomScrollView(
-                        slivers: [
-                          // Modern Header
-                          SliverToBoxAdapter(
-                            child: Padding(
-                              padding: ResponsiveHelper.edgeInsets(
-                                  context, 24, 20, 16, 20),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    '${_getGreeting()} 👋',
-                                    style: GoogleFonts.manrope(
-                                      fontSize: ResponsiveHelper.fontSize(
-                                          context, 16),
-                                      color: colorScheme.onSurfaceVariant,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+          body: AppScreenBackground(
+            child: _isLoading
+                ? _buildLoadingState()
+                : RefreshIndicator(
+                    onRefresh: _refreshData,
+                    child: CustomScrollView(
+                      slivers: [
+                        // Modern Header
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: ResponsiveHelper.edgeInsets(
+                                context, 24, 20, 16, 20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '${_getGreeting()} 👋',
+                                  style: GoogleFonts.manrope(
+                                    fontSize:
+                                        ResponsiveHelper.fontSize(context, 16),
+                                    color: colorScheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.w500,
                                   ),
-                                  SizedBox(
-                                      height:
-                                          ResponsiveHelper.spacing(context, 4)),
-                                  Text(
-                                    currentUser?.displayName ?? 'User',
-                                    style: GoogleFonts.manrope(
-                                      fontSize: ResponsiveHelper.fontSize(
-                                          context, 28),
-                                      fontWeight: FontWeight.bold,
-                                      color: colorScheme.onSurface,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 1,
+                                ),
+                                SizedBox(
+                                    height:
+                                        ResponsiveHelper.spacing(context, 4)),
+                                Text(
+                                  currentUser?.displayName ?? 'User',
+                                  style: GoogleFonts.manrope(
+                                    fontSize:
+                                        ResponsiveHelper.fontSize(context, 28),
+                                    fontWeight: FontWeight.bold,
+                                    color: colorScheme.onSurface,
                                   ),
-                                ],
-                              ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ],
                             ),
                           ),
-                          // Enhanced Summary Cards Section
-                          SliverToBoxAdapter(
-                            child: Padding(
-                              padding: ResponsiveHelper.edgeInsets(
-                                  context, 16, 20, 12, 20),
-                              child: Column(
-                                children: [
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: _EnhancedSummaryCard(
-                                          title: 'Income',
-                                          amount: _totalIncome,
-                                          icon: Icons.trending_up_rounded,
-                                          color: Colors.green,
-                                          currencySymbol: _currencySymbol,
-                                          percentage: _totalIncome > 0 &&
-                                                  _totalExpenses > 0
-                                              ? (_totalIncome /
-                                                  (_totalIncome +
-                                                      _totalExpenses) *
-                                                  100)
-                                              : 0,
-                                        ),
+                        ),
+                        // Enhanced Summary Cards Section
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: ResponsiveHelper.edgeInsets(
+                                context, 16, 20, 12, 20),
+                            child: Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: SummaryMetricCard(
+                                        title: 'Income',
+                                        amount: _totalIncome,
+                                        icon: Icons.trending_up_rounded,
+                                        color: Colors.green,
+                                        currencySymbol: _currencySymbol,
+                                        percentage: _totalIncome > 0 &&
+                                                _totalExpenses > 0
+                                            ? (_totalIncome /
+                                                (_totalIncome +
+                                                    _totalExpenses) *
+                                                100)
+                                            : 0,
                                       ),
-                                      SizedBox(
-                                          width: ResponsiveHelper.spacing(
-                                              context, 12)),
-                                      Expanded(
-                                        child: _EnhancedSummaryCard(
-                                          title: 'Expenses',
-                                          amount: _totalExpenses,
-                                          icon: Icons.trending_down_rounded,
-                                          color: Colors.red,
-                                          currencySymbol: _currencySymbol,
-                                          percentage: _totalIncome > 0 &&
-                                                  _totalExpenses > 0
-                                              ? (_totalExpenses /
-                                                  (_totalIncome +
-                                                      _totalExpenses) *
-                                                  100)
-                                              : 0,
-                                        ),
+                                    ),
+                                    SizedBox(
+                                        width: ResponsiveHelper.spacing(
+                                            context, 12)),
+                                    Expanded(
+                                      child: SummaryMetricCard(
+                                        title: 'Expenses',
+                                        amount: _totalExpenses,
+                                        icon: Icons.trending_down_rounded,
+                                        color: Colors.red,
+                                        currencySymbol: _currencySymbol,
+                                        percentage: _totalIncome > 0 &&
+                                                _totalExpenses > 0
+                                            ? (_totalExpenses /
+                                                (_totalIncome +
+                                                    _totalExpenses) *
+                                                100)
+                                            : 0,
                                       ),
-                                    ],
-                                  ),
-                                  SizedBox(
-                                      height: ResponsiveHelper.spacing(
-                                          context, 12)),
-                                  _EnhancedSummaryCard(
-                                    title: 'Balance',
-                                    amount: _balance,
-                                    icon: Icons.account_balance_wallet_rounded,
-                                    color: _balance >= 0
-                                        ? Colors.blue
-                                        : Colors.orange,
-                                    currencySymbol: _currencySymbol,
-                                    isFullWidth: true,
-                                    showTrend: true,
-                                    isPositive: _balance >= 0,
-                                  ),
-                                ],
-                              ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(
+                                    height:
+                                        ResponsiveHelper.spacing(context, 12)),
+                                SummaryMetricCard(
+                                  title: 'Balance',
+                                  amount: _balance,
+                                  icon: Icons.account_balance_wallet_rounded,
+                                  color: _balance >= 0
+                                      ? Colors.blue
+                                      : Colors.orange,
+                                  currencySymbol: _currencySymbol,
+                                  showTrend: true,
+                                  isPositive: _balance >= 0,
+                                ),
+                              ],
                             ),
                           ),
-                          SliverToBoxAdapter(
-                            child: _buildSmsImportSection(currentUser),
-                          ),
-                          // Upcoming Bills Section
-                          SliverToBoxAdapter(
-                            child: _buildUpcomingBillsSection(currentUser),
-                          ),
-                          // Recent Transactions Section
-                          SliverToBoxAdapter(
-                            child: Padding(
-                              padding: ResponsiveHelper.edgeInsets(
-                                  context, 16, 20, 8, 20),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Flexible(
-                                        child: Text(
-                                          'Recent Transactions',
-                                          style: GoogleFonts.manrope(
-                                            fontSize: ResponsiveHelper.fontSize(
-                                                context, 20),
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          if (currentUser == null) return;
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  const AllTransactionsScreen(),
-                                            ),
-                                          ).then((_) => _refreshData());
-                                        },
-                                        child: Text(
-                                          'See All',
-                                          style: GoogleFonts.manrope(
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(
-                                      height:
-                                          ResponsiveHelper.spacing(context, 6)),
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.swipe_rounded,
-                                        size: ResponsiveHelper.iconSize(
-                                            context, 14),
-                                        color: colorScheme.onSurfaceVariant
-                                            .withValues(alpha: 0.6),
-                                      ),
-                                      SizedBox(
-                                          width: ResponsiveHelper.spacing(
-                                              context, 6)),
-                                      Text(
-                                        'Swipe right to edit, swipe left to delete',
+                        ),
+                        SliverToBoxAdapter(
+                          child: _buildSmsImportSection(currentUser),
+                        ),
+                        // Upcoming Bills Section
+                        SliverToBoxAdapter(
+                          child: _buildUpcomingBillsSection(currentUser),
+                        ),
+                        // Recent Transactions Section
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: ResponsiveHelper.edgeInsets(
+                                context, 16, 20, 8, 20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        'Recent Transactions',
                                         style: GoogleFonts.manrope(
                                           fontSize: ResponsiveHelper.fontSize(
-                                              context, 12),
-                                          color: colorScheme.onSurfaceVariant
-                                              .withValues(alpha: 0.7),
-                                          fontStyle: FontStyle.italic,
+                                              context, 20),
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        if (currentUser == null) return;
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                const AllTransactionsScreen(),
+                                          ),
+                                        ).then((_) => _refreshData());
+                                      },
+                                      child: Text(
+                                        'See All',
+                                        style: GoogleFonts.manrope(
+                                          fontWeight: FontWeight.w600,
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                ],
-                              ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(
+                                    height:
+                                        ResponsiveHelper.spacing(context, 6)),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.swipe_rounded,
+                                      size: ResponsiveHelper.iconSize(
+                                          context, 14),
+                                      color: colorScheme.onSurfaceVariant
+                                          .withValues(alpha: 0.6),
+                                    ),
+                                    SizedBox(
+                                        width: ResponsiveHelper.spacing(
+                                            context, 6)),
+                                    Text(
+                                      'Swipe right to edit, swipe left to delete',
+                                      style: GoogleFonts.manrope(
+                                        fontSize: ResponsiveHelper.fontSize(
+                                            context, 12),
+                                        color: colorScheme.onSurfaceVariant
+                                            .withValues(alpha: 0.7),
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
-                          // Transaction List
-                          _buildTransactionList(currentUser),
-                        ],
-                      ),
+                        ),
+                        // Transaction List
+                        _buildTransactionList(currentUser),
+                      ],
                     ),
-            ),
+                  ),
           ),
           floatingActionButton: Container(
             margin: ResponsiveHelper.edgeInsets(context, 0, 20, 16, 20),
             decoration: BoxDecoration(
               borderRadius:
                   BorderRadius.circular(ResponsiveHelper.radius(context, 20)),
-              boxShadow: [
-                BoxShadow(
-                  color: colorScheme.primary.withValues(alpha: 0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 6),
-                  spreadRadius: 0,
-                ),
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              boxShadow: AppShadows.subtle(colorScheme.primary),
             ),
             child: FloatingActionButton.extended(
               onPressed: () async {
@@ -1820,204 +1784,6 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         },
         childCount: recentTransactions.length,
-      ),
-    );
-  }
-}
-
-class _EnhancedSummaryCard extends StatelessWidget {
-  final String title;
-  final double amount;
-  final IconData icon;
-  final Color color;
-  final String currencySymbol;
-  final bool isFullWidth;
-  final double? percentage;
-  final bool showTrend;
-  final bool? isPositive;
-
-  const _EnhancedSummaryCard({
-    required this.title,
-    required this.amount,
-    required this.icon,
-    required this.color,
-    required this.currencySymbol,
-    this.isFullWidth = false,
-    this.percentage,
-    this.showTrend = false,
-    this.isPositive,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final currencyFormatter =
-        NumberFormat.currency(locale: 'en_US', symbol: '');
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius:
-            BorderRadius.circular(ResponsiveHelper.radius(context, 24)),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            color.withValues(alpha: isDark ? 0.25 : 0.15),
-            color.withValues(alpha: isDark ? 0.15 : 0.08),
-            color.withValues(alpha: isDark ? 0.10 : 0.05),
-          ],
-          stops: const [0.0, 0.5, 1.0],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.15),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-            spreadRadius: 0,
-          ),
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.3)
-                : Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            // Could add navigation to detailed view
-          },
-          borderRadius:
-              BorderRadius.circular(ResponsiveHelper.radius(context, 24)),
-          child: Container(
-            padding: ResponsiveHelper.edgeInsetsAll(context, 18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: ResponsiveHelper.edgeInsetsAll(context, 10),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            color,
-                            color.withValues(alpha: 0.8),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(
-                            ResponsiveHelper.radius(context, 12)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: color.withValues(alpha: 0.4),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        icon,
-                        color: Colors.white,
-                        size: ResponsiveHelper.iconSize(context, 22),
-                      ),
-                    ),
-                    SizedBox(width: ResponsiveHelper.spacing(context, 12)),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: GoogleFonts.manrope(
-                              fontSize: ResponsiveHelper.fontSize(context, 13),
-                              color: colorScheme.onSurfaceVariant
-                                  .withValues(alpha: 0.8),
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.3,
-                            ),
-                          ),
-                          if (percentage != null && percentage! > 0)
-                            Padding(
-                              padding: EdgeInsets.only(
-                                  top: ResponsiveHelper.spacing(context, 2)),
-                              child: Text(
-                                '${percentage!.toStringAsFixed(1)}%',
-                                style: GoogleFonts.manrope(
-                                  fontSize:
-                                      ResponsiveHelper.fontSize(context, 10),
-                                  color: colorScheme.onSurfaceVariant
-                                      .withValues(alpha: 0.6),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    if (showTrend && isPositive != null)
-                      Container(
-                        padding:
-                            ResponsiveHelper.edgeInsetsSymmetric(context, 6, 8),
-                        decoration: BoxDecoration(
-                          color: (isPositive! ? Colors.green : Colors.orange)
-                              .withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(
-                              ResponsiveHelper.radius(context, 8)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              isPositive!
-                                  ? Icons.arrow_upward_rounded
-                                  : Icons.arrow_downward_rounded,
-                              size: ResponsiveHelper.iconSize(context, 14),
-                              color: isPositive! ? Colors.green : Colors.orange,
-                            ),
-                            SizedBox(
-                                width: ResponsiveHelper.spacing(context, 2)),
-                            Text(
-                              isPositive! ? 'Good' : 'Low',
-                              style: GoogleFonts.manrope(
-                                fontSize:
-                                    ResponsiveHelper.fontSize(context, 10),
-                                color:
-                                    isPositive! ? Colors.green : Colors.orange,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-                SizedBox(height: ResponsiveHelper.spacing(context, 12)),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    '$currencySymbol ${currencyFormatter.format(amount)}',
-                    style: GoogleFonts.manrope(
-                      fontSize: ResponsiveHelper.fontSize(context, 20),
-                      fontWeight: FontWeight.bold,
-                      color: color,
-                      height: 1.1,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }

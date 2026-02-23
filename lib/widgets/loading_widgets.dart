@@ -235,7 +235,7 @@ class LoadingOverlay extends StatelessWidget {
         child,
         if (isLoading)
           Container(
-            color: Colors.black54,
+            color: Colors.black.withValues(alpha: 0.08),
             child: Center(
               child: Container(
                 constraints: const BoxConstraints(

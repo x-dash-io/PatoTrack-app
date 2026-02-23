@@ -14,43 +14,29 @@ class AppScreenBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
 
     final background = DecoratedBox(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            isDark
-                ? colorScheme.primaryContainer.withValues(alpha: 0.28)
-                : colorScheme.primaryContainer.withValues(alpha: 0.44),
-            colorScheme.surfaceContainerLowest,
-            colorScheme.surface,
-          ],
-          stops: const [0.0, 0.45, 1.0],
-        ),
+        color: colorScheme.surface,
       ),
       child: Stack(
         fit: StackFit.expand,
         children: [
           Positioned(
-            top: -120,
-            right: -80,
+            top: -90,
+            right: -60,
             child: _GlowOrb(
-              size: 280,
-              color: colorScheme.primary.withValues(alpha: isDark ? 0.16 : 0.2),
+              size: 200,
+              color: colorScheme.primary.withValues(alpha: 0.08),
             ),
           ),
           Positioned(
-            bottom: -120,
-            left: -100,
+            bottom: -70,
+            left: -50,
             child: _GlowOrb(
-              size: 240,
-              color:
-                  colorScheme.tertiary.withValues(alpha: isDark ? 0.12 : 0.18),
+              size: 150,
+              color: colorScheme.tertiary.withValues(alpha: 0.05),
             ),
           ),
           if (includeSafeArea)

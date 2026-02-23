@@ -36,6 +36,7 @@ dependencies:
   pdf: ^3.10.8
   printing: ^5.12.0
   http: ^1.2.1
+  cached_network_image: ^3.4.1
 
   # NEW: Package for creating a secure upload signature
   crypto: ^3.0.3

@@ -7,6 +7,8 @@ import '../main.dart';
 import '../helpers/passcode_service.dart';
 import '../helpers/notification_helper.dart';
 import '../widgets/app_screen_background.dart';
+import '../styles/app_shadows.dart';
+import '../styles/app_spacing.dart';
 
 class PasscodeScreen extends StatefulWidget {
   final bool isSettingPasscode;
@@ -211,7 +213,9 @@ class _PasscodeScreenState extends State<PasscodeScreen>
           : AppBar(
               title: Text(
                 _title,
-                style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               elevation: 0,
               systemOverlayStyle: SystemUiOverlayStyle(
@@ -232,7 +236,7 @@ class _PasscodeScreenState extends State<PasscodeScreen>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 40),
+                  const SizedBox(height: AppSpacing.xl),
 
                   // Lock Icon
                   AnimatedBuilder(
@@ -253,15 +257,7 @@ class _PasscodeScreenState extends State<PasscodeScreen>
                               ],
                             ),
                             shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color:
-                                    colorScheme.primary.withValues(alpha: 0.3),
-                                blurRadius: 20,
-                                spreadRadius: 2,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
+                            boxShadow: AppShadows.subtle(colorScheme.primary),
                           ),
                           child: Icon(
                             Icons.lock_outline_rounded,
@@ -278,9 +274,7 @@ class _PasscodeScreenState extends State<PasscodeScreen>
                   // Title
                   Text(
                     _title,
-                    style: GoogleFonts.manrope(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
+                    style: theme.textTheme.headlineMedium?.copyWith(
                       color: colorScheme.onSurface,
                     ),
                     textAlign: TextAlign.center,
@@ -291,10 +285,8 @@ class _PasscodeScreenState extends State<PasscodeScreen>
                   // Subtitle
                   Text(
                     _subtitle,
-                    style: GoogleFonts.manrope(
-                      fontSize: 16,
+                    style: theme.textTheme.bodyLarge?.copyWith(
                       color: colorScheme.onSurfaceVariant,
-                      height: 1.4,
                     ),
                     textAlign: TextAlign.center,
                   ),

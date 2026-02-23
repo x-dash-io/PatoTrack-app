@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'login_screen.dart';
 import 'signup_screen.dart';
 import '../widgets/app_screen_background.dart';
+import '../styles/app_shadows.dart';
+import '../styles/app_spacing.dart';
 
 class WelcomeScreen extends StatefulWidget {
   final VoidCallback? onOnboardingCompleted;
@@ -145,7 +147,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
             // Navigation buttons
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.md,
+              ),
               child: Column(
                 children: [
                   // Next/Get Started button
@@ -273,13 +278,7 @@ class _OnboardingSlideWidget extends StatelessWidget {
                 colors: slide.gradient,
               ),
               shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: slide.gradient[0].withValues(alpha: 0.3),
-                  blurRadius: 30,
-                  offset: const Offset(0, 15),
-                ),
-              ],
+              boxShadow: AppShadows.subtle(slide.gradient[0]),
             ),
             child: Icon(
               slide.icon,
@@ -293,12 +292,9 @@ class _OnboardingSlideWidget extends StatelessWidget {
           // Title
           Text(
             slide.title,
-            style: GoogleFonts.manrope(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
-              height: 1.2,
-            ),
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  color: colorScheme.onSurface,
+                ),
             textAlign: TextAlign.center,
           ),
 
@@ -307,12 +303,9 @@ class _OnboardingSlideWidget extends StatelessWidget {
           // Description
           Text(
             slide.description,
-            style: GoogleFonts.manrope(
-              fontSize: 17,
-              fontWeight: FontWeight.w400,
-              height: 1.6,
-              color: colorScheme.onSurfaceVariant,
-            ),
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
             textAlign: TextAlign.center,
           ),
         ],

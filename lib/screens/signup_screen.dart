@@ -7,6 +7,8 @@ import '../widgets/input_fields.dart';
 import '../services/google_sign_in_service.dart';
 import '../helpers/notification_helper.dart';
 import '../widgets/app_screen_background.dart';
+import '../styles/app_shadows.dart';
+import '../styles/app_spacing.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -145,7 +147,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
           isLoading: _isLoading,
           message: 'Creating account...',
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.md,
+            ),
             child: Form(
               key: _formKey,
               autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -169,13 +174,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           ],
                         ),
                         shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: colorScheme.primary.withValues(alpha: 0.3),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
+                        boxShadow: AppShadows.subtle(colorScheme.primary),
                       ),
                       child: Icon(
                         Icons.person_add_alt_1,
@@ -190,11 +189,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   // Modern title section
                   Text(
                     'Get Started',
-                    style: GoogleFonts.manrope(
-                      fontSize: 36,
-                      fontWeight: FontWeight.bold,
+                    style: theme.textTheme.headlineMedium?.copyWith(
                       color: colorScheme.onSurface,
-                      height: 1.2,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -203,10 +199,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                   Text(
                     'Create your account to start tracking',
-                    style: GoogleFonts.manrope(
-                      fontSize: 16,
+                    style: theme.textTheme.bodyLarge?.copyWith(
                       color: colorScheme.onSurfaceVariant,
-                      height: 1.4,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -216,11 +210,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   // Modern card container for form
                   Card(
                     elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: AppSpacing.cardRadius,
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.all(24),
+                      padding: AppSpacing.cardPaddingLarge,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
