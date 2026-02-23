@@ -5,11 +5,14 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
 import '../helpers/database_helper.dart';
 import '../helpers/notification_service.dart';
 import '../helpers/notification_helper.dart';
 import '../models/bill.dart';
 import '../models/frequency.dart';
+import '../providers/currency_provider.dart';
 import '../widgets/modern_date_picker.dart';
 import '../widgets/input_fields.dart';
 import '../widgets/app_screen_background.dart';
@@ -37,6 +40,7 @@ class _AddBillScreenState extends State<AddBillScreen> {
   List<Frequency> _frequencies = [];
   bool _isLoadingFrequencies = true;
   bool _isSaving = false;
+  bool _enableReminder = true;
 
   @override
   void initState() {
@@ -52,6 +56,7 @@ class _AddBillScreenState extends State<AddBillScreen> {
       _amountController.text = bill.amount.toStringAsFixed(2);
       _selectedDate = bill.dueDate;
       _isRecurring = bill.isRecurring;
+      _enableReminder = true;
       // We'll set the frequency after frequencies are loaded
     }
   }
@@ -117,6 +122,7 @@ class _AddBillScreenState extends State<AddBillScreen> {
     setState(() => _isSaving = true);
 
     try {
+      final currencySymbol = context.read<CurrencyProvider>().symbol;
       final dbHelper = DatabaseHelper();
       final billName = _nameController.text.trim();
 
@@ -151,6 +157,9 @@ class _AddBillScreenState extends State<AddBillScreen> {
       );
 
       final notificationService = NotificationService();
+      final canScheduleReminder = _enableReminder
+          ? await _ensureNotificationPermissionWithRationale()
+          : false;
 
       if (widget.billToEdit != null) {
         // Updating existing bill
@@ -159,15 +168,31 @@ class _AddBillScreenState extends State<AddBillScreen> {
         if (widget.billToEdit!.id != null) {
           await notificationService.cancelNotification(widget.billToEdit!.id!);
         }
-        await notificationService.scheduleBillNotification(bill);
+        if (canScheduleReminder) {
+          await notificationService.scheduleBillNotification(
+            bill,
+            currencySymbol: currencySymbol,
+          );
+        }
       } else {
         // Adding new bill
         final newBillId = await dbHelper.addBill(bill, _currentUser.uid);
-        await notificationService
-            .scheduleBillNotification(bill.copyWith(id: newBillId));
+        if (canScheduleReminder) {
+          await notificationService.scheduleBillNotification(
+            bill.copyWith(id: newBillId),
+            currencySymbol: currencySymbol,
+          );
+        }
       }
 
       if (mounted) {
+        if (_enableReminder && !canScheduleReminder) {
+          NotificationHelper.showWarning(
+            context,
+            message:
+                'Bill saved, but reminder notifications are off. You can enable them later in app settings.',
+          );
+        }
         Navigator.of(context).pop();
       }
     } catch (e) {
@@ -195,6 +220,55 @@ class _AddBillScreenState extends State<AddBillScreen> {
         _selectedDate = picked;
       });
     }
+  }
+
+  Future<bool> _ensureNotificationPermissionWithRationale() async {
+    final status = await Permission.notification.status;
+    if (status.isGranted) {
+      return true;
+    }
+
+    if (status.isPermanentlyDenied) {
+      if (mounted) {
+        NotificationHelper.showWarning(
+          context,
+          message:
+              'Notification permission is blocked. Open device settings to enable bill reminders.',
+        );
+      }
+      return false;
+    }
+
+    if (!mounted) {
+      return false;
+    }
+
+    final shouldRequest = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Enable bill reminders?'),
+        content: const Text(
+          'We use notification permission to remind you one day before your bill is due. You can skip this and still save the bill.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Skip'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldRequest != true) {
+      return false;
+    }
+
+    final requestedStatus = await Permission.notification.request();
+    return requestedStatus.isGranted;
   }
 
   @override
@@ -258,6 +332,16 @@ class _AddBillScreenState extends State<AddBillScreen> {
                 valueText: DateFormat('MMMM dd, yyyy').format(_selectedDate),
                 helperText: 'Tap to select a due date',
                 onTap: _pickDate,
+              ),
+              const SizedBox(height: 16),
+              SwitchListTile.adaptive(
+                value: _enableReminder,
+                onChanged: (value) => setState(() => _enableReminder = value),
+                title: const Text('Enable bill reminder notification'),
+                subtitle: const Text(
+                  'Sends a reminder one day before the due date.',
+                ),
+                contentPadding: EdgeInsets.zero,
               ),
               const SizedBox(height: 24),
 

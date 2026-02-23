@@ -79,7 +79,7 @@ class _FaqScreenState extends State<FaqScreen> {
       category: 'Security',
       question: 'Is my data backed up?',
       answer:
-          'Your data is backed up to Firebase. To restore on a new device, go to Settings → Data & Sync → Restore from Cloud. The app shows the last restore timestamp for transparency.',
+          'Your data is backed up to Firebase. To restore on a new device, go to Settings → Data & Sync and use Cloud Sync. The app shows live sync status plus the last sync timestamp.',
     ),
     FAQItem(
       category: 'Reports',
@@ -91,7 +91,7 @@ class _FaqScreenState extends State<FaqScreen> {
       category: 'Settings',
       question: 'Can I change the currency?',
       answer:
-          'Yes! Go to Settings → Currency and select from the available options (KSh, USD, EUR, GBP). Your existing transactions will be displayed with the new currency symbol.',
+          'Yes. Go to Settings → Currency and pick your preferred option. All supported screens update automatically to the selected currency format.',
     ),
     FAQItem(
       category: 'Settings',

@@ -9,8 +9,12 @@ import '../models/transaction.dart' as model;
 class PdfHelper {
   // Generates and shares a PDF report for the given transactions and user, using the specified file name.
   // IMPORTANT: Only business transactions are included in the PDF for loan/investor applications.
-  static Future<void> generateAndSharePdf(List<model.Transaction> transactions,
-      String userName, String fileName) async {
+  static Future<void> generateAndSharePdf(
+    List<model.Transaction> transactions,
+    String userName,
+    String fileName, {
+    String currencySymbol = 'KSh',
+  }) async {
     // Filter to only include business transactions (for loan/investor applications)
     final businessTransactions =
         transactions.where((t) => t.tag == 'business').toList();
@@ -31,11 +35,11 @@ class PdfHelper {
             _buildHeader(userName, businessTransactions),
         build: (pw.Context context) {
           return [
-            _buildBusinessInfo(businessTransactions),
+            _buildBusinessInfo(businessTransactions, currencySymbol),
             pw.SizedBox(height: 20),
-            _buildTransactionTable(businessTransactions),
+            _buildTransactionTable(businessTransactions, currencySymbol),
             pw.Divider(),
-            _buildSummary(businessTransactions),
+            _buildSummary(businessTransactions, currencySymbol),
           ];
         },
       ),
@@ -80,7 +84,10 @@ class PdfHelper {
     );
   }
 
-  static pw.Widget _buildBusinessInfo(List<model.Transaction> transactions) {
+  static pw.Widget _buildBusinessInfo(
+    List<model.Transaction> transactions,
+    String currencySymbol,
+  ) {
     // Calculate key business metrics
     double totalBusinessIncome = 0;
     double totalBusinessExpenses = 0;
@@ -150,7 +157,8 @@ class PdfHelper {
                 children: [
                   pw.Text('Gross Revenue:',
                       style: const pw.TextStyle(fontSize: 12)),
-                  pw.Text('KSh ${totalBusinessIncome.toStringAsFixed(2)}',
+                  pw.Text(
+                      '$currencySymbol ${totalBusinessIncome.toStringAsFixed(2)}',
                       style: pw.TextStyle(
                           fontSize: 16,
                           fontWeight: pw.FontWeight.bold,
@@ -179,7 +187,9 @@ class PdfHelper {
   }
 
   static pw.Widget _buildTransactionTable(
-      List<model.Transaction> transactions) {
+    List<model.Transaction> transactions,
+    String currencySymbol,
+  ) {
     // Sort transactions by date (newest first) for better readability
     final sortedTransactions = List<model.Transaction>.from(transactions);
     sortedTransactions.sort((a, b) {
@@ -203,7 +213,7 @@ class PdfHelper {
           DateFormat('MMM dd, yyyy').format(date),
           cleanDescription,
           transaction.type.toUpperCase(),
-          'KSh ${transaction.amount.toStringAsFixed(2)}',
+          '$currencySymbol ${transaction.amount.toStringAsFixed(2)}',
         ];
       }).toList(),
       headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12),
@@ -215,7 +225,10 @@ class PdfHelper {
     );
   }
 
-  static pw.Widget _buildSummary(List<model.Transaction> transactions) {
+  static pw.Widget _buildSummary(
+    List<model.Transaction> transactions,
+    String currencySymbol,
+  ) {
     double totalIncome = 0;
     double totalExpenses = 0;
 
@@ -248,7 +261,7 @@ class PdfHelper {
             children: [
               pw.Text('Total Business Revenue:',
                   style: const pw.TextStyle(fontSize: 12)),
-              pw.Text('KSh ${totalIncome.toStringAsFixed(2)}',
+              pw.Text('$currencySymbol ${totalIncome.toStringAsFixed(2)}',
                   style: pw.TextStyle(
                       fontSize: 14,
                       fontWeight: pw.FontWeight.bold,
@@ -261,7 +274,7 @@ class PdfHelper {
             children: [
               pw.Text('Total Business Expenses:',
                   style: const pw.TextStyle(fontSize: 12)),
-              pw.Text('KSh ${totalExpenses.toStringAsFixed(2)}',
+              pw.Text('$currencySymbol ${totalExpenses.toStringAsFixed(2)}',
                   style: pw.TextStyle(
                       fontSize: 14,
                       fontWeight: pw.FontWeight.bold,
@@ -275,7 +288,7 @@ class PdfHelper {
               pw.Text('Net Profit / Loss:',
                   style: pw.TextStyle(
                       fontSize: 14, fontWeight: pw.FontWeight.bold)),
-              pw.Text('KSh ${netProfit.toStringAsFixed(2)}',
+              pw.Text('$currencySymbol ${netProfit.toStringAsFixed(2)}',
                   style: pw.TextStyle(
                       fontSize: 18,
                       fontWeight: pw.FontWeight.bold,

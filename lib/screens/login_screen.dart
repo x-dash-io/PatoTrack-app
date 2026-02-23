@@ -26,6 +26,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _isPasswordVisible = false;
   bool _isLoading = false;
+  int _activeRequestToken = 0;
 
   @override
   void dispose() {
@@ -49,6 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     // Only set loading state after validation passes
     if (!mounted) return;
+    final requestToken = ++_activeRequestToken;
     setState(() {
       _isLoading = true;
     });
@@ -63,7 +65,13 @@ class _LoginScreenState extends State<LoginScreen> {
           FirebaseAuth.instance.currentUser == null) {
         throw Exception('Login failed - user not authenticated');
       }
+      if (requestToken != _activeRequestToken) {
+        return;
+      }
     } on FirebaseAuthException catch (e) {
+      if (requestToken != _activeRequestToken) {
+        return;
+      }
       if (mounted) {
         String errorMessage = 'Login failed. Please try again.';
 
@@ -96,6 +104,9 @@ class _LoginScreenState extends State<LoginScreen> {
         NotificationHelper.showError(context, message: errorMessage);
       }
     } catch (e) {
+      if (requestToken != _activeRequestToken) {
+        return;
+      }
       if (mounted) {
         NotificationHelper.showError(
           context,
@@ -103,7 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } finally {
-      if (mounted) {
+      if (mounted && requestToken == _activeRequestToken) {
         setState(() {
           _isLoading = false;
         });
@@ -113,6 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _signInWithGoogle() async {
     if (!mounted) return;
+    final requestToken = ++_activeRequestToken;
     setState(() {
       _isLoading = true;
     });
@@ -128,7 +140,13 @@ class _LoginScreenState extends State<LoginScreen> {
           FirebaseAuth.instance.currentUser == null) {
         throw Exception('Authentication failed. Please try again.');
       }
+      if (requestToken != _activeRequestToken) {
+        return;
+      }
     } catch (e) {
+      if (requestToken != _activeRequestToken) {
+        return;
+      }
       if (mounted) {
         NotificationHelper.showError(
           context,
@@ -136,12 +154,27 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } finally {
-      if (mounted) {
+      if (mounted && requestToken == _activeRequestToken) {
         setState(() {
           _isLoading = false;
         });
       }
     }
+  }
+
+  void _cancelAuthRequest() {
+    if (!_isLoading) {
+      return;
+    }
+    setState(() {
+      _activeRequestToken++;
+      _isLoading = false;
+    });
+    NotificationHelper.showInfo(
+      context,
+      message:
+          'Sign-in request cancelled. If the network call completes, it will be ignored.',
+    );
   }
 
   Future<void> _showForgotPasswordDialog() async {
@@ -366,6 +399,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: LoadingOverlay(
           isLoading: _isLoading,
           message: 'Signing in...',
+          onCancel: _cancelAuthRequest,
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.lg,
@@ -385,21 +419,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       width: ResponsiveHelper.width(context, 100),
                       height: ResponsiveHelper.height(context, 100),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            colorScheme.primary,
-                            colorScheme.primary.withValues(alpha: 0.7),
-                          ],
-                        ),
+                        color: colorScheme.primaryContainer,
                         shape: BoxShape.circle,
-                        boxShadow: AppShadows.subtle(colorScheme.primary),
+                        boxShadow: const [AppShadows.card],
                       ),
                       child: Icon(
                         Icons.account_balance_wallet,
                         size: ResponsiveHelper.iconSize(context, 50),
-                        color: colorScheme.onPrimary,
+                        color: colorScheme.onPrimaryContainer,
                       ),
                     ),
                   ),

@@ -5,35 +5,60 @@ import 'package:permission_handler/permission_handler.dart';
 import 'database_helper.dart';
 import '../models/transaction.dart' as model;
 
+class SmsSyncCancelledException implements Exception {
+  const SmsSyncCancelledException();
+
+  @override
+  String toString() => 'SMS sync cancelled by user';
+}
+
 class SmsService {
   final SmsQuery _query = SmsQuery();
   final dbHelper = DatabaseHelper();
 
-  Future<void> syncMpesaMessages(String userId) async {
-    var permission = await Permission.sms.status;
-    if (permission.isGranted) {
-      final messages = await _query.querySms(
-        kinds: [SmsQueryKind.inbox],
-        address: 'MPESA',
-        count: 50, // Fetches the 50 most recent messages
-      );
+  Future<int> syncMpesaMessages(
+    String userId, {
+    bool Function()? shouldCancel,
+  }) async {
+    final permission = await Permission.sms.status;
+    if (!permission.isGranted) {
+      return 0;
+    }
 
-      final existingTransactions = await dbHelper.getTransactions(userId);
+    final messages = await _query.querySms(
+      kinds: [SmsQueryKind.inbox],
+      address: 'MPESA',
+      count: 50, // Fetches the 50 most recent messages
+    );
 
-      for (var message in messages) {
-        if (message.body == null || message.date == null) continue;
+    final existingTransactions = await dbHelper.getTransactions(userId);
+    final existingCodes = existingTransactions
+        .map((t) => _getTransactionCodeFromDescription(t.description))
+        .whereType<String>()
+        .toSet();
 
-        final transactionCode = _getTransactionCode(message.body!);
-        if (transactionCode == null) continue;
+    var importedCount = 0;
+    for (final message in messages) {
+      if (shouldCancel?.call() == true) {
+        throw const SmsSyncCancelledException();
+      }
+      if (message.body == null || message.date == null) {
+        continue;
+      }
 
-        final isDuplicate = existingTransactions
-            .any((t) => t.description.contains(transactionCode));
-        if (isDuplicate) continue;
+      final transactionCode = _getTransactionCode(message.body!);
+      if (transactionCode == null || existingCodes.contains(transactionCode)) {
+        continue;
+      }
 
-        // Pass the message date to the parsing function
-        _parseAndSave(message, transactionCode, userId);
+      final created = await _parseAndSave(message, transactionCode, userId);
+      if (created) {
+        importedCount++;
+        existingCodes.add(transactionCode);
       }
     }
+
+    return importedCount;
   }
 
   String? _getTransactionCode(String body) {
@@ -42,8 +67,17 @@ class SmsService {
     return match?.group(1);
   }
 
-  Future<void> _parseAndSave(
-      SmsMessage message, String transactionCode, String userId) async {
+  String? _getTransactionCodeFromDescription(String description) {
+    final codeRegex = RegExp(r'\(([A-Z0-9]+)\)');
+    final match = codeRegex.firstMatch(description);
+    return match?.group(1);
+  }
+
+  Future<bool> _parseAndSave(
+    SmsMessage message,
+    String transactionCode,
+    String userId,
+  ) async {
     final String body = message.body!;
     String description = '';
     double? amount;
@@ -54,7 +88,7 @@ class SmsService {
     if (match != null) {
       amount = double.parse(match.group(1)!.replaceAll(',', ''));
     } else {
-      return;
+      return false;
     }
 
     final paidToRegex = RegExp(r"paid to (.+?)\.");
@@ -97,19 +131,17 @@ class SmsService {
       type: transactionType,
       amount: amount,
       description: description,
-      // THE FIX: Use the actual date from the SMS message
       date: (message.date ?? DateTime.now()).toIso8601String(),
       categoryId: await _getOrCreateMpesaCategory(userId),
     );
 
     await dbHelper.addTransaction(newTransaction, userId);
-    developer.log("MPESA transaction ($transactionCode) automatically synced!");
+    developer.log('MPESA transaction ($transactionCode) automatically synced!');
+    return true;
   }
 
-  // UPDATED: This now correctly specifies the category type
   Future<int> _getOrCreateMpesaCategory(String userId) async {
     const categoryName = 'M-Pesa';
-    // M-Pesa is treated as an 'expense' category for organizational purposes
     return dbHelper.getOrCreateCategory(categoryName, userId, type: 'expense');
   }
 }

@@ -1,7 +1,36 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-/// Modern loading widgets with shimmer effects and skeleton loaders
+/// Loading widgets and skeleton placeholders.
+///
+/// Set [LoadingConfig.enableShimmer] to true if subtle shimmer is desired.
+class LoadingConfig {
+  static bool enableShimmer = false;
+}
+
+Color _skeletonBaseColor(BuildContext context) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  return isDark ? Colors.grey[800]! : Colors.grey[300]!;
+}
+
+Color _skeletonHighlightColor(BuildContext context) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  return isDark ? Colors.grey[700]! : Colors.grey[100]!;
+}
+
+Widget _withOptionalShimmer({
+  required BuildContext context,
+  required Widget child,
+}) {
+  if (!LoadingConfig.enableShimmer) {
+    return child;
+  }
+  return Shimmer(
+    baseColor: _skeletonBaseColor(context),
+    highlightColor: _skeletonHighlightColor(context),
+    child: child,
+  );
+}
 
 /// Shimmer effect widget
 class Shimmer extends StatefulWidget {
@@ -73,10 +102,9 @@ class TransactionShimmerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Shimmer(
-      baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-      highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+    final skeletonColor = _skeletonBaseColor(context);
+    return _withOptionalShimmer(
+      context: context,
       child: Card(
         margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
         child: ListTile(
@@ -84,14 +112,14 @@ class TransactionShimmerCard extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: isDark ? Colors.grey[800] : Colors.grey[300],
+              color: skeletonColor,
               borderRadius: BorderRadius.circular(8),
             ),
           ),
           title: Container(
             height: 16,
             decoration: BoxDecoration(
-              color: isDark ? Colors.grey[800] : Colors.grey[300],
+              color: skeletonColor,
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -101,7 +129,7 @@ class TransactionShimmerCard extends StatelessWidget {
               height: 12,
               width: 100,
               decoration: BoxDecoration(
-                color: isDark ? Colors.grey[800] : Colors.grey[300],
+                color: skeletonColor,
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -110,50 +138,7 @@ class TransactionShimmerCard extends StatelessWidget {
             height: 16,
             width: 80,
             decoration: BoxDecoration(
-              color: isDark ? Colors.grey[800] : Colors.grey[300],
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Skeleton loader for home screen summary cards
-class SummaryCardShimmer extends StatelessWidget {
-  const SummaryCardShimmer({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Shimmer(
-      baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-      highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
-      child: Card(
-        margin: const EdgeInsets.symmetric(vertical: 4.0),
-        child: ListTile(
-          leading: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: isDark ? Colors.grey[800] : Colors.grey[300],
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          title: Container(
-            height: 16,
-            width: 100,
-            decoration: BoxDecoration(
-              color: isDark ? Colors.grey[800] : Colors.grey[300],
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-          trailing: Container(
-            height: 20,
-            width: 120,
-            decoration: BoxDecoration(
-              color: isDark ? Colors.grey[800] : Colors.grey[300],
+              color: skeletonColor,
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -220,12 +205,14 @@ class LoadingOverlay extends StatelessWidget {
   final Widget child;
   final bool isLoading;
   final String? message;
+  final VoidCallback? onCancel;
 
   const LoadingOverlay({
     super.key,
     required this.child,
     required this.isLoading,
     this.message,
+    this.onCancel,
   });
 
   @override
@@ -250,6 +237,16 @@ class LoadingOverlay extends StatelessWidget {
                 ),
                 child: ModernLoadingIndicator(message: message),
               ),
+            ),
+          ),
+        if (isLoading && onCancel != null)
+          Positioned(
+            top: 48,
+            right: 16,
+            child: FilledButton.tonalIcon(
+              onPressed: onCancel,
+              icon: const Icon(Icons.close_rounded),
+              label: const Text('Cancel'),
             ),
           ),
       ],
@@ -277,20 +274,6 @@ class TransactionShimmerList extends StatelessWidget {
   }
 }
 
-/// Shimmer list for summary cards
-class SummaryCardShimmerList extends StatelessWidget {
-  const SummaryCardShimmerList({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        for (int i = 0; i < 3; i++) const SummaryCardShimmer(),
-      ],
-    );
-  }
-}
-
 /// Shimmer card widget (reusable)
 class ShimmerCard extends StatelessWidget {
   final double height;
@@ -306,15 +289,14 @@ class ShimmerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Shimmer(
-      baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-      highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+    final skeletonColor = _skeletonBaseColor(context);
+    return _withOptionalShimmer(
+      context: context,
       child: Container(
         height: height,
         width: width,
         decoration: BoxDecoration(
-          color: isDark ? Colors.grey[800] : Colors.grey[300],
+          color: skeletonColor,
           borderRadius: BorderRadius.circular(borderRadius),
         ),
       ),
@@ -328,10 +310,9 @@ class CategoryShimmerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Shimmer(
-      baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-      highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+    final skeletonColor = _skeletonBaseColor(context);
+    return _withOptionalShimmer(
+      context: context,
       child: Card(
         margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         child: ListTile(
@@ -339,7 +320,7 @@ class CategoryShimmerCard extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: isDark ? Colors.grey[800] : Colors.grey[300],
+              color: skeletonColor,
               borderRadius: BorderRadius.circular(12),
             ),
           ),
@@ -347,7 +328,7 @@ class CategoryShimmerCard extends StatelessWidget {
             height: 16,
             width: 150,
             decoration: BoxDecoration(
-              color: isDark ? Colors.grey[800] : Colors.grey[300],
+              color: skeletonColor,
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -355,7 +336,7 @@ class CategoryShimmerCard extends StatelessWidget {
             width: 24,
             height: 24,
             decoration: BoxDecoration(
-              color: isDark ? Colors.grey[800] : Colors.grey[300],
+              color: skeletonColor,
               shape: BoxShape.circle,
             ),
           ),
@@ -391,10 +372,9 @@ class ReportsProfitLossShimmer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Shimmer(
-      baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-      highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+    final skeletonColor = _skeletonBaseColor(context);
+    return _withOptionalShimmer(
+      context: context,
       child: Card(
         margin: const EdgeInsets.all(16.0),
         child: Padding(
@@ -406,7 +386,7 @@ class ReportsProfitLossShimmer extends StatelessWidget {
                 height: 16,
                 width: 120,
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.grey[800] : Colors.grey[300],
+                  color: skeletonColor,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -415,7 +395,7 @@ class ReportsProfitLossShimmer extends StatelessWidget {
                 height: 32,
                 width: 200,
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.grey[800] : Colors.grey[300],
+                  color: skeletonColor,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -424,7 +404,7 @@ class ReportsProfitLossShimmer extends StatelessWidget {
                 height: 14,
                 width: 250,
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.grey[800] : Colors.grey[300],
+                  color: skeletonColor,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -449,16 +429,15 @@ class ChartShimmer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Shimmer(
-      baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-      highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+    final skeletonColor = _skeletonBaseColor(context);
+    return _withOptionalShimmer(
+      context: context,
       child: Container(
         height: height,
         width: width ?? double.infinity,
         margin: const EdgeInsets.all(16.0),
         decoration: BoxDecoration(
-          color: isDark ? Colors.grey[800] : Colors.grey[300],
+          color: skeletonColor,
           borderRadius: BorderRadius.circular(16),
         ),
       ),
@@ -472,10 +451,9 @@ class FrequencyShimmerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Shimmer(
-      baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-      highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+    final skeletonColor = _skeletonBaseColor(context);
+    return _withOptionalShimmer(
+      context: context,
       child: Card(
         margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         child: ListTile(
@@ -483,7 +461,7 @@ class FrequencyShimmerCard extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: isDark ? Colors.grey[800] : Colors.grey[300],
+              color: skeletonColor,
               shape: BoxShape.circle,
             ),
           ),
@@ -491,7 +469,7 @@ class FrequencyShimmerCard extends StatelessWidget {
             height: 16,
             width: 120,
             decoration: BoxDecoration(
-              color: isDark ? Colors.grey[800] : Colors.grey[300],
+              color: skeletonColor,
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -501,7 +479,7 @@ class FrequencyShimmerCard extends StatelessWidget {
               height: 12,
               width: 100,
               decoration: BoxDecoration(
-                color: isDark ? Colors.grey[800] : Colors.grey[300],
+                color: skeletonColor,
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -538,33 +516,30 @@ class TransactionDetailShimmer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Shimmer(
-      baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-      highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+    final skeletonColor = _skeletonBaseColor(context);
+    return _withOptionalShimmer(
+      context: context,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Amount shimmer
             Container(
               height: 48,
               width: 200,
               decoration: BoxDecoration(
-                color: isDark ? Colors.grey[800] : Colors.grey[300],
+                color: skeletonColor,
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
             const SizedBox(height: 24),
-            // Details shimmer
             for (int i = 0; i < 4; i++) ...[
               Container(
                 height: 14,
                 width: double.infinity,
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.grey[800] : Colors.grey[300],
+                  color: skeletonColor,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),

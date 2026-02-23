@@ -16,6 +16,7 @@ import '../helpers/config.dart';
 import '../helpers/database_helper.dart';
 import '../helpers/passcode_service.dart';
 import '../helpers/responsive_helper.dart';
+import '../providers/currency_provider.dart';
 import '../theme_provider.dart';
 import '../widgets/dialog_helpers.dart';
 import '../widgets/input_fields.dart';
@@ -27,6 +28,14 @@ import '../styles/app_spacing.dart';
 import 'passcode_screen.dart';
 import 'help_screen.dart';
 import 'faq_screen.dart';
+
+enum CloudSyncStatus {
+  idle,
+  syncing,
+  success,
+  error,
+  cancelled,
+}
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -47,12 +56,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   bool _isLoggingOut = false;
   bool _isUploading = false;
-  bool _isRestoring = false;
   bool _isSendingPasswordReset = false;
   bool _isDeletingAccount = false;
-  String _selectedCurrency = 'KSh';
   bool _isPasscodeEnabled = false;
   DateTime? _lastCloudRestoreAt;
+  CloudSyncStatus _cloudSyncStatus = CloudSyncStatus.idle;
+  String? _cloudSyncMessage;
+  bool _cancelCloudSyncRequested = false;
 
   @override
   void initState() {
@@ -170,7 +180,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final isPasscodeEnabled = await _passcodeService.isPasscodeSet();
     if (mounted) {
       setState(() {
-        _selectedCurrency = prefs.getString('currency') ?? 'KSh';
         _isPasscodeEnabled = isPasscodeEnabled;
         final lastRestoreEpoch = prefs.getInt(_lastCloudRestorePreferenceKey);
         _lastCloudRestoreAt = lastRestoreEpoch == null
@@ -178,12 +187,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             : DateTime.fromMillisecondsSinceEpoch(lastRestoreEpoch);
       });
     }
-  }
-
-  Future<void> _saveCurrencyPreference(String currency) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('currency', currency);
-    setState(() => _selectedCurrency = currency);
   }
 
   void _showUpdateNameDialog() {
@@ -371,15 +374,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (mounted) {
           setState(() => _isLoggingOut = false);
 
-          // Try to sign out anyway, even if there was an error
+          bool recoveredSignOut = false;
           try {
             await _auth.signOut();
+            recoveredSignOut = true;
           } catch (signOutError) {
             debugPrint('Secondary sign out attempt also failed: $signOutError');
           }
           if (!mounted) return;
-          NotificationHelper.showSuccess(context,
-              message: 'Signed out successfully');
+          if (recoveredSignOut) {
+            NotificationHelper.showWarning(
+              context,
+              message:
+                  'Signed out, but there was a cleanup issue. You may need to sign in again if this repeats.',
+            );
+          } else {
+            NotificationHelper.showError(
+              context,
+              message: 'Unable to sign out right now. Please try again.',
+            );
+          }
         }
       }
     }
@@ -413,60 +427,139 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Future<void> _handleRestore() async {
-    if (currentUser == null) return;
+  Future<void> _handleRestore({bool skipConfirmation = false}) async {
+    final user = currentUser;
+    if (user == null || _cloudSyncStatus == CloudSyncStatus.syncing) {
+      return;
+    }
 
-    final bool? confirm = await showModernConfirmDialog(
-      context: context,
-      title: 'Restore from Cloud',
-      message:
-          'This will replace all local data with your cloud backup. Are you sure?',
-      confirmText: 'Restore',
-      cancelText: 'Cancel',
-      isDestructive: false,
-    );
-
-    if (confirm == true && mounted) {
-      setState(() => _isRestoring = true);
-      try {
-        await dbHelper.restoreFromFirestore(currentUser!.uid);
-        final now = DateTime.now();
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setInt(
-          _lastCloudRestorePreferenceKey,
-          now.millisecondsSinceEpoch,
-        );
-        if (mounted) {
-          setState(() => _lastCloudRestoreAt = now);
-        }
-        if (!mounted) return;
-        NotificationHelper.showSuccess(
-          context,
-          message:
-              "Data restored successfully! Please restart the app to see all changes.",
-          duration: const Duration(seconds: 5),
-        );
-      } catch (e) {
-        if (!mounted) return;
-        NotificationHelper.showError(context,
-            message: "Error restoring data: $e");
-      } finally {
-        if (mounted) setState(() => _isRestoring = false);
+    if (!skipConfirmation) {
+      final bool? confirm = await showModernConfirmDialog(
+        context: context,
+        title: 'Sync from Cloud',
+        message:
+            'This will replace local data with your latest cloud backup. Continue?',
+        confirmText: 'Sync now',
+        cancelText: 'Cancel',
+        isDestructive: false,
+      );
+      if (confirm != true || !mounted) {
+        return;
       }
+    }
+
+    setState(() {
+      _cancelCloudSyncRequested = false;
+      _cloudSyncStatus = CloudSyncStatus.syncing;
+      _cloudSyncMessage = 'Syncing your cloud backup…';
+    });
+
+    try {
+      await dbHelper.restoreFromFirestore(
+        user.uid,
+        shouldCancel: () => _cancelCloudSyncRequested,
+      );
+
+      if (_cancelCloudSyncRequested) {
+        if (!mounted) return;
+        setState(() {
+          _cloudSyncStatus = CloudSyncStatus.cancelled;
+          _cloudSyncMessage = 'Cloud sync cancelled.';
+        });
+        return;
+      }
+
+      final now = DateTime.now();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(
+        _lastCloudRestorePreferenceKey,
+        now.millisecondsSinceEpoch,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _lastCloudRestoreAt = now;
+        _cloudSyncStatus = CloudSyncStatus.success;
+        _cloudSyncMessage = 'Cloud sync completed successfully.';
+      });
+      NotificationHelper.showSuccess(
+        context,
+        message: 'Cloud sync complete. Local data is now up to date.',
+      );
+    } on CloudRestoreCancelledException {
+      if (!mounted) return;
+      setState(() {
+        _cloudSyncStatus = CloudSyncStatus.cancelled;
+        _cloudSyncMessage = 'Cloud sync cancelled.';
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _cloudSyncStatus = CloudSyncStatus.error;
+        _cloudSyncMessage =
+            'Cloud sync failed. Check your internet connection and retry.';
+      });
+      NotificationHelper.showError(
+        context,
+        message: 'Cloud sync failed. Please retry in a moment.',
+      );
+      debugPrint('Cloud sync error: $e');
     }
   }
 
-  String _cloudRestoreSubtitle() {
-    const baseMessage = 'Replace local data with your latest cloud backup.';
-    if (_lastCloudRestoreAt == null) {
-      return '$baseMessage Last restore: not yet run.';
+  void _cancelRestore() {
+    if (_cloudSyncStatus != CloudSyncStatus.syncing) {
+      return;
     }
-    return '$baseMessage Last restore: ${DateFormat('MMM d, yyyy h:mm a').format(_lastCloudRestoreAt!)}.';
+    setState(() {
+      _cancelCloudSyncRequested = true;
+      _cloudSyncStatus = CloudSyncStatus.cancelled;
+      _cloudSyncMessage = 'Cancelling cloud sync…';
+    });
+  }
+
+  String _cloudRestoreSubtitle() {
+    final timestamp = _lastCloudRestoreAt == null
+        ? 'Last sync: never.'
+        : 'Last sync: ${DateFormat('MMM d, yyyy h:mm a').format(_lastCloudRestoreAt!)}.';
+    final status = _cloudSyncMessage ?? 'Sync when you need to refresh data.';
+    return '$status $timestamp';
+  }
+
+  String _cloudSyncStatusLabel() {
+    switch (_cloudSyncStatus) {
+      case CloudSyncStatus.syncing:
+        return 'Syncing';
+      case CloudSyncStatus.success:
+        return 'Synced';
+      case CloudSyncStatus.error:
+        return 'Failed';
+      case CloudSyncStatus.cancelled:
+        return 'Cancelled';
+      case CloudSyncStatus.idle:
+        return 'Idle';
+    }
+  }
+
+  Color _cloudSyncStatusColor(ColorScheme colorScheme) {
+    switch (_cloudSyncStatus) {
+      case CloudSyncStatus.syncing:
+        return colorScheme.primary;
+      case CloudSyncStatus.success:
+        return Colors.green;
+      case CloudSyncStatus.error:
+        return colorScheme.error;
+      case CloudSyncStatus.cancelled:
+        return Colors.orange;
+      case CloudSyncStatus.idle:
+        return colorScheme.onSurfaceVariant;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final currencyProvider = Provider.of<CurrencyProvider>(context);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -745,7 +838,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.currency_exchange_rounded,
                       title: 'Currency',
                       trailing: DropdownButton<String>(
-                        value: _selectedCurrency,
+                        value: currencyProvider.code,
                         underline: const SizedBox(),
                         dropdownColor: theme.brightness == Brightness.dark
                             ? colorScheme.surfaceContainerHighest
@@ -758,23 +851,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         iconSize: 24,
                         borderRadius: BorderRadius.circular(12),
                         menuMaxHeight: 200,
-                        items: <String>['KSh', 'USD', 'EUR', 'GBP']
+                        items: currencyProvider.options
                             .map<DropdownMenuItem<String>>(
-                                (String value) => DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Text(
-                                      value,
-                                      style: GoogleFonts.manrope(
-                                        fontWeight: FontWeight.w500,
-                                        color: colorScheme.onSurface,
+                                (option) => DropdownMenuItem<String>(
+                                      value: option.code,
+                                      child: Text(
+                                        '${option.symbol} · ${option.code}',
+                                        style: GoogleFonts.manrope(
+                                          fontWeight: FontWeight.w500,
+                                          color: colorScheme.onSurface,
+                                        ),
                                       ),
-                                    )))
+                                    ))
                             .toList(),
                         selectedItemBuilder: (BuildContext context) {
-                          return <String>['KSh', 'USD', 'EUR', 'GBP']
-                              .map<Widget>((String value) {
+                          return currencyProvider.options.map<Widget>((option) {
                             return Text(
-                              value,
+                              option.symbol,
                               style: GoogleFonts.manrope(
                                 fontWeight: FontWeight.w600,
                                 color: colorScheme.primary,
@@ -784,9 +877,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         },
                         onChanged: (String? newValue) {
                           if (newValue != null && mounted) {
-                            _saveCurrencyPreference(newValue);
-                            NotificationHelper.showSuccess(context,
-                                message: 'Currency updated!');
+                            currencyProvider.setCurrency(newValue);
+                            NotificationHelper.showSuccess(
+                              context,
+                              message: 'Currency updated app-wide.',
+                            );
                           }
                         },
                       ),
@@ -885,23 +980,82 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: SettingListTile(
-                  icon: Icons.cloud_download_rounded,
-                  title: 'Restore from Cloud',
-                  subtitle: _cloudRestoreSubtitle(),
-                  trailing: _isRestoring
-                      ? SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 3,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              colorScheme.primary,
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: colorScheme.primaryContainer,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              Icons.cloud_sync_rounded,
+                              color: colorScheme.onPrimaryContainer,
                             ),
                           ),
-                        )
-                      : const Icon(Icons.chevron_right_rounded, size: 24),
-                  onTap: _isRestoring ? null : _handleRestore,
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: Text(
+                              'Cloud Sync',
+                              style: theme.textTheme.titleMedium,
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _cloudSyncStatusColor(colorScheme)
+                                  .withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              _cloudSyncStatusLabel(),
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: _cloudSyncStatusColor(colorScheme),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        _cloudRestoreSubtitle(),
+                        style: theme.textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Wrap(
+                        spacing: AppSpacing.xs,
+                        runSpacing: AppSpacing.xs,
+                        children: [
+                          FilledButton.icon(
+                            onPressed:
+                                _cloudSyncStatus == CloudSyncStatus.syncing
+                                    ? null
+                                    : _handleRestore,
+                            icon: const Icon(Icons.sync_rounded),
+                            label: Text(
+                              _cloudSyncStatus == CloudSyncStatus.error
+                                  ? 'Retry'
+                                  : 'Sync now',
+                            ),
+                          ),
+                          if (_cloudSyncStatus == CloudSyncStatus.syncing)
+                            OutlinedButton.icon(
+                              onPressed: _cancelRestore,
+                              icon: const Icon(Icons.close_rounded),
+                              label: const Text('Cancel'),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

@@ -22,10 +22,18 @@ class NotificationService {
     tz.initializeTimeZones();
   }
 
-  Future<void> scheduleBillNotification(Bill bill) async {
+  Future<void> scheduleBillNotification(
+    Bill bill, {
+    String currencySymbol = 'KSh',
+  }) async {
     if (bill.id == null) {
       return;
     }
+
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.requestNotificationsPermission();
 
     // Schedule reminder for 9:00 AM local time, one day before due date.
     final dueDateLocal = tz.TZDateTime.from(bill.dueDate, tz.local);
@@ -60,7 +68,7 @@ class NotificationService {
       id: bill.id!,
       title: 'Upcoming Bill Reminder',
       body:
-          'Your bill "${bill.name}" for KSh ${bill.amount.toStringAsFixed(0)} is due tomorrow.',
+          'Your bill "${bill.name}" for $currencySymbol ${bill.amount.toStringAsFixed(0)} is due tomorrow.',
       scheduledDate: scheduleTime,
       notificationDetails: notificationDetails,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,

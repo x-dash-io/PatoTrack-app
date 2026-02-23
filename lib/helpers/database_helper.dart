@@ -8,6 +8,13 @@ import '../models/transaction.dart' as model;
 import '../models/category.dart';
 import '../models/frequency.dart';
 
+class CloudRestoreCancelledException implements Exception {
+  const CloudRestoreCancelledException();
+
+  @override
+  String toString() => 'Cloud restore cancelled by user';
+}
+
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
   factory DatabaseHelper() => _instance;
@@ -400,17 +407,36 @@ class DatabaseHelper {
     return result;
   }
 
-  Future<void> restoreFromFirestore(String userId) async {
+  Future<void> restoreFromFirestore(
+    String userId, {
+    bool Function()? shouldCancel,
+  }) async {
     final db = await database;
     final userRef = _firestore.collection('users').doc(userId);
 
+    if (shouldCancel?.call() == true) {
+      throw const CloudRestoreCancelledException();
+    }
+
     // Download remote data first so we never wipe local data on a fetch failure.
     final transactionSnap = await userRef.collection('transactions').get();
+    if (shouldCancel?.call() == true) {
+      throw const CloudRestoreCancelledException();
+    }
     final categorySnap = await userRef.collection('categories').get();
+    if (shouldCancel?.call() == true) {
+      throw const CloudRestoreCancelledException();
+    }
     final billSnap = await userRef.collection('bills').get();
+    if (shouldCancel?.call() == true) {
+      throw const CloudRestoreCancelledException();
+    }
     final frequencySnap = await userRef.collection('frequencies').get();
 
     await db.transaction((txn) async {
+      if (shouldCancel?.call() == true) {
+        throw const CloudRestoreCancelledException();
+      }
       // Replace local data only after all remote collections are available.
       await txn
           .delete('transactions', where: 'userId = ?', whereArgs: [userId]);
@@ -419,6 +445,9 @@ class DatabaseHelper {
       await txn.delete('frequencies', where: 'userId = ?', whereArgs: [userId]);
 
       for (final doc in transactionSnap.docs) {
+        if (shouldCancel?.call() == true) {
+          throw const CloudRestoreCancelledException();
+        }
         await txn.insert(
           'transactions',
           _normalizeFirestoreDoc(doc, userId),
@@ -427,6 +456,9 @@ class DatabaseHelper {
       }
 
       for (final doc in categorySnap.docs) {
+        if (shouldCancel?.call() == true) {
+          throw const CloudRestoreCancelledException();
+        }
         await txn.insert(
           'categories',
           _normalizeFirestoreDoc(doc, userId),
@@ -435,6 +467,9 @@ class DatabaseHelper {
       }
 
       for (final doc in billSnap.docs) {
+        if (shouldCancel?.call() == true) {
+          throw const CloudRestoreCancelledException();
+        }
         await txn.insert(
           'bills',
           _normalizeFirestoreDoc(doc, userId),
@@ -443,6 +478,9 @@ class DatabaseHelper {
       }
 
       for (final doc in frequencySnap.docs) {
+        if (shouldCancel?.call() == true) {
+          throw const CloudRestoreCancelledException();
+        }
         await txn.insert(
           'frequencies',
           _normalizeFirestoreDoc(doc, userId),

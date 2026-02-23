@@ -8,8 +8,10 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'auth_gate.dart';
 import 'firebase_options.dart';
 import 'helpers/notification_service.dart';
+import 'providers/currency_provider.dart';
 import 'theme_provider.dart';
 import 'screens/home_screen.dart';
+import 'screens/all_transactions_screen.dart';
 import 'screens/reports_screen.dart';
 import 'screens/profile_screen.dart';
 import 'styles/app_theme.dart';
@@ -26,8 +28,11 @@ Future<void> main() async {
   await notificationService.init();
 
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => ThemeProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        ChangeNotifierProvider(create: (context) => CurrencyProvider()),
+      ],
       child: const PatoTrack(),
     ),
   );
@@ -74,6 +79,7 @@ class _MainScreenState extends State<MainScreen> {
 
   static const List<Widget> _widgetOptions = <Widget>[
     HomeScreen(),
+    AllTransactionsScreen(),
     ReportsScreen(),
     ProfileScreen(),
   ];
@@ -111,14 +117,19 @@ class _MainScreenState extends State<MainScreen> {
               label: 'Home',
             ),
             NavigationDestination(
+              icon: Icon(Icons.receipt_long_outlined),
+              selectedIcon: Icon(Icons.receipt_long_rounded),
+              label: 'Transactions',
+            ),
+            NavigationDestination(
               icon: Icon(Icons.analytics_outlined),
               selectedIcon: Icon(Icons.analytics_rounded),
               label: 'Reports',
             ),
             NavigationDestination(
-              icon: Icon(Icons.person_outline_rounded),
-              selectedIcon: Icon(Icons.person_rounded),
-              label: 'Profile',
+              icon: Icon(Icons.settings_outlined),
+              selectedIcon: Icon(Icons.settings_rounded),
+              label: 'Settings',
             ),
           ],
         ),

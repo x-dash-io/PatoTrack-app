@@ -4,10 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 import '../helpers/database_helper.dart';
 import '../models/category.dart';
 import '../models/transaction.dart' as model;
+import '../providers/currency_provider.dart';
 import '../widgets/loading_widgets.dart';
 import '../widgets/modern_date_picker.dart';
 import '../widgets/input_fields.dart';
@@ -34,7 +35,6 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
   Timer? _searchDebounce;
   final User? _currentUser = FirebaseAuth.instance.currentUser;
   final ScrollController _scrollController = ScrollController();
-  String _currencySymbol = 'KSh';
 
   // Pagination constants
   static const int _itemsPerPage = 20;
@@ -49,17 +49,8 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadCurrencyPreference();
     _loadInitialData();
     _scrollController.addListener(_onScroll);
-  }
-
-  Future<void> _loadCurrencyPreference() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (!mounted) return;
-    setState(() {
-      _currencySymbol = prefs.getString('currency') ?? 'KSh';
-    });
   }
 
   void _onScroll() {
@@ -337,8 +328,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormatter =
-        NumberFormat.currency(locale: 'en_US', symbol: '$_currencySymbol ');
+    final currency = context.watch<CurrencyProvider>();
 
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -469,7 +459,6 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                               final isIncome = transaction.type == 'income';
                               final amountColor =
                                   isIncome ? Colors.green : Colors.red;
-                              final amountPrefix = isIncome ? '+' : '-';
 
                               return Card(
                                 margin: const EdgeInsets.symmetric(
@@ -504,7 +493,11 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                                               0.35,
                                     ),
                                     child: Text(
-                                      '$amountPrefix${currencyFormatter.format(transaction.amount)}',
+                                      currency.format(
+                                        transaction.amount,
+                                        decimalDigits: 0,
+                                        includePositiveSign: isIncome,
+                                      ),
                                       style: TextStyle(
                                           color: amountColor,
                                           fontWeight: FontWeight.bold),

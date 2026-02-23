@@ -1,17 +1,16 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../helpers/database_helper.dart';
-import '../helpers/pdf_helper.dart';
-import '../helpers/responsive_helper.dart';
-import '../models/transaction.dart' as model;
-import '../widgets/loading_widgets.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+
+import '../features/reports/controllers/reports_controller.dart';
+import '../features/reports/widgets/reports_charts.dart';
 import '../helpers/notification_helper.dart';
+import '../providers/currency_provider.dart';
+import '../styles/app_spacing.dart';
 import '../widgets/app_screen_background.dart';
+import '../widgets/loading_widgets.dart';
+import 'add_transaction_screen.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -20,1391 +19,454 @@ class ReportsScreen extends StatefulWidget {
   State<ReportsScreen> createState() => _ReportsScreenState();
 }
 
-class _ReportsScreenState extends State<ReportsScreen> {
-  late Future<Map<String, dynamic>> _reportDataFuture;
-  String _currencySymbol = 'KSh';
-  final compactFormatter = NumberFormat.compact();
-  final User? _currentUser = FirebaseAuth.instance.currentUser;
-  bool _isExportingPDF = false;
+class _ReportsScreenState extends State<ReportsScreen>
+    with AutomaticKeepAliveClientMixin<ReportsScreen> {
+  final ReportsController _reportsController = ReportsController();
 
-  String _selectedTimeFilter = 'month';
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
-    _reportDataFuture = _prepareReportData();
-    _loadCurrencyPreference();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      _reportsController.initialize(user.uid);
+    }
   }
 
-  Future<void> _loadCurrencyPreference() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (!mounted) return;
-    setState(() {
-      _currencySymbol = prefs.getString('currency') ?? 'KSh';
-    });
+  @override
+  void dispose() {
+    _reportsController.dispose();
+    super.dispose();
   }
 
-  void _refreshReports() {
-    setState(() {
-      _reportDataFuture = _prepareReportData();
-    });
-  }
-
-  Future<Map<String, dynamic>> _prepareReportData() async {
-    if (_currentUser == null) return {};
-    final dbHelper = DatabaseHelper();
-    final transactions = await dbHelper.getTransactions(_currentUser.uid);
-    final categories = await dbHelper.getCategories(_currentUser.uid);
-    final categoryMap = {for (var cat in categories) cat.id!: cat.name};
-    return {'transactions': transactions, 'categoryMap': categoryMap};
-  }
-
-  ({DateTime start, DateTime end, String label}) _periodRangeForFilter(
-      String filter) {
-    final now = DateTime.now();
-    final end = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      23,
-      59,
-      59,
-      999,
-      999,
-    );
-
-    DateTime start;
-    String label;
-
-    switch (filter) {
-      case 'week':
-        start = now.subtract(Duration(days: now.weekday - 1));
-        start = DateTime(start.year, start.month, start.day);
-        label = 'This Week';
-        break;
-      case 'year':
-        start = DateTime(now.year, 1, 1);
-        label = 'This Year';
-        break;
-      case 'month':
-      default:
-        start = DateTime(now.year, now.month, 1);
-        label = 'This Month';
-        break;
+  Future<void> _exportCurrentReport(
+    ReportsController controller,
+    CurrencyProvider currency,
+  ) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return;
     }
 
-    return (start: start, end: end, label: label);
-  }
-
-  bool _isInInclusiveRange(DateTime value, DateTime start, DateTime end) {
-    return !value.isBefore(start) && !value.isAfter(end);
-  }
-
-  Future<bool> _confirmPdfExport({
-    required int transactionCount,
-    required DateTime start,
-    required DateTime end,
-  }) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        final colorScheme = Theme.of(dialogContext).colorScheme;
-        return AlertDialog(
-          title: const Text('Confirm Export Scope'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Business transactions only',
-                style: GoogleFonts.manrope(
-                  fontWeight: FontWeight.w700,
-                  color: colorScheme.primary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Period: ${DateFormat('MMM d, yyyy').format(start)} - ${DateFormat('MMM d, yyyy').format(end)} (inclusive)',
-              ),
-              const SizedBox(height: 4),
-              Text('Transactions included: $transactionCount'),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Export PDF'),
-            ),
-          ],
-        );
-      },
+    final error = await controller.exportReportPdf(
+      userName: user.displayName ?? 'User',
+      currencySymbol: currency.symbol,
     );
 
-    return result ?? false;
-  }
+    if (!mounted) {
+      return;
+    }
 
-  ({double profitLoss, String tip, Color color}) _getProfitLossAndTip(
-      List<model.Transaction> transactions, String timeFilter) {
-    final businessTransactions =
-        transactions.where((t) => t.tag == 'business').toList();
-    final periodRange = _periodRangeForFilter(timeFilter);
-
-    final periodTransactions = businessTransactions.where((t) {
-      try {
-        return _isInInclusiveRange(
-          DateTime.parse(t.date),
-          periodRange.start,
-          periodRange.end,
-        );
-      } catch (e) {
-        return false;
-      }
-    }).toList();
-
-    double income = periodTransactions
-        .where((t) => t.type == 'income')
-        .fold(0.0, (sum, t) => sum + t.amount);
-    double expenses = periodTransactions
-        .where((t) => t.type == 'expense')
-        .fold(0.0, (sum, t) => sum + t.amount);
-    double profitLoss = income - expenses;
-
-    String periodText = timeFilter == 'week'
-        ? 'this week'
-        : (timeFilter == 'month' ? 'this month' : 'this year');
-
-    if (profitLoss > 0) {
-      return (
-        profitLoss: profitLoss,
-        tip: 'Great business performance $periodText!',
-        color: Colors.green
-      );
-    } else if (profitLoss < 0) {
-      return (
-        profitLoss: profitLoss,
-        tip: 'Your business is at a loss $periodText. Review expenses.',
-        color: Colors.red
+    if (error == null) {
+      NotificationHelper.showSuccess(
+        context,
+        message: 'Report exported. Check your share options.',
       );
     } else {
-      return (
-        profitLoss: 0,
-        tip: 'Your business has broken even $periodText.',
-        color: Colors.orange
-      );
+      NotificationHelper.showError(context, message: error);
     }
-  }
-
-  // Removed tag breakdown - only business transactions now
-
-  Map<String, double> _prepareExpenseData(
-      List<model.Transaction> transactions, Map<int, String> categoryMap) {
-    final Map<String, double> expenseData = {};
-    for (var transaction in transactions.where((t) => t.type == 'expense')) {
-      if (transaction.categoryId != null) {
-        final categoryName =
-            categoryMap[transaction.categoryId] ?? 'Uncategorized';
-        expenseData.update(categoryName, (value) => value + transaction.amount,
-            ifAbsent: () => transaction.amount);
-      }
-    }
-    return expenseData;
-  }
-
-  Map<String, double> _prepareBarChartData(
-      List<model.Transaction> transactions) {
-    double totalIncome = 0;
-    double totalExpenses = 0;
-    for (var t in transactions) {
-      if (t.type == 'income') {
-        totalIncome += t.amount;
-      } else {
-        totalExpenses += t.amount;
-      }
-    }
-    return {'Income': totalIncome, 'Expenses': totalExpenses};
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    super.build(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Business Reports',
-          style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return const Scaffold(
+        body: Center(
+          child: Text('Sign in to view reports.'),
         ),
-        elevation: 0,
-        systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-          statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: _refreshReports,
-            tooltip: 'Refresh Data',
-          ),
-        ],
-      ),
-      body: AppScreenBackground(
-        includeSafeArea: false,
-        child: FutureBuilder<Map<String, dynamic>>(
-          future: _reportDataFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return _buildReportsLoadingState();
-            } else if (snapshot.hasError) {
-              return Center(child: Text('Error: ${snapshot.error}'));
-            } else if (!snapshot.hasData ||
-                (snapshot.data!['transactions'] as List).isEmpty) {
-              return const Center(child: Text('No data to display.'));
-            }
+      );
+    }
 
-            final allTransactions =
-                snapshot.data!['transactions'] as List<model.Transaction>;
-            final categoryMap =
-                snapshot.data!['categoryMap'] as Map<int, String>;
-            final periodRange = _periodRangeForFilter(_selectedTimeFilter);
+    return ChangeNotifierProvider<ReportsController>.value(
+      value: _reportsController,
+      child: Consumer2<ReportsController, CurrencyProvider>(
+        builder: (context, reports, currency, child) {
+          final viewData = reports.viewData;
 
-            final timeFilteredTransactions = allTransactions.where((t) {
-              try {
-                return _isInInclusiveRange(
-                  DateTime.parse(t.date),
-                  periodRange.start,
-                  periodRange.end,
-                );
-              } catch (e) {
-                return false;
-              }
-            }).toList();
-
-            // Only show business transactions
-            final fullyFilteredTransactions = timeFilteredTransactions
-                .where((t) => t.tag == 'business')
-                .toList();
-
-            final expenseData =
-                _prepareExpenseData(fullyFilteredTransactions, categoryMap);
-            final barChartData =
-                _prepareBarChartData(fullyFilteredTransactions);
-            final totalExpenses =
-                expenseData.values.fold(0.0, (sum, amount) => sum + amount);
-            final profitLossData = _getProfitLossAndTip(
-                fullyFilteredTransactions, _selectedTimeFilter);
-
-            return Column(
-              children: [
-                Padding(
-                  padding: ResponsiveHelper.edgeInsets(context, 8, 16, 8, 16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: SegmentedButton<String>(
-                          segments: const [
-                            ButtonSegment(value: 'week', label: Text('Week')),
-                            ButtonSegment(value: 'month', label: Text('Month')),
-                            ButtonSegment(value: 'year', label: Text('Year')),
-                          ],
-                          selected: {_selectedTimeFilter},
-                          onSelectionChanged: (newSelection) => setState(
-                              () => _selectedTimeFilter = newSelection.first),
-                        ),
-                      ),
-                    ],
-                  ),
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text('Reports'),
+              actions: [
+                IconButton(
+                  onPressed: () => reports.refresh(user.uid),
+                  icon: const Icon(Icons.refresh_rounded),
+                  tooltip: 'Refresh reports',
                 ),
-                Padding(
-                  padding: ResponsiveHelper.edgeInsets(context, 0, 16, 10, 16),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color:
-                          theme.colorScheme.surfaceContainerHighest.withValues(
-                        alpha: 0.75,
-                      ),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: theme.colorScheme.outline.withValues(alpha: 0.1),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.filter_alt_rounded,
-                          size: 18,
-                          color: theme.colorScheme.primary,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Scope: Business transactions only • ${DateFormat('MMM d').format(periodRange.start)} - ${DateFormat('MMM d, yyyy').format(periodRange.end)} (inclusive)',
-                            style: GoogleFonts.manrope(
-                              fontSize: ResponsiveHelper.fontSize(context, 12),
-                              color: theme.colorScheme.onSurfaceVariant,
-                              fontWeight: FontWeight.w600,
+              ],
+            ),
+            body: AppScreenBackground(
+              includeSafeArea: false,
+              child: RefreshIndicator(
+                onRefresh: () => reports.refresh(user.uid),
+                child: reports.isLoading
+                    ? ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: const [
+                          SizedBox(height: 180),
+                          Center(
+                            child: ModernLoadingIndicator(
+                              message: 'Building your reports…',
                             ),
                           ),
+                        ],
+                      )
+                    : ListView(
+                        padding: const EdgeInsets.only(
+                          top: AppSpacing.sm,
+                          bottom: 96,
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: ListView(
-                    padding:
-                        ResponsiveHelper.edgeInsets(context, 12, 20, 20, 20),
-                    children: [
-                      // Modernized Profit/Loss Card
-                      Container(
-                        decoration: BoxDecoration(
-                          color: profitLossData.color.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(
-                              ResponsiveHelper.radius(context, 28)),
-                          border: Border.all(
-                            color: profitLossData.color.withValues(alpha: 0.4),
-                            width: 1.5,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color:
-                                  profitLossData.color.withValues(alpha: 0.2),
-                              blurRadius: 6,
-                              offset: const Offset(0, 8),
-                              spreadRadius: 0,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.lg,
                             ),
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 6,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        padding: ResponsiveHelper.edgeInsets(
-                            context, 24, 20, 20, 20),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  padding: ResponsiveHelper.edgeInsetsAll(
-                                      context, 8),
-                                  decoration: BoxDecoration(
-                                    color: profitLossData.color
-                                        .withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(
-                                        ResponsiveHelper.radius(context, 10)),
-                                  ),
-                                  child: Icon(
-                                    profitLossData.profitLoss >= 0
-                                        ? Icons.trending_up_rounded
-                                        : Icons.trending_down_rounded,
-                                    color: profitLossData.color,
-                                    size:
-                                        ResponsiveHelper.iconSize(context, 22),
-                                  ),
+                            child: SegmentedButton<ReportsRange>(
+                              segments: const [
+                                ButtonSegment(
+                                  value: ReportsRange.week,
+                                  label: Text('Week'),
                                 ),
-                                SizedBox(
-                                    width:
-                                        ResponsiveHelper.spacing(context, 10)),
-                                Flexible(
-                                  child: Text(
-                                    'Business Profit/Loss',
-                                    style: GoogleFonts.manrope(
-                                      fontSize: ResponsiveHelper.fontSize(
-                                          context, 15),
-                                      fontWeight: FontWeight.w600,
-                                      color: theme.colorScheme.onSurface,
-                                      letterSpacing: 0.3,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
+                                ButtonSegment(
+                                  value: ReportsRange.month,
+                                  label: Text('Month'),
+                                ),
+                                ButtonSegment(
+                                  value: ReportsRange.year,
+                                  label: Text('Year'),
                                 ),
                               ],
-                            ),
-                            SizedBox(
-                                height: ResponsiveHelper.spacing(context, 16)),
-                            FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text(
-                                '$_currencySymbol ${NumberFormat.currency(locale: 'en_US', symbol: '').format(profitLossData.profitLoss.abs())}',
-                                style: GoogleFonts.manrope(
-                                  fontSize:
-                                      ResponsiveHelper.fontSize(context, 32),
-                                  fontWeight: FontWeight.bold,
-                                  color: profitLossData.color,
-                                  letterSpacing: -1,
-                                  height: 1.1,
-                                ),
-                                textAlign: TextAlign.center,
-                                maxLines: 1,
-                              ),
-                            ),
-                            SizedBox(
-                                height: ResponsiveHelper.spacing(context, 12)),
-                            Container(
-                              padding: ResponsiveHelper.edgeInsetsSymmetric(
-                                  context, 14, 10),
-                              decoration: BoxDecoration(
-                                color: profitLossData.color
-                                    .withValues(alpha: 0.18),
-                                borderRadius: BorderRadius.circular(
-                                    ResponsiveHelper.radius(context, 12)),
-                                border: Border.all(
-                                  color: profitLossData.color
-                                      .withValues(alpha: 0.3),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Text(
-                                _selectedTimeFilter.toUpperCase(),
-                                style: GoogleFonts.manrope(
-                                  fontSize:
-                                      ResponsiveHelper.fontSize(context, 11),
-                                  fontWeight: FontWeight.w700,
-                                  color: profitLossData.color,
-                                  letterSpacing: 1.2,
-                                ),
-                              ),
-                            ),
-                            SizedBox(
-                                height: ResponsiveHelper.spacing(context, 16)),
-                            Container(
-                              padding: ResponsiveHelper.edgeInsets(
-                                  context, 14, 12, 12, 12),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.surfaceContainerHighest
-                                    .withValues(alpha: 0.8),
-                                borderRadius: BorderRadius.circular(
-                                    ResponsiveHelper.radius(context, 14)),
-                                border: Border.all(
-                                  color: theme.colorScheme.outline
-                                      .withValues(alpha: 0.1),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    padding: ResponsiveHelper.edgeInsetsAll(
-                                        context, 6),
-                                    decoration: BoxDecoration(
-                                      color: theme.colorScheme.primaryContainer
-                                          .withValues(alpha: 0.5),
-                                      borderRadius: BorderRadius.circular(
-                                          ResponsiveHelper.radius(context, 8)),
-                                    ),
-                                    child: Icon(
-                                      Icons.info_outline_rounded,
-                                      size: ResponsiveHelper.iconSize(
-                                          context, 16),
-                                      color: theme.colorScheme.primary,
-                                    ),
-                                  ),
-                                  SizedBox(
-                                      width: ResponsiveHelper.spacing(
-                                          context, 10)),
-                                  Expanded(
-                                    child: Text(
-                                      profitLossData.tip,
-                                      style: GoogleFonts.manrope(
-                                        fontSize: ResponsiveHelper.fontSize(
-                                            context, 12.5),
-                                        color:
-                                            theme.colorScheme.onSurfaceVariant,
-                                        height: 1.4,
-                                      ),
-                                      textAlign: TextAlign.left,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: ResponsiveHelper.spacing(context, 24)),
-                      // Modernized Income vs Expenses Card
-                      Container(
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(
-                              ResponsiveHelper.radius(context, 28)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 6,
-                              offset: const Offset(0, 5),
-                              spreadRadius: 0,
-                            ),
-                          ],
-                        ),
-                        padding: ResponsiveHelper.edgeInsets(
-                            context, 22, 20, 20, 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: ResponsiveHelper.edgeInsetsAll(
-                                      context, 10),
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.primaryContainer,
-                                    borderRadius: BorderRadius.circular(
-                                        ResponsiveHelper.radius(context, 12)),
-                                  ),
-                                  child: Icon(
-                                    Icons.analytics_rounded,
-                                    color: theme.colorScheme.onPrimaryContainer,
-                                    size:
-                                        ResponsiveHelper.iconSize(context, 24),
-                                  ),
-                                ),
-                                SizedBox(
-                                    width:
-                                        ResponsiveHelper.spacing(context, 12)),
-                                Expanded(
-                                  child: Text(
-                                    'Income vs Expenses',
-                                    style: GoogleFonts.manrope(
-                                      fontSize: ResponsiveHelper.fontSize(
-                                          context, 20),
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(
-                                height: ResponsiveHelper.spacing(context, 16)),
-                            LayoutBuilder(
-                              builder: (context, constraints) {
-                                final screenWidth =
-                                    MediaQuery.of(context).size.width;
-                                final isSmallScreen = screenWidth <= 400;
-                                // Much smaller bar chart for small screens
-                                final chartHeight = isSmallScreen
-                                    ? screenWidth *
-                                        0.55 // ~220px for 400px screen
-                                    : ResponsiveHelper.height(context, 250);
-
-                                return SizedBox(
-                                  height: chartHeight,
-                                  child: Builder(
-                                    builder: (context) {
-                                      final maxValue =
-                                          (barChartData['Income']! >
-                                                  barChartData['Expenses']!
-                                              ? barChartData['Income']!
-                                              : barChartData['Expenses']!);
-                                      final safeMaxY = maxValue > 0
-                                          ? maxValue * 1.15
-                                          : 100.0;
-                                      // Ensure interval is never zero - calculate interval or use a safe default
-                                      final calculatedInterval =
-                                          maxValue > 0 ? (maxValue / 5) : 20.0;
-                                      final safeInterval =
-                                          calculatedInterval > 0 &&
-                                                  calculatedInterval.isFinite
-                                              ? calculatedInterval
-                                              : 20.0;
-
-                                      return BarChart(
-                                        BarChartData(
-                                          alignment:
-                                              BarChartAlignment.spaceAround,
-                                          maxY: safeMaxY,
-                                          barGroups: [
-                                            _buildModernBarGroupData(
-                                              0,
-                                              barChartData['Income'] ?? 0,
-                                              Colors.green.shade600,
-                                              theme,
-                                            ),
-                                            _buildModernBarGroupData(
-                                              1,
-                                              barChartData['Expenses'] ?? 0,
-                                              Colors.red.shade600,
-                                              theme,
-                                            ),
-                                          ],
-                                          titlesData: FlTitlesData(
-                                            bottomTitles: AxisTitles(
-                                              sideTitles: SideTitles(
-                                                showTitles: true,
-                                                getTitlesWidget: (value, meta) {
-                                                  String text = '';
-                                                  if (value.toInt() == 0) {
-                                                    text = 'Income';
-                                                  }
-                                                  if (value.toInt() == 1) {
-                                                    text = 'Expenses';
-                                                  }
-                                                  return Padding(
-                                                    padding: EdgeInsets.only(
-                                                        top: ResponsiveHelper
-                                                            .spacing(
-                                                                context, 8.0)),
-                                                    child: Text(
-                                                      text,
-                                                      style:
-                                                          GoogleFonts.manrope(
-                                                        fontSize:
-                                                            ResponsiveHelper
-                                                                .fontSize(
-                                                                    context,
-                                                                    13),
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                      ),
-                                                    ),
-                                                  );
-                                                },
-                                              ),
-                                            ),
-                                            leftTitles: AxisTitles(
-                                              sideTitles: SideTitles(
-                                                showTitles: true,
-                                                reservedSize:
-                                                    ResponsiveHelper.width(
-                                                        context, 60),
-                                                getTitlesWidget: (value, meta) {
-                                                  if (value == 0) {
-                                                    return const Text('');
-                                                  }
-                                                  return Padding(
-                                                    padding: EdgeInsets.only(
-                                                        right: ResponsiveHelper
-                                                            .spacing(
-                                                                context, 8.0)),
-                                                    child: Text(
-                                                      compactFormatter
-                                                          .format(value),
-                                                      style:
-                                                          GoogleFonts.manrope(
-                                                        fontSize:
-                                                            ResponsiveHelper
-                                                                .fontSize(
-                                                                    context,
-                                                                    11),
-                                                        color: theme.colorScheme
-                                                            .onSurfaceVariant,
-                                                      ),
-                                                    ),
-                                                  );
-                                                },
-                                                interval: safeInterval,
-                                              ),
-                                            ),
-                                            topTitles: const AxisTitles(
-                                              sideTitles:
-                                                  SideTitles(showTitles: false),
-                                            ),
-                                            rightTitles: const AxisTitles(
-                                              sideTitles:
-                                                  SideTitles(showTitles: false),
-                                            ),
-                                          ),
-                                          borderData: FlBorderData(
-                                            show: true,
-                                            border: Border(
-                                              bottom: BorderSide(
-                                                color: theme.colorScheme.outline
-                                                    .withValues(alpha: 0.3),
-                                                width: 1.5,
-                                              ),
-                                              left: BorderSide(
-                                                color: theme.colorScheme.outline
-                                                    .withValues(alpha: 0.3),
-                                                width: 1.5,
-                                              ),
-                                            ),
-                                          ),
-                                          gridData: FlGridData(
-                                            show: true,
-                                            drawVerticalLine: false,
-                                            horizontalInterval: safeInterval,
-                                            getDrawingHorizontalLine: (value) =>
-                                                FlLine(
-                                              color: theme.colorScheme.outline
-                                                  .withValues(alpha: 0.15),
-                                              strokeWidth: 1,
-                                              dashArray: [5, 5],
-                                            ),
-                                          ),
-                                          barTouchData: BarTouchData(
-                                            enabled: true,
-                                            touchTooltipData:
-                                                BarTouchTooltipData(
-                                              getTooltipColor: (group) =>
-                                                  theme.colorScheme.surface,
-                                              tooltipBorderRadius:
-                                                  BorderRadius.circular(8),
-                                              tooltipPadding:
-                                                  const EdgeInsets.all(8),
-                                              tooltipMargin: 8,
-                                              getTooltipItem: (group,
-                                                  groupIndex, rod, rodIndex) {
-                                                return BarTooltipItem(
-                                                  '$_currencySymbol${NumberFormat.currency(locale: 'en_US', symbol: '').format(rod.toY)}',
-                                                  GoogleFonts.manrope(
-                                                    color: theme
-                                                        .colorScheme.onSurface,
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: ResponsiveHelper
-                                                        .fontSize(context, 12),
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                );
+                              selected: {reports.selectedRange},
+                              onSelectionChanged: (selection) {
+                                reports.setRange(selection.first, user.uid);
                               },
                             ),
-                            SizedBox(
-                                height: ResponsiveHelper.spacing(context, 20)),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                _buildLegendItem(
-                                  context,
-                                  'Income',
-                                  Colors.green.shade600,
-                                  barChartData['Income'] ?? 0,
-                                  theme,
-                                ),
-                                _buildLegendItem(
-                                  context,
-                                  'Expenses',
-                                  Colors.red.shade600,
-                                  barChartData['Expenses'] ?? 0,
-                                  theme,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      if (expenseData.isNotEmpty) ...[
-                        SizedBox(height: ResponsiveHelper.spacing(context, 24)),
-                        // Modernized Expense Breakdown Card
-                        Container(
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(
-                                ResponsiveHelper.radius(context, 28)),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
-                                blurRadius: 6,
-                                offset: const Offset(0, 5),
-                                spreadRadius: 0,
-                              ),
-                            ],
                           ),
-                          padding: ResponsiveHelper.edgeInsets(
-                              context, 22, 20, 20, 20),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: ResponsiveHelper.edgeInsetsAll(
-                                        context, 10),
-                                    decoration: BoxDecoration(
-                                      color: theme.colorScheme.primaryContainer,
-                                      borderRadius: BorderRadius.circular(
-                                          ResponsiveHelper.radius(context, 12)),
-                                    ),
-                                    child: Icon(
-                                      Icons.pie_chart_rounded,
-                                      color:
-                                          theme.colorScheme.onPrimaryContainer,
-                                      size: ResponsiveHelper.iconSize(
-                                          context, 24),
-                                    ),
+                          const SizedBox(height: AppSpacing.sm),
+                          _ScopeCard(
+                            start: viewData?.periodStart,
+                            end: viewData?.periodEnd,
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          if (reports.errorMessage != null)
+                            _ErrorState(
+                              message: reports.errorMessage!,
+                              onRetry: () => reports.refresh(user.uid),
+                            )
+                          else if (viewData == null || !viewData.hasData)
+                            _EmptyState(
+                              onAddData: () async {
+                                await Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) =>
+                                        const AddTransactionScreen(),
                                   ),
-                                  SizedBox(
-                                      width: ResponsiveHelper.spacing(
-                                          context, 12)),
-                                  Expanded(
-                                    child: Text(
-                                      'Expense Breakdown',
-                                      style: GoogleFonts.manrope(
-                                        fontSize: ResponsiveHelper.fontSize(
-                                            context, 20),
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
+                                );
+                                if (context.mounted) {
+                                  reports.refresh(user.uid);
+                                }
+                              },
+                            )
+                          else ...[
+                            _PerformanceSummaryCard(
+                              income: viewData.totalIncome,
+                              expenses: viewData.totalExpenses,
+                              net: viewData.net,
+                              currency: currency,
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 240),
+                              child: Column(
+                                key: ValueKey<String>(
+                                  'charts-${reports.selectedRange.name}-${viewData.businessTransactions.length}',
+                                ),
+                                children: [
+                                  SpendingTrendChartCard(
+                                    points: viewData.trendPoints,
+                                    currency: currency,
+                                  ),
+                                  const SizedBox(height: AppSpacing.sm),
+                                  CategoryBarChartCard(
+                                    categories: viewData.categoryTotals,
+                                    currency: currency,
                                   ),
                                 ],
                               ),
-                              SizedBox(
-                                  height:
-                                      ResponsiveHelper.spacing(context, 20)),
-                              // Pie Chart - smaller and better contained
-                              LayoutBuilder(
-                                builder: (context, constraints) {
-                                  final screenWidth =
-                                      MediaQuery.of(context).size.width;
-                                  final isSmallScreen = screenWidth <= 400;
-                                  final isVerySmall = screenWidth <= 380;
-
-                                  // Smaller, more compact chart dimensions
-                                  final chartSize = isVerySmall
-                                      ? screenWidth *
-                                          0.50 // ~190px for 380px screen
-                                      : isSmallScreen
-                                          ? screenWidth *
-                                              0.55 // ~220px for 400px screen
-                                          : ResponsiveHelper.width(context,
-                                              220); // Smaller fixed size for larger screens
-
-                                  // Proportional pie chart dimensions
-                                  final centerSpaceRadius =
-                                      chartSize * 0.15; // 15% of chart size
-                                  final radius =
-                                      chartSize * 0.35; // 35% of chart size
-
-                                  return Column(
-                                    children: [
-                                      // Centered pie chart
-                                      SizedBox(
-                                        height: chartSize,
-                                        width: chartSize,
-                                        child: PieChart(
-                                          PieChartData(
-                                            sectionsSpace: 2,
-                                            centerSpaceRadius:
-                                                centerSpaceRadius,
-                                            sections: expenseData.entries
-                                                .map((entry) {
-                                              final percentage = (entry.value /
-                                                      totalExpenses) *
-                                                  100;
-                                              return PieChartSectionData(
-                                                color:
-                                                    _getModernColorForCategory(
-                                                        entry.key, theme),
-                                                value: entry.value,
-                                                title: percentage > 5
-                                                    ? '${percentage.toStringAsFixed(1)}%'
-                                                    : '',
-                                                radius: radius,
-                                                titleStyle: GoogleFonts.manrope(
-                                                  fontSize:
-                                                      ResponsiveHelper.fontSize(
-                                                          context, 11),
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white,
-                                                ),
-                                                badgeWidget: percentage <= 5
-                                                    ? Container(
-                                                        padding:
-                                                            ResponsiveHelper
-                                                                .edgeInsetsAll(
-                                                                    context, 3),
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          color: theme
-                                                              .colorScheme
-                                                              .surface,
-                                                          shape:
-                                                              BoxShape.circle,
-                                                        ),
-                                                        child: Text(
-                                                          '${percentage.toStringAsFixed(0)}%',
-                                                          style: GoogleFonts
-                                                              .manrope(
-                                                            fontSize:
-                                                                ResponsiveHelper
-                                                                    .fontSize(
-                                                                        context,
-                                                                        9),
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                            color: theme
-                                                                .colorScheme
-                                                                .onSurface,
-                                                          ),
-                                                        ),
-                                                      )
-                                                    : null,
-                                                badgePositionPercentageOffset:
-                                                    1.2,
-                                              );
-                                            }).toList(),
-                                            pieTouchData: PieTouchData(
-                                              touchCallback:
-                                                  (FlTouchEvent event,
-                                                      pieTouchResponse) {},
-                                              enabled: true,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                          height: ResponsiveHelper.spacing(
-                                              context, 24)),
-                                      // Legend below chart - properly spaced
-                                      Wrap(
-                                        spacing: ResponsiveHelper.spacing(
-                                            context, 12),
-                                        runSpacing: ResponsiveHelper.spacing(
-                                            context, 10),
-                                        alignment: WrapAlignment.center,
-                                        children: expenseData.entries
-                                            .map((entry) =>
-                                                _buildCategoryLegendItem(
-                                                  entry.key,
-                                                  _getModernColorForCategory(
-                                                      entry.key, theme),
-                                                  entry.value,
-                                                  totalExpenses,
-                                                  theme,
-                                                ))
-                                            .toList(),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      ] else
-                        Container(
-                          padding: ResponsiveHelper.edgeInsetsAll(context, 40),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(
-                                ResponsiveHelper.radius(context, 28)),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
-                                blurRadius: 6,
-                                offset: const Offset(0, 5),
-                                spreadRadius: 0,
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              Icon(
-                                Icons.bar_chart_rounded,
-                                size: ResponsiveHelper.iconSize(context, 64),
-                                color: theme.colorScheme.onSurfaceVariant
-                                    .withValues(alpha: 0.4),
-                              ),
-                              SizedBox(
-                                  height:
-                                      ResponsiveHelper.spacing(context, 16)),
-                              Text(
-                                'No Business Expense Data',
-                                style: GoogleFonts.manrope(
-                                  fontSize:
-                                      ResponsiveHelper.fontSize(context, 18),
-                                  fontWeight: FontWeight.w600,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                              SizedBox(
-                                  height: ResponsiveHelper.spacing(context, 8)),
-                              Text(
-                                'Add transactions to see your expense breakdown',
-                                style: GoogleFonts.manrope(
-                                  fontSize:
-                                      ResponsiveHelper.fontSize(context, 14),
-                                  color: theme.colorScheme.onSurfaceVariant
-                                      .withValues(alpha: 0.7),
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      // Modernized PDF Export Card
-                      Container(
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primaryContainer
-                              .withValues(alpha: 0.5),
-                          borderRadius: BorderRadius.circular(
-                              ResponsiveHelper.radius(context, 24)),
-                          border: Border.all(
-                            color: theme.colorScheme.primaryContainer
-                                .withValues(alpha: 0.5),
-                            width: 1.5,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: theme.colorScheme.primary
-                                  .withValues(alpha: 0.15),
-                              blurRadius: 6,
-                              offset: const Offset(0, 5),
-                              spreadRadius: 0,
                             ),
-                          ],
-                        ),
-                        padding: ResponsiveHelper.edgeInsetsAll(context, 22),
-                        child: Column(
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.primary,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Icon(
-                                    Icons.picture_as_pdf_rounded,
-                                    color: Colors.white,
-                                    size: 24,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
+                            const SizedBox(height: AppSpacing.sm),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.lg,
+                              ),
+                              child: Card(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(AppSpacing.md),
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'Export Business Report',
-                                        style: GoogleFonts.manrope(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                        'Export PDF report',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium,
                                       ),
-                                      const SizedBox(height: 4),
+                                      const SizedBox(height: AppSpacing.xs),
                                       Text(
-                                        'Scope: ${periodRange.label} • ${DateFormat('MMM d').format(periodRange.start)} - ${DateFormat('MMM d, yyyy').format(periodRange.end)}',
-                                        style: GoogleFonts.manrope(
-                                          fontSize: 13,
-                                          color: theme
-                                              .colorScheme.onSurfaceVariant,
+                                        'Export includes business transactions only for the selected period.',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall,
+                                      ),
+                                      const SizedBox(height: AppSpacing.sm),
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: FilledButton.icon(
+                                          onPressed: reports.isExporting
+                                              ? null
+                                              : () => _exportCurrentReport(
+                                                    reports,
+                                                    currency,
+                                                  ),
+                                          icon: reports.isExporting
+                                              ? const SizedBox(
+                                                  width: 18,
+                                                  height: 18,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                  ),
+                                                )
+                                              : const Icon(
+                                                  Icons.picture_as_pdf_rounded,
+                                                ),
+                                          label: Text(
+                                            reports.isExporting
+                                                ? 'Generating…'
+                                                : 'Generate report',
+                                          ),
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            SizedBox(
-                              width: double.infinity,
-                              child: FilledButton.icon(
-                                onPressed: _isExportingPDF
-                                    ? null
-                                    : () async {
-                                        if (_currentUser == null ||
-                                            _isExportingPDF) {
-                                          return;
-                                        }
-
-                                        final businessTransactions =
-                                            fullyFilteredTransactions
-                                                .where(
-                                                    (t) => t.tag == 'business')
-                                                .toList();
-
-                                        if (businessTransactions.isEmpty) {
-                                          NotificationHelper.showWarning(
-                                            this.context,
-                                            message:
-                                                'No business transactions found in the selected period. Cannot generate report.',
-                                          );
-                                          return;
-                                        }
-
-                                        final confirmed =
-                                            await _confirmPdfExport(
-                                          transactionCount:
-                                              businessTransactions.length,
-                                          start: periodRange.start,
-                                          end: periodRange.end,
-                                        );
-                                        if (!confirmed || !mounted) {
-                                          return;
-                                        }
-
-                                        setState(() => _isExportingPDF = true);
-
-                                        try {
-                                          final dateStr =
-                                              DateFormat('yyyy-MM-dd')
-                                                  .format(DateTime.now());
-                                          final fileName =
-                                              'PatoTrack_Business_Report_$dateStr.pdf';
-
-                                          await PdfHelper.generateAndSharePdf(
-                                            businessTransactions,
-                                            _currentUser.displayName ?? 'User',
-                                            fileName,
-                                          );
-                                        } catch (e) {
-                                          if (mounted) {
-                                            NotificationHelper.showError(
-                                              this.context,
-                                              message:
-                                                  'Error generating report: $e',
-                                            );
-                                          }
-                                        } finally {
-                                          if (mounted) {
-                                            setState(
-                                                () => _isExportingPDF = false);
-                                          }
-                                        }
-                                      },
-                                icon: _isExportingPDF
-                                    ? SizedBox(
-                                        width: 22,
-                                        height: 22,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor:
-                                              AlwaysStoppedAnimation<Color>(
-                                            theme.colorScheme.onPrimary,
-                                          ),
-                                        ),
-                                      )
-                                    : Icon(Icons.picture_as_pdf_rounded,
-                                        size: ResponsiveHelper.iconSize(
-                                            context, 22)),
-                                label: Text(
-                                  _isExportingPDF
-                                      ? 'Generating...'
-                                      : 'Generate PDF Report',
-                                  style: GoogleFonts.manrope(
-                                    fontSize:
-                                        ResponsiveHelper.fontSize(context, 16),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                style: FilledButton.styleFrom(
-                                  padding: EdgeInsets.symmetric(
-                                      vertical: ResponsiveHelper.buttonHeight(
-                                          context, 16)),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                        ResponsiveHelper.radius(context, 16)),
-                                  ),
-                                ),
                               ),
                             ),
                           ],
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  BarChartGroupData _buildModernBarGroupData(
-      int x, double y, Color color, ThemeData theme) {
-    return BarChartGroupData(
-      x: x,
-      barRods: [
-        BarChartRodData(
-          toY: y,
-          color: color,
-          width: 50,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(12),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Color _getModernColorForCategory(String category, ThemeData theme) {
-    // Modern color palette
-    final colors = [
-      Colors.blue.shade600,
-      Colors.green.shade600,
-      Colors.orange.shade600,
-      Colors.purple.shade600,
-      Colors.pink.shade600,
-      Colors.teal.shade600,
-      Colors.indigo.shade600,
-      Colors.amber.shade600,
-      Colors.red.shade600,
-      Colors.cyan.shade600,
-      Colors.deepPurple.shade600,
-      Colors.lime.shade600,
-    ];
-    int hash = category.hashCode.abs();
-    return colors[hash % colors.length];
-  }
-
-  Widget _buildLegendItem(BuildContext context, String label, Color color,
-      double value, ThemeData theme) {
-    return Container(
-      padding: ResponsiveHelper.edgeInsetsSymmetric(context, 16, 10),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius:
-            BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
-        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: ResponsiveHelper.width(context, 12),
-                height: ResponsiveHelper.width(context, 12),
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                ),
               ),
-              SizedBox(width: ResponsiveHelper.spacing(context, 8)),
-              Text(
-                label,
-                style: GoogleFonts.manrope(
-                  fontSize: ResponsiveHelper.fontSize(context, 13),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: ResponsiveHelper.spacing(context, 4)),
-          Text(
-            '$_currencySymbol${NumberFormat.currency(locale: 'en_US', symbol: '').format(value)}',
-            style: GoogleFonts.manrope(
-              fontSize: ResponsiveHelper.fontSize(context, 14),
-              fontWeight: FontWeight.bold,
-              color: color,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryLegendItem(String category, Color color, double value,
-      double total, ThemeData theme) {
-    final percentage = (value / total) * 100;
-    return Builder(
-      builder: (context) {
-        return Container(
-          padding: ResponsiveHelper.edgeInsetsSymmetric(context, 12, 10),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            borderRadius:
-                BorderRadius.circular(ResponsiveHelper.radius(context, 12)),
-            border: Border.all(
-              color: color.withValues(alpha: 0.3),
-              width: 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: color.withValues(alpha: 0.4),
-                      blurRadius: 3,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(width: ResponsiveHelper.spacing(context, 10)),
-              Flexible(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      category,
-                      style: GoogleFonts.manrope(
-                        fontSize: ResponsiveHelper.fontSize(context, 13),
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: ResponsiveHelper.spacing(context, 2)),
-                    Text(
-                      '${percentage.toStringAsFixed(1)}% · $_currencySymbol${value.toStringAsFixed(0)}',
-                      style: GoogleFonts.manrope(
-                        fontSize: ResponsiveHelper.fontSize(context, 11),
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildReportsLoadingState() {
-    return const SingleChildScrollView(
-      child: Column(
-        children: [
-          ReportsProfitLossShimmer(),
-          ChartShimmer(height: 320),
-          ChartShimmer(height: 320),
-        ],
+          );
+        },
       ),
     );
   }
 }
 
-extension StringExtension on String {
-  String capitalize() {
-    if (isEmpty) return this;
-    return "${this[0].toUpperCase()}${substring(1)}";
+class _ScopeCard extends StatelessWidget {
+  const _ScopeCard({required this.start, required this.end});
+
+  final DateTime? start;
+  final DateTime? end;
+
+  @override
+  Widget build(BuildContext context) {
+    final periodText = (start == null || end == null)
+        ? 'Business transactions only'
+        : 'Business transactions only • ${DateFormat('MMM d').format(start!)} - ${DateFormat('MMM d, yyyy').format(end!)} (inclusive)';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Row(
+            children: [
+              Icon(
+                Icons.shield_rounded,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  periodText,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PerformanceSummaryCard extends StatelessWidget {
+  const _PerformanceSummaryCard({
+    required this.income,
+    required this.expenses,
+    required this.net,
+    required this.currency,
+  });
+
+  final double income;
+  final double expenses;
+  final double net;
+  final CurrencyProvider currency;
+
+  @override
+  Widget build(BuildContext context) {
+    final trendColor = net >= 0 ? Colors.green : Colors.red;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Net performance',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                currency.format(net, decimalDigits: 0),
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: trendColor,
+                    ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              ExpansionTile(
+                title: const Text('Details'),
+                tilePadding: EdgeInsets.zero,
+                childrenPadding: EdgeInsets.zero,
+                children: [
+                  _SummaryRow(
+                    label: 'Income',
+                    value: currency.format(income, decimalDigits: 0),
+                    color: Colors.green,
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  _SummaryRow(
+                    label: 'Expenses',
+                    value: currency.format(expenses, decimalDigits: 0),
+                    color: Colors.red,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SummaryRow extends StatelessWidget {
+  const _SummaryRow({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(child: Text(label)),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: color,
+              ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  const _ErrorState({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Reports unavailable',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(message, style: Theme.of(context).textTheme.bodyMedium),
+              const SizedBox(height: AppSpacing.sm),
+              FilledButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({required this.onAddData});
+
+  final VoidCallback onAddData;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'No data for this period',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Add business transactions to unlock spending and trend insights.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              FilledButton.icon(
+                onPressed: onAddData,
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('Add transaction'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
