@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/help_article.dart';
 import '../widgets/app_screen_background.dart';
+import '../styles/app_colors.dart';
 import '../styles/app_shadows.dart';
 import '../styles/app_spacing.dart';
 
@@ -53,24 +54,24 @@ class HelpArticleDetailScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: colorScheme.onPrimaryContainer
-                            .withValues(alpha: 0.2),
+                        color: Colors.white.withValues(alpha: 0.18),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Icon(
                         article.icon,
                         size: 40,
-                        color: colorScheme.onPrimaryContainer,
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(width: 20),
                     Expanded(
                       child: Text(
                         article.title,
-                        style: GoogleFonts.manrope(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onPrimaryContainer,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: -0.4,
                         ),
                       ),
                     ),

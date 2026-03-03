@@ -8,6 +8,9 @@ import '../widgets/dialog_helpers.dart';
 import '../widgets/loading_widgets.dart';
 import '../widgets/input_fields.dart';
 import '../helpers/notification_helper.dart';
+import '../styles/app_colors.dart';
+import '../styles/app_shadows.dart';
+import '../styles/app_spacing.dart';
 import '../widgets/app_screen_background.dart';
 
 class ManageCategoriesScreen extends StatefulWidget {
@@ -438,81 +441,81 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
       );
     }
     return ListView.builder(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 96),
       itemCount: categories.length,
       itemBuilder: (context, index) {
         final category = categories[index];
-        final colorScheme = Theme.of(context).colorScheme;
-        return Card(
-          elevation: 0,
-          margin: const EdgeInsets.only(bottom: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          margin: const EdgeInsets.only(bottom: AppSpacing.xs),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 12),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+            borderRadius: AppSpacing.radiusLg,
+            border: Border.all(
+              color: isDark ? AppColors.surfaceBorderDark : AppColors.surfaceBorderLight,
+              width: 1,
+            ),
+            boxShadow: AppShadows.subtle(),
           ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 8,
-            ),
-            leading: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                _getIconForCategory(category),
-                color: colorScheme.onPrimaryContainer,
-                size: 24,
-              ),
-            ),
-            title: Text(
-              category.name,
-              style: GoogleFonts.manrope(
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-              ),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: Icon(
-                    Icons.edit_rounded,
-                    color: colorScheme.primary,
-                  ),
-                  onPressed: () => _showCategoryDialog(
-                    category: category,
-                    type: category.type,
-                  ),
-                  tooltip: 'Edit Category',
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.brandSoftDark : AppColors.brandSoft,
+                  borderRadius: AppSpacing.radiusMd,
                 ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline_rounded,
-                      color: Colors.red),
-                  onPressed: () async {
-                    if (currentUser == null) return;
-                    final bool? confirm = await showModernConfirmDialog(
-                      context: context,
-                      title: 'Confirm Deletion',
-                      message:
-                          'Are you sure you want to delete the "${category.name}" category?',
-                      confirmText: 'Delete',
-                      cancelText: 'Cancel',
-                      isDestructive: true,
-                    );
-                    if (confirm == true) {
-                      await dbHelper.deleteCategory(
-                          category.id!, currentUser!.uid);
-                      _refreshCategories();
-                    }
-                  },
-                  tooltip: 'Delete Category',
+                child: Icon(
+                  _getIconForCategory(category),
+                  color: isDark ? AppColors.brandDark : AppColors.brand,
+                  size: 22,
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  category.name,
+                  style: Theme.of(context).textTheme.titleSmall,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ),
+              IconButton(
+                icon: Icon(Icons.edit_rounded,
+                    color: isDark ? AppColors.brandDark : AppColors.brand, size: 20),
+                onPressed: () => _showCategoryDialog(
+                  category: category,
+                  type: category.type,
+                ),
+                tooltip: 'Edit',
+                visualDensity: VisualDensity.compact,
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline_rounded,
+                    color: AppColors.expense, size: 20),
+                onPressed: () async {
+                  if (currentUser == null) return;
+                  final bool? confirm = await showModernConfirmDialog(
+                    context: context,
+                    title: 'Confirm Deletion',
+                    message:
+                        'Are you sure you want to delete the "${category.name}" category?',
+                    confirmText: 'Delete',
+                    cancelText: 'Cancel',
+                    isDestructive: true,
+                  );
+                  if (confirm == true) {
+                    await dbHelper.deleteCategory(
+                        category.id!, currentUser!.uid);
+                    _refreshCategories();
+                  }
+                },
+                tooltip: 'Delete',
+                visualDensity: VisualDensity.compact,
+              ),
+            ],
           ),
         );
       },

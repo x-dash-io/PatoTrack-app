@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'login_screen.dart';
 import 'signup_screen.dart';
+import '../styles/app_colors.dart';
 import '../styles/app_theme.dart';
 import '../styles/app_spacing.dart';
 
@@ -30,14 +31,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       description:
           'Connect your M-Pesa SMS and transactions sync automatically. No manual entry needed.',
       icon: Icons.phone_android_rounded,
-      color: Color(0xFF00C896),
+      color: AppColors.income,
     ),
     _OnboardSlide(
       title: 'Never miss a payment',
       description:
           'Set bill reminders and get notified before due dates. Stay on top of every obligation.',
       icon: Icons.calendar_month_rounded,
-      color: Color(0xFFFFA726),
+      color: AppColors.warning,
     ),
     _OnboardSlide(
       title: 'Reports that make sense',

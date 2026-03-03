@@ -7,6 +7,7 @@ import '../widgets/input_fields.dart';
 import '../services/google_sign_in_service.dart';
 import '../helpers/notification_helper.dart';
 import '../widgets/app_screen_background.dart';
+import '../styles/app_colors.dart';
 import '../styles/app_shadows.dart';
 import '../styles/app_spacing.dart';
 

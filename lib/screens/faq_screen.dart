@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../widgets/app_screen_background.dart';
+import '../styles/app_colors.dart';
 import '../styles/app_shadows.dart';
 import '../styles/app_spacing.dart';
 
@@ -187,8 +188,8 @@ class _FaqScreenState extends State<FaqScreen> {
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Container(
                   decoration: BoxDecoration(
-                    color:
-                        Theme.of(context).colorScheme.surfaceContainerHighest,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.surfaceDark : AppColors.surfaceLight,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: const [AppShadows.card],
                   ),
@@ -291,9 +292,8 @@ class _FaqScreenState extends State<FaqScreen> {
                               Container(
                                 padding: const EdgeInsets.all(20),
                                 decoration: BoxDecoration(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .surfaceContainerHighest,
+                                  color: Theme.of(context).brightness == Brightness.dark
+                                      ? AppColors.surfaceElevatedDark : AppColors.surfaceElevatedLight,
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(
@@ -382,16 +382,16 @@ class _FAQCardState extends State<_FAQCard> {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: _isExpanded
-            ? colorScheme.surfaceContainerHighest
-            : colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+            ? (Theme.of(context).brightness == Brightness.dark ? AppColors.surfaceDark : AppColors.surfaceLight)
+            : (Theme.of(context).brightness == Brightness.dark ? AppColors.surfaceElevatedDark : AppColors.surfaceElevatedLight),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: _isExpanded
-              ? colorScheme.primary.withValues(alpha: 0.3)
+              ? AppColors.brand.withValues(alpha: 0.25)
               : Colors.transparent,
           width: 1,
         ),
-        boxShadow: _isExpanded ? AppShadows.subtle(colorScheme.primary) : null,
+        boxShadow: _isExpanded ? AppShadows.subtle(AppColors.brand) : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -410,8 +410,7 @@ class _FAQCardState extends State<_FAQCard> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color:
-                          colorScheme.primaryContainer.withValues(alpha: 0.5),
+                      color: AppColors.brandSoft,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
@@ -419,7 +418,7 @@ class _FAQCardState extends State<_FAQCard> {
                           ? Icons.help_rounded
                           : Icons.help_outline_rounded,
                       size: 22,
-                      color: colorScheme.primary,
+                      color: AppColors.brand,
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -443,7 +442,7 @@ class _FAQCardState extends State<_FAQCard> {
                         ? Icons.expand_less_rounded
                         : Icons.expand_more_rounded,
                     size: 28,
-                    color: colorScheme.primary,
+                    color: AppColors.brand,
                   ),
                 ],
               ),
@@ -459,7 +458,7 @@ class _FAQCardState extends State<_FAQCard> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer,
+                      color: AppColors.brandSoft,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -468,14 +467,14 @@ class _FAQCardState extends State<_FAQCard> {
                         Icon(
                           Icons.label_rounded,
                           size: 14,
-                          color: colorScheme.onPrimaryContainer,
+                          color: AppColors.brand,
                         ),
                         const SizedBox(width: 6),
                         Text(
                           widget.faq.category.toUpperCase(),
                           style: GoogleFonts.manrope(
                             fontSize: 11,
-                            color: colorScheme.onPrimaryContainer,
+                            color: AppColors.brand,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 1,
                           ),
@@ -487,7 +486,7 @@ class _FAQCardState extends State<_FAQCard> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: colorScheme.surface,
+                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.surfaceElevatedDark : AppColors.surfaceElevatedLight,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Text(
@@ -530,8 +529,8 @@ class _CategoryChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.surfaceContainerHighest,
+              ? AppColors.brand
+              : (Theme.of(context).brightness == Brightness.dark ? AppColors.surfaceDark : AppColors.surfaceLight),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(

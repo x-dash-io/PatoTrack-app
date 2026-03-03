@@ -7,6 +7,7 @@ import '../main.dart';
 import '../helpers/passcode_service.dart';
 import '../helpers/notification_helper.dart';
 import '../widgets/app_screen_background.dart';
+import '../styles/app_colors.dart';
 import '../styles/app_shadows.dart';
 import '../styles/app_spacing.dart';
 
@@ -252,12 +253,12 @@ class _PasscodeScreenState extends State<PasscodeScreen>
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                               colors: [
-                                colorScheme.primary,
-                                colorScheme.primary.withValues(alpha: 0.7),
+                                AppColors.brand,
+                                AppColors.brand.withValues(alpha: 0.7),
                               ],
                             ),
                             shape: BoxShape.circle,
-                            boxShadow: AppShadows.subtle(colorScheme.primary),
+                            boxShadow: AppShadows.subtle(AppColors.brand),
                           ),
                           child: Icon(
                             Icons.lock_outline_rounded,
@@ -327,8 +328,8 @@ class _PasscodeScreenState extends State<PasscodeScreen>
                                       borderRadius: BorderRadius.circular(16),
                                       borderSide: BorderSide(
                                         color: _hasError
-                                            ? colorScheme.error
-                                            : colorScheme.outline
+                                            ? AppColors.expense
+                                            : Theme.of(context).colorScheme.outline
                                                 .withValues(alpha: 0.3),
                                         width: 2.5,
                                       ),
@@ -348,8 +349,8 @@ class _PasscodeScreenState extends State<PasscodeScreen>
                                       borderRadius: BorderRadius.circular(16),
                                       borderSide: BorderSide(
                                         color: _hasError
-                                            ? colorScheme.error
-                                            : colorScheme.primary,
+                                            ? AppColors.expense
+                                            : AppColors.brand,
                                         width: 2.5,
                                       ),
                                     ),
@@ -392,7 +393,7 @@ class _PasscodeScreenState extends State<PasscodeScreen>
                       ),
                       decoration: BoxDecoration(
                         color:
-                            colorScheme.primaryContainer.withValues(alpha: 0.5),
+                            AppColors.brandSoft,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
@@ -409,7 +410,7 @@ class _PasscodeScreenState extends State<PasscodeScreen>
                             style: GoogleFonts.manrope(
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
-                              color: colorScheme.onPrimaryContainer,
+                              color: AppColors.brand,
                             ),
                           ),
                         ],
@@ -438,7 +439,7 @@ class _PasscodeScreenState extends State<PasscodeScreen>
                       'Please try again',
                       style: GoogleFonts.manrope(
                         fontSize: 13,
-                        color: colorScheme.error,
+                        color: AppColors.expense,
                         fontWeight: FontWeight.w500,
                       ),
                       textAlign: TextAlign.center,

@@ -8,6 +8,9 @@ import '../widgets/input_fields.dart';
 import '../widgets/dialog_helpers.dart';
 import '../widgets/loading_widgets.dart';
 import '../helpers/notification_helper.dart';
+import '../styles/app_colors.dart';
+import '../styles/app_shadows.dart';
+import '../styles/app_spacing.dart';
 import '../widgets/app_screen_background.dart';
 
 class ManageFrequenciesScreen extends StatefulWidget {
@@ -64,7 +67,7 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          color: Theme.of(context).brightness == Brightness.dark ? AppColors.surfaceDark : AppColors.surfaceLight,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Padding(
@@ -303,7 +306,7 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
                           style: GoogleFonts.manrope(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
-                            color: colorScheme.onSurfaceVariant,
+                            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -326,10 +329,10 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),
                         decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest,
+                          color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: colorScheme.outline.withValues(alpha: 0.1),
+                            color: isDark ? AppColors.surfaceBorderDark : AppColors.surfaceBorderLight,
                             width: 1,
                           ),
                         ),
@@ -341,12 +344,12 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
                           leading: Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: colorScheme.primaryContainer,
+                              color: isDark ? AppColors.brandSoftDark : AppColors.brandSoft,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Icon(
                               Icons.repeat_rounded,
-                              color: colorScheme.onPrimaryContainer,
+                              color: isDark ? AppColors.brandDark : AppColors.brand,
                               size: 24,
                             ),
                           ),
@@ -361,7 +364,7 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
                             '${frequency.value} days · ${frequency.type}',
                             style: GoogleFonts.manrope(
                               fontSize: 13,
-                              color: colorScheme.onSurfaceVariant,
+                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
                             ),
                           ),
                           trailing: IconButton(

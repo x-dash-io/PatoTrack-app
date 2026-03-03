@@ -7,6 +7,7 @@ import '../widgets/dialog_helpers.dart';
 import '../widgets/app_screen_background.dart';
 import '../models/help_article.dart';
 import 'help_article_detail_screen.dart';
+import '../styles/app_colors.dart';
 import '../styles/app_shadows.dart';
 import '../styles/app_spacing.dart';
 
@@ -46,14 +47,14 @@ class HelpScreen extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer,
+                    color: isDark ? AppColors.brandSoftDark : AppColors.brandSoft,
                     shape: BoxShape.circle,
                     boxShadow: AppShadows.subtle(colorScheme.primary),
                   ),
                   child: Icon(
                     Icons.help_rounded,
                     size: 64,
-                    color: colorScheme.onPrimaryContainer,
+                    color: isDark ? AppColors.brandDark : AppColors.brand,
                   ),
                 ),
               ),
@@ -435,10 +436,10 @@ class _HelpSection extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh,
+        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: colorScheme.outline.withValues(alpha: 0.1),
+          color: isDark ? AppColors.surfaceBorderDark : AppColors.surfaceBorderLight,
           width: 1,
         ),
         boxShadow: const [AppShadows.card],
@@ -455,13 +456,12 @@ class _HelpSection extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer,
+                    color: isDark ? AppColors.brandSoftDark : AppColors.brandSoft,
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: AppShadows.subtle(colorScheme.primary),
                   ),
                   child: Icon(
                     icon,
-                    color: colorScheme.onPrimaryContainer,
+                    color: isDark ? AppColors.brandDark : AppColors.brand,
                     size: 28,
                   ),
                 ),
@@ -492,13 +492,13 @@ class _HelpSection extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer.withValues(alpha: 0.3),
+                    color: isDark ? AppColors.brandSoftDark : AppColors.brandSoft,
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     Icons.chevron_right_rounded,
                     size: 20,
-                    color: colorScheme.primary,
+                    color: isDark ? AppColors.brandDark : AppColors.brand,
                   ),
                 ),
               ],
@@ -527,10 +527,10 @@ class _HelpArticleCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh,
+        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: colorScheme.outline.withValues(alpha: 0.1),
+          color: isDark ? AppColors.surfaceBorderDark : AppColors.surfaceBorderLight,
           width: 1,
         ),
         boxShadow: const [AppShadows.card],
@@ -547,9 +547,8 @@ class _HelpArticleCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer,
+                    color: isDark ? AppColors.brandSoftDark : AppColors.brandSoft,
                     borderRadius: BorderRadius.circular(14),
-                    boxShadow: AppShadows.subtle(colorScheme.primary),
                   ),
                   child: Icon(
                     article.icon,
@@ -584,13 +583,13 @@ class _HelpArticleCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer.withValues(alpha: 0.3),
+                    color: isDark ? AppColors.brandSoftDark : AppColors.brandSoft,
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     Icons.chevron_right_rounded,
                     size: 20,
-                    color: colorScheme.primary,
+                    color: isDark ? AppColors.brandDark : AppColors.brand,
                   ),
                 ),
               ],
@@ -622,10 +621,10 @@ class _GuideStep extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: AppSpacing.lg),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh,
+        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: colorScheme.outline.withValues(alpha: 0.1),
+          color: isDark ? AppColors.surfaceBorderDark : AppColors.surfaceBorderLight,
           width: 1,
         ),
       ),
@@ -636,15 +635,14 @@ class _GuideStep extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: colorScheme.primary,
+              color: AppColors.brand,
               shape: BoxShape.circle,
-              boxShadow: AppShadows.subtle(colorScheme.primary),
             ),
             child: Center(
               child: Text(
                 '$number',
                 style: GoogleFonts.manrope(
-                  color: colorScheme.onPrimary,
+                  color: Colors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
                 ),
