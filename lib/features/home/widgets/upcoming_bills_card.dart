@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pato_track/app_icons.dart';
 import 'package:intl/intl.dart';
 
 import '../../../models/bill.dart';
@@ -50,19 +51,18 @@ class _UpcomingBillsCardState extends State<UpcomingBillsCard> {
               GestureDetector(
                 onTap: widget.onAddBill,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? AppColors.brandSoftDark
-                        : AppColors.brandSoft,
+                    color:
+                        isDark ? AppColors.brandSoftDark : AppColors.brandSoft,
                     borderRadius: AppSpacing.radiusFull,
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        Icons.add_rounded,
+                        AppIcons.add_rounded,
                         size: 14,
                         color: isDark ? AppColors.brandDark : AppColors.brand,
                       ),
@@ -72,8 +72,7 @@ class _UpcomingBillsCardState extends State<UpcomingBillsCard> {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color:
-                              isDark ? AppColors.brandDark : AppColors.brand,
+                          color: isDark ? AppColors.brandDark : AppColors.brand,
                         ),
                       ),
                     ],
@@ -105,7 +104,8 @@ class _UpcomingBillsCardState extends State<UpcomingBillsCard> {
           if (bills.length > 3)
             TextButton(
               onPressed: () => setState(() => _showAll = !_showAll),
-              child: Text(_showAll ? 'Show less' : 'Show ${bills.length - 3} more'),
+              child: Text(
+                  _showAll ? 'Show less' : 'Show ${bills.length - 3} more'),
             ),
         ],
       ),
@@ -139,15 +139,15 @@ class _BillRow extends StatelessWidget {
         : days == 0
             ? ('Due today', AppColors.warning)
             : days <= 3
-                ? ('Due in $days day${days == 1 ? '' : 's'}',
-                    AppColors.warning)
-                : ('Due ${DateFormat('MMM d').format(bill.dueDate)}',
+                ? ('Due in $days day${days == 1 ? '' : 's'}', AppColors.warning)
+                : (
+                    'Due ${DateFormat('MMM d').format(bill.dueDate)}',
                     isDark
                         ? AppColors.textSecondaryDark
-                        : AppColors.textSecondary);
+                        : AppColors.textSecondary
+                  );
 
-    final bgColor =
-        isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
+    final bgColor = isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
     final borderColor =
         isDark ? AppColors.surfaceBorderDark : AppColors.surfaceBorderLight;
 
@@ -189,8 +189,8 @@ class _BillRow extends StatelessWidget {
               ),
               child: Icon(
                 days < 0
-                    ? Icons.warning_amber_rounded
-                    : Icons.receipt_outlined,
+                    ? AppIcons.warning_amber_rounded
+                    : AppIcons.receipt_outlined,
                 color: statusColor,
                 size: 18,
               ),
@@ -242,8 +242,7 @@ class _BillRow extends StatelessWidget {
                     onPressed: onPay,
                     style: FilledButton.styleFrom(
                       minimumSize: const Size(62, 30),
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 14),
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
                       textStyle: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
@@ -285,7 +284,7 @@ class _EmptyBills extends StatelessWidget {
               borderRadius: AppSpacing.radiusMd,
             ),
             child: const Icon(
-              Icons.calendar_today_outlined,
+              AppIcons.calendar_today_outlined,
               color: AppColors.warning,
               size: 20,
             ),

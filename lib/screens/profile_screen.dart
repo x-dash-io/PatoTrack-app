@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:pato_track/app_icons.dart';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -200,7 +201,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         content: StandardTextFormField(
           controller: _nameController,
           labelText: 'Full Name',
-          prefixIcon: Icons.person_outline,
+          prefixIcon: AppIcons.person_outline,
           autofocus: true,
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -579,7 +580,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 color: isDark ? const Color(0xFF192236) : Colors.white,
                 border: Border(
                   bottom: BorderSide(
-                    color: isDark ? const Color(0xFF243050) : const Color(0xFFE8EDF7),
+                    color: isDark
+                        ? const Color(0xFF243050)
+                        : const Color(0xFFE8EDF7),
                     width: 1,
                   ),
                 ),
@@ -595,10 +598,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           radius: 36,
                           backgroundColor: colorScheme.primary,
                           backgroundImage: currentUser!.photoURL != null
-                              ? CachedNetworkImageProvider(currentUser!.photoURL!)
+                              ? CachedNetworkImageProvider(
+                                  currentUser!.photoURL!)
                               : null,
                           child: currentUser!.photoURL == null
-                              ? Icon(Icons.person_rounded,
+                              ? Icon(AppIcons.person_rounded,
                                   size: 36, color: Colors.white)
                               : null,
                         ),
@@ -609,7 +613,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             color: colorScheme.primary,
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: isDark ? const Color(0xFF192236) : Colors.white,
+                              color: isDark
+                                  ? const Color(0xFF192236)
+                                  : Colors.white,
                               width: 2,
                             ),
                           ),
@@ -618,10 +624,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   padding: EdgeInsets.all(4),
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white),
                                   ),
                                 )
-                              : const Icon(Icons.camera_alt_rounded,
+                              : const Icon(AppIcons.camera_alt_rounded,
                                   size: 12, color: Colors.white),
                         ),
                       ],
@@ -649,11 +656,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               child: Container(
                                 padding: const EdgeInsets.all(6),
                                 decoration: BoxDecoration(
-                                  color: isDark ? const Color(0xFF1E2A40) : const Color(0xFFF0F3FA),
+                                  color: isDark
+                                      ? const Color(0xFF1E2A40)
+                                      : const Color(0xFFF0F3FA),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: Icon(Icons.edit_outlined,
-                                    size: 14, color: colorScheme.onSurfaceVariant),
+                                child: Icon(AppIcons.edit_outlined,
+                                    size: 14,
+                                    color: colorScheme.onSurfaceVariant),
                               ),
                             ),
                           ],
@@ -679,7 +689,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _SettingsCard(
             children: [
               SettingListTile(
-                icon: Icons.dark_mode_rounded,
+                icon: AppIcons.dark_mode_rounded,
                 title: 'Dark Mode',
                 trailing: Switch(
                   value: themeProvider.themeMode == ThemeMode.dark,
@@ -688,7 +698,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               _SettingDivider(),
               SettingListTile(
-                icon: Icons.lock_rounded,
+                icon: AppIcons.lock_rounded,
                 title: 'Passcode Lock',
                 subtitle: 'Secure your app with a PIN',
                 trailing: Switch(
@@ -696,14 +706,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onChanged: (value) async {
                     if (value) {
                       final success = await Navigator.of(context).push<bool>(
-                        MaterialPageRoute(builder: (_) => const PasscodeScreen(isSettingPasscode: true)),
+                        MaterialPageRoute(
+                            builder: (_) =>
+                                const PasscodeScreen(isSettingPasscode: true)),
                       );
                       if (success == true && mounted) {
                         setState(() => _isPasscodeEnabled = true);
                       }
                     } else {
                       final success = await Navigator.of(context).push<bool>(
-                        MaterialPageRoute(builder: (_) => const PasscodeScreen(isSettingPasscode: false)),
+                        MaterialPageRoute(
+                            builder: (_) =>
+                                const PasscodeScreen(isSettingPasscode: false)),
                       );
                       if (success == true && mounted) {
                         await _passcodeService.clearPasscode();
@@ -716,44 +730,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
               if (_isPasscodeEnabled) ...[
                 _SettingDivider(),
                 SettingListTile(
-                  icon: Icons.phonelink_lock_rounded,
+                  icon: AppIcons.phonelink_lock_rounded,
                   title: 'Change Passcode',
                   onTap: () async {
                     final navigator = Navigator.of(context);
                     final verified = await navigator.push<bool>(
-                      MaterialPageRoute(builder: (_) => const PasscodeScreen(isSettingPasscode: false)),
+                      MaterialPageRoute(
+                          builder: (_) =>
+                              const PasscodeScreen(isSettingPasscode: false)),
                     );
                     if (verified != true || !mounted) return;
                     await navigator.push<bool>(
-                      MaterialPageRoute(builder: (_) => const PasscodeScreen(isSettingPasscode: true)),
+                      MaterialPageRoute(
+                          builder: (_) =>
+                              const PasscodeScreen(isSettingPasscode: true)),
                     );
                   },
                 ),
               ],
               _SettingDivider(),
               SettingListTile(
-                icon: Icons.currency_exchange_rounded,
+                icon: AppIcons.currency_exchange_rounded,
                 title: 'Currency',
                 trailing: DropdownButton<String>(
                   value: currencyProvider.code,
                   underline: const SizedBox(),
-                  dropdownColor: isDark ? const Color(0xFF1E2A40) : Colors.white,
-                  icon: Icon(Icons.arrow_drop_down_rounded,
+                  dropdownColor:
+                      isDark ? const Color(0xFF1E2A40) : Colors.white,
+                  icon: Icon(AppIcons.arrow_drop_down_rounded,
                       color: colorScheme.onSurfaceVariant, size: 24),
                   borderRadius: BorderRadius.circular(12),
                   menuMaxHeight: 200,
-                  items: currencyProvider.options.map((o) =>
-                    DropdownMenuItem(value: o.code, child: Text('${o.symbol} · ${o.code}'))
-                  ).toList(),
-                  selectedItemBuilder: (_) => currencyProvider.options.map((o) =>
-                    Text(o.symbol, style: theme.textTheme.labelLarge?.copyWith(
-                      color: colorScheme.primary, fontWeight: FontWeight.w700,
-                    ))
-                  ).toList(),
+                  items: currencyProvider.options
+                      .map((o) => DropdownMenuItem(
+                          value: o.code,
+                          child: Text('${o.symbol} · ${o.code}')))
+                      .toList(),
+                  selectedItemBuilder: (_) => currencyProvider.options
+                      .map((o) => Text(o.symbol,
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.w700,
+                          )))
+                      .toList(),
                   onChanged: (v) {
                     if (v != null && mounted) {
                       currencyProvider.setCurrency(v);
-                      NotificationHelper.showSuccess(context, message: 'Currency updated.');
+                      NotificationHelper.showSuccess(context,
+                          message: 'Currency updated.');
                     }
                   },
                 ),
@@ -768,24 +792,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _SettingsCard(
             children: [
               SettingListTile(
-                icon: Icons.password_rounded,
+                icon: AppIcons.password_rounded,
                 title: 'Change Password',
                 trailing: _isSendingPasswordReset
-                    ? const SizedBox(width: 20, height: 20,
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2))
                     : null,
                 onTap: _isSendingPasswordReset ? null : _sendPasswordResetEmail,
               ),
               _SettingDivider(),
               SettingListTile(
-                icon: Icons.delete_forever_rounded,
+                icon: AppIcons.delete_forever_rounded,
                 title: 'Delete Account',
                 titleColor: colorScheme.error,
                 iconColor: colorScheme.error,
                 trailing: _isDeletingAccount
-                    ? SizedBox(width: 20, height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(colorScheme.error)))
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                                colorScheme.error)))
                     : null,
                 onTap: _isDeletingAccount ? null : _deleteAccount,
               ),
@@ -804,7 +834,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 color: isDark ? const Color(0xFF192236) : Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: isDark ? const Color(0xFF243050) : const Color(0xFFE8EDF7),
+                  color: isDark
+                      ? const Color(0xFF243050)
+                      : const Color(0xFFE8EDF7),
                   width: 1,
                 ),
               ),
@@ -814,12 +846,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Row(
                     children: [
                       Container(
-                        width: 36, height: 36,
+                        width: 36,
+                        height: 36,
                         decoration: BoxDecoration(
                           color: colorScheme.primaryContainer,
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Icon(Icons.cloud_sync_rounded,
+                        child: Icon(AppIcons.cloud_sync_rounded,
                             color: Colors.white, size: 18),
                       ),
                       const SizedBox(width: 12),
@@ -827,15 +860,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Cloud Sync', style: theme.textTheme.titleSmall),
-                            Text(_cloudRestoreSubtitle(), style: theme.textTheme.bodySmall?.copyWith(fontSize: 11)),
+                            Text('Cloud Sync',
+                                style: theme.textTheme.titleSmall),
+                            Text(_cloudRestoreSubtitle(),
+                                style: theme.textTheme.bodySmall
+                                    ?.copyWith(fontSize: 11)),
                           ],
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: _cloudSyncStatusColor(colorScheme).withValues(alpha: 0.1),
+                          color: _cloudSyncStatusColor(colorScheme)
+                              .withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -854,19 +892,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Expanded(
                         child: FilledButton.icon(
                           onPressed: _cloudSyncStatus == CloudSyncStatus.syncing
-                              ? null : _handleRestore,
-                          icon: const Icon(Icons.sync_rounded, size: 16),
-                          label: Text(_cloudSyncStatus == CloudSyncStatus.error ? 'Retry' : 'Sync now'),
-                          style: FilledButton.styleFrom(minimumSize: const Size(0, 38)),
+                              ? null
+                              : _handleRestore,
+                          icon: const Icon(AppIcons.sync_rounded, size: 16),
+                          label: Text(_cloudSyncStatus == CloudSyncStatus.error
+                              ? 'Retry'
+                              : 'Sync now'),
+                          style: FilledButton.styleFrom(
+                              minimumSize: const Size(0, 38)),
                         ),
                       ),
                       if (_cloudSyncStatus == CloudSyncStatus.syncing) ...[
                         const SizedBox(width: 8),
                         IconButton.outlined(
                           onPressed: _cancelRestore,
-                          icon: const Icon(Icons.close_rounded, size: 18),
+                          icon: const Icon(AppIcons.close_rounded, size: 18),
                           style: IconButton.styleFrom(
-                            minimumSize: const Size(38, 38), fixedSize: const Size(38, 38)),
+                              minimumSize: const Size(38, 38),
+                              fixedSize: const Size(38, 38)),
                         ),
                       ],
                     ],
@@ -883,13 +926,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _SettingsCard(
             children: [
               SettingListTile(
-                icon: Icons.question_answer_rounded,
+                icon: AppIcons.question_answer_rounded,
                 title: 'FAQ',
                 onTap: _showFaqScreen,
               ),
               _SettingDivider(),
               SettingListTile(
-                icon: Icons.help_outline_rounded,
+                icon: AppIcons.help_outline_rounded,
                 title: 'Help & Support',
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const HelpScreen()),
@@ -897,7 +940,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               _SettingDivider(),
               SettingListTile(
-                icon: Icons.support_agent_rounded,
+                icon: AppIcons.support_agent_rounded,
                 title: 'Contact via WhatsApp',
                 onTap: _launchWhatsApp,
               ),
@@ -915,9 +958,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: OutlinedButton.icon(
                 onPressed: _isLoggingOut ? null : _logout,
                 icon: _isLoggingOut
-                    ? const SizedBox(width: 18, height: 18,
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
                         child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(Icons.logout_rounded),
+                    : const Icon(AppIcons.logout_rounded),
                 label: const Text('Sign out'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: colorScheme.error,
@@ -946,10 +991,10 @@ class _SectionHeader extends StatelessWidget {
       child: Text(
         title.toUpperCase(),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          letterSpacing: 1.0,
-          fontWeight: FontWeight.w700,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
+              letterSpacing: 1.0,
+              fontWeight: FontWeight.w700,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
       ),
     );
   }

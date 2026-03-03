@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pato_track/app_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -67,7 +68,9 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
         decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.dark ? AppColors.surfaceDark : AppColors.surfaceLight,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.surfaceDark
+              : AppColors.surfaceLight,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Padding(
@@ -100,14 +103,14 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
                 controller: nameController,
                 labelText: 'Name (internal)',
                 hintText: 'e.g., weekly, monthly',
-                prefixIcon: Icons.label_outline_rounded,
+                prefixIcon: AppIcons.label_outline_rounded,
               ),
               const SizedBox(height: 16),
               StandardTextFormField(
                 controller: displayNameController,
                 labelText: 'Display Name',
                 hintText: 'e.g., Weekly, Monthly',
-                prefixIcon: Icons.text_fields_rounded,
+                prefixIcon: AppIcons.text_fields_rounded,
               ),
               const SizedBox(height: 16),
               StatefulBuilder(
@@ -117,7 +120,7 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
                       StandardDropdownFormField<String>(
                         value: selectedType,
                         labelText: 'Type',
-                        prefixIcon: Icons.category_rounded,
+                        prefixIcon: AppIcons.category_rounded,
                         items: const [
                           DropdownMenuItem(
                               value: 'weekly', child: Text('Weekly')),
@@ -167,7 +170,7 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
                         hintText: 'e.g., 7 for weekly',
                         keyboardType: const TextInputType.numberWithOptions(
                             decimal: false),
-                        prefixIcon: Icons.numbers_rounded,
+                        prefixIcon: AppIcons.numbers_rounded,
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly
                         ],
@@ -273,13 +276,13 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
           style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
         ),
         systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
+          statusBarColor: isDark ? AppColors.bgDark : AppColors.bgLight,
           statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
           statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_rounded),
+            icon: const Icon(AppIcons.add_rounded),
             onPressed: _addFrequency,
             tooltip: 'Add Frequency',
           ),
@@ -295,7 +298,7 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          Icons.repeat_rounded,
+                          AppIcons.repeat_rounded,
                           size: 64,
                           color: colorScheme.onSurfaceVariant
                               .withValues(alpha: 0.4),
@@ -306,7 +309,9 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
                           style: GoogleFonts.manrope(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
-                            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                            color: isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondary,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -329,10 +334,14 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),
                         decoration: BoxDecoration(
-                          color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                          color: isDark
+                              ? AppColors.surfaceDark
+                              : AppColors.surfaceLight,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: isDark ? AppColors.surfaceBorderDark : AppColors.surfaceBorderLight,
+                            color: isDark
+                                ? AppColors.surfaceBorderDark
+                                : AppColors.surfaceBorderLight,
                             width: 1,
                           ),
                         ),
@@ -344,12 +353,16 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
                           leading: Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: isDark ? AppColors.brandSoftDark : AppColors.brandSoft,
+                              color: isDark
+                                  ? AppColors.brandSoftDark
+                                  : AppColors.brandSoft,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Icon(
-                              Icons.repeat_rounded,
-                              color: isDark ? AppColors.brandDark : AppColors.brand,
+                              AppIcons.repeat_rounded,
+                              color: isDark
+                                  ? AppColors.brandDark
+                                  : AppColors.brand,
                               size: 24,
                             ),
                           ),
@@ -364,11 +377,13 @@ class _ManageFrequenciesScreenState extends State<ManageFrequenciesScreen> {
                             '${frequency.value} days · ${frequency.type}',
                             style: GoogleFonts.manrope(
                               fontSize: 13,
-                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondary,
                             ),
                           ),
                           trailing: IconButton(
-                            icon: const Icon(Icons.delete_outline_rounded),
+                            icon: const Icon(AppIcons.delete_outline_rounded),
                             color: Colors.red,
                             onPressed: () => _deleteFrequency(frequency),
                           ),

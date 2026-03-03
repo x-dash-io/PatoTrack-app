@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:pato_track/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -68,7 +69,8 @@ class _ReportsScreenState extends State<ReportsScreen>
     super.build(context);
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      return const Scaffold(body: Center(child: Text('Sign in to view reports.')));
+      return const Scaffold(
+          body: Center(child: Text('Sign in to view reports.')));
     }
 
     return ChangeNotifierProvider<ReportsController>.value(
@@ -84,7 +86,7 @@ class _ReportsScreenState extends State<ReportsScreen>
               actions: [
                 IconButton(
                   onPressed: () => reports.refresh(user.uid),
-                  icon: const Icon(Icons.refresh_rounded),
+                  icon: const Icon(AppIcons.refresh_rounded),
                   tooltip: 'Refresh',
                 ),
               ],
@@ -118,8 +120,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                                 horizontal: AppSpacing.lg),
                             child: _PeriodSelector(
                               selected: reports.selectedRange,
-                              onChanged: (r) =>
-                                  reports.setRange(r, user.uid),
+                              onChanged: (r) => reports.setRange(r, user.uid),
                             ),
                           ),
                           const SizedBox(height: AppSpacing.sm),
@@ -192,8 +193,8 @@ class _ReportsScreenState extends State<ReportsScreen>
                                   horizontal: AppSpacing.lg),
                               child: _ExportCard(
                                 isExporting: reports.isExporting,
-                                onExport: () => _exportCurrentReport(
-                                    reports, currency),
+                                onExport: () =>
+                                    _exportCurrentReport(reports, currency),
                               ),
                             ),
                           ],
@@ -231,7 +232,9 @@ class _PeriodSelector extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceElevatedDark : AppColors.surfaceElevatedLight,
+        color: isDark
+            ? AppColors.surfaceElevatedDark
+            : AppColors.surfaceElevatedLight,
         borderRadius: AppSpacing.radiusMd,
       ),
       child: Row(
@@ -292,7 +295,7 @@ class _ScopeNotice extends StatelessWidget {
       child: Row(
         children: [
           Icon(
-            Icons.info_outline_rounded,
+            AppIcons.info_outline_rounded,
             size: 14,
             color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiary,
           ),
@@ -338,7 +341,9 @@ class _KpiRow extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: isDark ? AppColors.heroGradientDark : AppColors.heroGradientLight,
+              colors: isDark
+                  ? AppColors.heroGradientDark
+                  : AppColors.heroGradientLight,
             ),
             borderRadius: AppSpacing.radiusXl,
             boxShadow: const [AppShadows.cardMd],
@@ -371,13 +376,16 @@ class _KpiRow extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.15),
                   borderRadius: AppSpacing.radiusFull,
                 ),
                 child: Text(
-                  net >= 0 ? 'In the green this period' : 'Spending exceeds income',
+                  net >= 0
+                      ? 'In the green this period'
+                      : 'Spending exceeds income',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -395,7 +403,7 @@ class _KpiRow extends StatelessWidget {
               child: _KpiTile(
                 label: 'Income',
                 value: currency.format(income, decimalDigits: 0),
-                icon: Icons.arrow_downward_rounded,
+                icon: AppIcons.arrow_downward_rounded,
                 color: AppColors.income,
                 softColor: AppColors.incomeSoft,
               ),
@@ -405,7 +413,7 @@ class _KpiRow extends StatelessWidget {
               child: _KpiTile(
                 label: 'Expenses',
                 value: currency.format(expenses, decimalDigits: 0),
-                icon: Icons.arrow_upward_rounded,
+                icon: AppIcons.arrow_upward_rounded,
                 color: AppColors.expense,
                 softColor: AppColors.expenseSoft,
               ),
@@ -441,7 +449,9 @@ class _KpiTile extends StatelessWidget {
         color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: AppSpacing.radiusXl,
         border: Border.all(
-          color: isDark ? AppColors.surfaceBorderDark : AppColors.surfaceBorderLight,
+          color: isDark
+              ? AppColors.surfaceBorderDark
+              : AppColors.surfaceBorderLight,
           width: 1,
         ),
         boxShadow: AppShadows.subtle(),
@@ -499,7 +509,9 @@ class _ExportCard extends StatelessWidget {
         color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: AppSpacing.radiusXl,
         border: Border.all(
-          color: isDark ? AppColors.surfaceBorderDark : AppColors.surfaceBorderLight,
+          color: isDark
+              ? AppColors.surfaceBorderDark
+              : AppColors.surfaceBorderLight,
           width: 1,
         ),
         boxShadow: AppShadows.subtle(),
@@ -510,12 +522,16 @@ class _ExportCard extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: isDark ? AppColors.surfaceElevatedDark : AppColors.surfaceElevatedLight,
+              color: isDark
+                  ? AppColors.surfaceElevatedDark
+                  : AppColors.surfaceElevatedLight,
               borderRadius: AppSpacing.radiusMd,
             ),
             child: Icon(
-              Icons.picture_as_pdf_rounded,
-              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+              AppIcons.picture_as_pdf_rounded,
+              color: isDark
+                  ? AppColors.textSecondaryDark
+                  : AppColors.textSecondary,
               size: 20,
             ),
           ),
@@ -524,7 +540,8 @@ class _ExportCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Export Report', style: Theme.of(context).textTheme.titleSmall),
+                Text('Export Report',
+                    style: Theme.of(context).textTheme.titleSmall),
                 const SizedBox(height: 2),
                 Text(
                   'Business transactions for this period',
@@ -543,11 +560,13 @@ class _ExportCard extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
-                textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                textStyle:
+                    const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
               ),
               child: isExporting
                   ? const SizedBox(
-                      width: 16, height: 16,
+                      width: 16,
+                      height: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
                         color: Colors.white,
@@ -574,7 +593,7 @@ class _ErrorState extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: _StateCard(
-        icon: Icons.error_outline_rounded,
+        icon: AppIcons.error_outline_rounded,
         iconColor: AppColors.expense,
         title: 'Reports unavailable',
         subtitle: message,
@@ -594,7 +613,7 @@ class _EmptyState extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: _StateCard(
-        icon: Icons.bar_chart_rounded,
+        icon: AppIcons.bar_chart_rounded,
         iconColor: AppColors.brand,
         title: 'No data for this period',
         subtitle:
@@ -632,7 +651,9 @@ class _StateCard extends StatelessWidget {
         color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: AppSpacing.radiusXl,
         border: Border.all(
-          color: isDark ? AppColors.surfaceBorderDark : AppColors.surfaceBorderLight,
+          color: isDark
+              ? AppColors.surfaceBorderDark
+              : AppColors.surfaceBorderLight,
         ),
         boxShadow: AppShadows.subtle(),
       ),

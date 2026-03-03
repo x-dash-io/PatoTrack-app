@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pato_track/app_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -18,7 +19,6 @@ class HelpScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
@@ -29,7 +29,7 @@ class HelpScreen extends StatelessWidget {
         ),
         elevation: 0,
         systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
+          statusBarColor: isDark ? AppColors.bgDark : AppColors.bgLight,
           statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
           statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
         ),
@@ -47,12 +47,13 @@ class HelpScreen extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.brandSoftDark : AppColors.brandSoft,
+                    color:
+                        isDark ? AppColors.brandSoftDark : AppColors.brandSoft,
                     shape: BoxShape.circle,
                     boxShadow: AppShadows.subtle(colorScheme.primary),
                   ),
                   child: Icon(
-                    Icons.help_rounded,
+                    AppIcons.help_rounded,
                     size: 64,
                     color: isDark ? AppColors.brandDark : AppColors.brand,
                   ),
@@ -65,7 +66,7 @@ class HelpScreen extends StatelessWidget {
               _HelpSection(
                 title: 'Frequently Asked Questions',
                 description: 'Find answers to common questions',
-                icon: Icons.question_answer_outlined,
+                icon: AppIcons.question_answer_outlined,
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (context) => const FaqScreen()),
@@ -79,7 +80,7 @@ class HelpScreen extends StatelessWidget {
               _HelpSection(
                 title: 'Contact Support',
                 description: 'Get help via WhatsApp',
-                icon: Icons.chat_outlined,
+                icon: AppIcons.chat_outlined,
                 onTap: () => _launchWhatsApp(context),
               ),
 
@@ -89,7 +90,7 @@ class HelpScreen extends StatelessWidget {
               _HelpSection(
                 title: 'Quick Start Guide',
                 description: 'Learn how to get started with PatoTrack',
-                icon: Icons.menu_book_rounded,
+                icon: AppIcons.menu_book_rounded,
                 onTap: () => _showQuickStartGuide(context),
               ),
 
@@ -107,7 +108,7 @@ class HelpScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
-                        Icons.article_rounded,
+                        AppIcons.article_rounded,
                         size: 20,
                         color: colorScheme.onPrimaryContainer,
                       ),
@@ -166,7 +167,7 @@ class HelpScreen extends StatelessWidget {
         id: 'adding-transaction',
         title: 'Adding Your First Transaction',
         description: 'Learn how to record income and expenses',
-        icon: Icons.add_circle_rounded,
+        icon: AppIcons.add_circle_rounded,
         content:
             'Adding transactions is the core feature of PatoTrack. Here\'s everything you need to know about recording your business income and expenses.',
         steps: [
@@ -189,7 +190,7 @@ class HelpScreen extends StatelessWidget {
         id: 'bill-reminders',
         title: 'Setting Up Bill Reminders',
         description: 'Never miss a payment with automatic reminders',
-        icon: Icons.calendar_today_rounded,
+        icon: AppIcons.calendar_today_rounded,
         content:
             'Bill reminders help you stay on top of recurring payments like rent, subscriptions, and utilities. Set them up once, and PatoTrack will remind you before they\'re due.',
         steps: [
@@ -213,7 +214,7 @@ class HelpScreen extends StatelessWidget {
         id: 'managing-categories',
         title: 'Managing Categories',
         description: 'Organize your transactions with custom categories',
-        icon: Icons.folder_rounded,
+        icon: AppIcons.folder_rounded,
         content:
             'Categories help you organize and analyze your business transactions. Create custom categories that match your business needs, and use them consistently for better reporting.',
         steps: [
@@ -238,7 +239,7 @@ class HelpScreen extends StatelessWidget {
         id: 'understanding-reports',
         title: 'Understanding Reports',
         description: 'Make sense of your spending with visual reports',
-        icon: Icons.bar_chart_rounded,
+        icon: AppIcons.bar_chart_rounded,
         content:
             'PatoTrack provides detailed visual reports to help you understand your business finances. Use these insights to make informed decisions and track your financial performance.',
         steps: [
@@ -263,7 +264,7 @@ class HelpScreen extends StatelessWidget {
         id: 'managing-frequencies',
         title: 'Managing Bill Frequencies',
         description: 'Create custom recurring bill schedules',
-        icon: Icons.repeat_rounded,
+        icon: AppIcons.repeat_rounded,
         content:
             'Customize bill frequencies to match your actual payment schedules. Create frequencies that don\'t come standard, like every 2 weeks or quarterly payments.',
         steps: [
@@ -432,6 +433,7 @@ class _HelpSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -439,7 +441,9 @@ class _HelpSection extends StatelessWidget {
         color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isDark ? AppColors.surfaceBorderDark : AppColors.surfaceBorderLight,
+          color: isDark
+              ? AppColors.surfaceBorderDark
+              : AppColors.surfaceBorderLight,
           width: 1,
         ),
         boxShadow: const [AppShadows.card],
@@ -456,7 +460,8 @@ class _HelpSection extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.brandSoftDark : AppColors.brandSoft,
+                    color:
+                        isDark ? AppColors.brandSoftDark : AppColors.brandSoft,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Icon(
@@ -492,11 +497,12 @@ class _HelpSection extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.brandSoftDark : AppColors.brandSoft,
+                    color:
+                        isDark ? AppColors.brandSoftDark : AppColors.brandSoft,
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    Icons.chevron_right_rounded,
+                    AppIcons.chevron_right_rounded,
                     size: 20,
                     color: isDark ? AppColors.brandDark : AppColors.brand,
                   ),
@@ -523,6 +529,7 @@ class _HelpArticleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -530,7 +537,9 @@ class _HelpArticleCard extends StatelessWidget {
         color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDark ? AppColors.surfaceBorderDark : AppColors.surfaceBorderLight,
+          color: isDark
+              ? AppColors.surfaceBorderDark
+              : AppColors.surfaceBorderLight,
           width: 1,
         ),
         boxShadow: const [AppShadows.card],
@@ -547,7 +556,8 @@ class _HelpArticleCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.brandSoftDark : AppColors.brandSoft,
+                    color:
+                        isDark ? AppColors.brandSoftDark : AppColors.brandSoft,
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Icon(
@@ -583,11 +593,12 @@ class _HelpArticleCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.brandSoftDark : AppColors.brandSoft,
+                    color:
+                        isDark ? AppColors.brandSoftDark : AppColors.brandSoft,
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    Icons.chevron_right_rounded,
+                    AppIcons.chevron_right_rounded,
                     size: 20,
                     color: isDark ? AppColors.brandDark : AppColors.brand,
                   ),
@@ -616,6 +627,7 @@ class _GuideStep extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.lg),
@@ -624,7 +636,9 @@ class _GuideStep extends StatelessWidget {
         color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDark ? AppColors.surfaceBorderDark : AppColors.surfaceBorderLight,
+          color: isDark
+              ? AppColors.surfaceBorderDark
+              : AppColors.surfaceBorderLight,
           width: 1,
         ),
       ),

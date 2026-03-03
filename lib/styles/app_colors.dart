@@ -12,21 +12,21 @@ class AppColors {
   AppColors._();
 
   // ─── Brand ───────────────────────────────────────────────────────────────
-  static const Color brand = Color(0xFF3D5AFE);        // Primary action blue
-  static const Color brandDeep = Color(0xFF1A237E);    // Deep navy for headers
-  static const Color brandSoft = Color(0xFFE8EAFF);    // Tinted bg / chips
-  static const Color brandMid = Color(0xFF7986FF);     // Lighter brand for icons
+  static const Color brand = Color(0xFF3D5AFE); // Primary action blue
+  static const Color brandDeep = Color(0xFF1A237E); // Deep navy for headers
+  static const Color brandSoft = Color(0xFFE8EAFF); // Tinted bg / chips
+  static const Color brandMid = Color(0xFF7986FF); // Lighter brand for icons
 
   // Dark-mode brand
   static const Color brandDark = Color(0xFF7986FF);
   static const Color brandSoftDark = Color(0xFF1A237E);
 
   // ─── Income / Expense Semantic ────────────────────────────────────────────
-  static const Color income = Color(0xFF00C896);       // Emerald green
+  static const Color income = Color(0xFF00C896); // Emerald green
   static const Color incomeSoft = Color(0xFFE0FAF3);
   static const Color incomeDark = Color(0xFF00C896);
 
-  static const Color expense = Color(0xFFFF4757);      // Vivid red
+  static const Color expense = Color(0xFFFF4757); // Vivid red
   static const Color expenseSoft = Color(0xFFFFECEE);
   static const Color expenseDark = Color(0xFFFF6B81);
 
@@ -38,10 +38,11 @@ class AppColors {
   static const Color neutralSoft = Color(0xFFF0F2F5);
 
   // ─── Surface & Background (Light) ────────────────────────────────────────
-  static const Color bgLight = Color(0xFFF7F8FC);      // Page background
+  static const Color bgLight = Color(0xFFF7F8FC); // Page background
   static const Color surfaceLight = Color(0xFFFFFFFF); // Card surface
   static const Color surfaceElevatedLight = Color(0xFFF0F2FA); // Elevated cards
-  static const Color surfaceBorderLight = Color(0xFFE8EAF0); // Dividers & borders
+  static const Color surfaceBorderLight =
+      Color(0xFFE8EAF0); // Dividers & borders
 
   // ─── Surface & Background (Dark) ─────────────────────────────────────────
   static const Color bgDark = Color(0xFF0F1117);

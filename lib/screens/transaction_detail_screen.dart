@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pato_track/app_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
@@ -170,7 +171,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
           style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
         ),
         systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
+          statusBarColor: isDark ? AppColors.bgDark : AppColors.bgLight,
           statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
           statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
         ),
@@ -191,7 +192,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                   ),
                 )
               : IconButton(
-                  icon: const Icon(Icons.delete_outline),
+                  icon: const Icon(AppIcons.delete_outline),
                   color: Colors.red,
                   onPressed: _isDeleting ? null : _deleteTransaction,
                   tooltip: 'Delete Transaction',
@@ -222,7 +223,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                         'Expense',
                         style: GoogleFonts.manrope(fontWeight: FontWeight.w500),
                       ),
-                      icon: const Icon(Icons.arrow_upward, size: 18),
+                      icon: const Icon(AppIcons.arrow_upward, size: 18),
                     ),
                     ButtonSegment(
                       value: 'income',
@@ -230,7 +231,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                         'Income',
                         style: GoogleFonts.manrope(fontWeight: FontWeight.w500),
                       ),
-                      icon: const Icon(Icons.arrow_downward, size: 18),
+                      icon: const Icon(AppIcons.arrow_downward, size: 18),
                     ),
                   ],
                   selected: {_transactionType},
@@ -251,7 +252,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                 labelText: 'Amount',
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
-                prefixIcon: Icons.attach_money_rounded,
+                prefixIcon: AppIcons.attach_money_rounded,
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
                 ],
@@ -293,8 +294,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                           value: dropdownValue,
                           labelText: 'Category',
                           prefixIcon: _transactionType == 'expense'
-                              ? Icons.category_rounded
-                              : Icons.account_balance_wallet_rounded,
+                              ? AppIcons.category_rounded
+                              : AppIcons.account_balance_wallet_rounded,
                           items: categories.map((category) {
                             return DropdownMenuItem<int>(
                               value: category.id,
@@ -326,7 +327,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.settings_outlined),
+                      icon: const Icon(AppIcons.settings_outlined),
                       tooltip: 'Manage Categories',
                       onPressed: () async {
                         await Navigator.of(context).push(
@@ -347,7 +348,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
               StandardTextFormField(
                 controller: _descriptionController,
                 labelText: 'Description / Note (Optional)',
-                prefixIcon: Icons.description_rounded,
+                prefixIcon: AppIcons.description_rounded,
                 maxLines: 3,
               ),
               const SizedBox(height: 16),

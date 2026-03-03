@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:pato_track/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
@@ -247,7 +248,11 @@ class _HomeScreenState extends State<HomeScreen>
                         SizedBox(
                           height: MediaQuery.of(context).padding.top + 8,
                         ),
-                        HomeHeader(user: user, greeting: _greeting(), balance: home.balance, currency: currency),
+                        HomeHeader(
+                            user: user,
+                            greeting: _greeting(),
+                            balance: home.balance,
+                            currency: currency),
                         const SizedBox(height: AppSpacing.md),
                         SummaryCardsSection(
                           currency: currency,
@@ -341,7 +346,7 @@ class _QuickActionsRow extends StatelessWidget {
       children: [
         Expanded(
           child: _QuickAction(
-            icon: Icons.add_rounded,
+            icon: AppIcons.add_rounded,
             label: 'Add',
             onTap: onAddTransaction,
             isPrimary: true,
@@ -350,7 +355,7 @@ class _QuickActionsRow extends StatelessWidget {
         const SizedBox(width: AppSpacing.xs),
         Expanded(
           child: _QuickAction(
-            icon: Icons.receipt_long_rounded,
+            icon: AppIcons.receipt_long_rounded,
             label: 'Transactions',
             onTap: onViewAll,
           ),
@@ -358,7 +363,7 @@ class _QuickActionsRow extends StatelessWidget {
         const SizedBox(width: AppSpacing.xs),
         Expanded(
           child: _QuickAction(
-            icon: Icons.calendar_month_rounded,
+            icon: AppIcons.calendar_month_rounded,
             label: 'Add Bill',
             onTap: onAddBill,
           ),
@@ -404,7 +409,9 @@ class _QuickAction extends StatelessWidget {
           border: isPrimary
               ? null
               : Border.all(
-                  color: isDark ? AppColors.surfaceBorderDark : AppColors.surfaceBorderLight,
+                  color: isDark
+                      ? AppColors.surfaceBorderDark
+                      : AppColors.surfaceBorderLight,
                   width: 1,
                 ),
           boxShadow: isPrimary

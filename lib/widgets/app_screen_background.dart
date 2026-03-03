@@ -45,8 +45,8 @@ class AppScreenBackground extends StatelessWidget {
                     end: Alignment.bottomCenter,
                     colors: [
                       (isDark
-                              ? AppColors.brand.withValues(alpha: 0.08)
-                              : AppColors.brand.withValues(alpha: 0.04)),
+                          ? AppColors.brand.withValues(alpha: 0.08)
+                          : AppColors.brand.withValues(alpha: 0.04)),
                       Colors.transparent,
                     ],
                   ),

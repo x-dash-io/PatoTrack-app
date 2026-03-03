@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pato_track/app_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/help_article.dart';
@@ -28,7 +29,7 @@ class HelpArticleDetailScreen extends StatelessWidget {
           style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
         ),
         systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
+          statusBarColor: isDark ? AppColors.bgDark : AppColors.bgLight,
           statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
           statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
         ),
@@ -103,7 +104,7 @@ class HelpArticleDetailScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
-                        Icons.checklist_rounded,
+                        AppIcons.checklist_rounded,
                         color: colorScheme.onPrimaryContainer,
                         size: 24,
                       ),
@@ -183,7 +184,7 @@ class HelpArticleDetailScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
-                        Icons.lightbulb_rounded,
+                        AppIcons.lightbulb_rounded,
                         color: Colors.amber,
                         size: 24,
                       ),
@@ -215,7 +216,7 @@ class HelpArticleDetailScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Icon(
-                          Icons.info_outline_rounded,
+                          AppIcons.info_outline_rounded,
                           color: Colors.amber.shade700,
                           size: 20,
                         ),

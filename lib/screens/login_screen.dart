@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:pato_track/app_icons.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'signup_screen.dart';
-import '../widgets/loading_widgets.dart';
 import '../widgets/input_fields.dart';
 import '../services/google_sign_in_service.dart';
 import '../helpers/notification_helper.dart';
 import '../styles/app_colors.dart';
-import '../styles/app_theme.dart';
 import '../styles/app_spacing.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -25,6 +24,14 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _isGoogleLoading = false;
   int _activeRequestToken = 0;
+
+  void _returnToAuthRoot() {
+    if (!mounted) return;
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.popUntil((route) => route.isFirst);
+    }
+  }
 
   @override
   void dispose() {
@@ -45,6 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _passwordController.text.trim(),
       );
       if (token != _activeRequestToken) return;
+      _returnToAuthRoot();
     } on FirebaseAuthException catch (e) {
       if (token != _activeRequestToken) return;
       if (mounted) {
@@ -73,10 +81,23 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _loginWithGoogle() async {
     setState(() => _isGoogleLoading = true);
     try {
-      await GoogleSignInService.signIn();
+      final userCredential = await GoogleSignInService.signInWithGoogle();
+      if (userCredential == null) {
+        if (mounted) {
+          NotificationHelper.showInfo(
+            context,
+            message: 'Google sign-in was cancelled.',
+          );
+        }
+        return;
+      }
+      _returnToAuthRoot();
     } catch (e) {
       if (mounted) {
-        NotificationHelper.showError(context, message: 'Google sign-in failed.');
+        NotificationHelper.showError(
+          context,
+          message: e.toString().replaceAll('Exception: ', ''),
+        );
       }
     } finally {
       if (mounted) setState(() => _isGoogleLoading = false);
@@ -108,7 +129,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: const Icon(
-                    Icons.account_balance_wallet_rounded,
+                    AppIcons.account_balance_wallet_rounded,
                     color: Colors.white,
                     size: 26,
                   ),
@@ -135,7 +156,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _emailController,
                   labelText: 'Email address',
                   keyboardType: TextInputType.emailAddress,
-                  prefixIcon: Icons.email_outlined,
+                  prefixIcon: AppIcons.email_outlined,
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Enter your email';
                     if (!v.contains('@')) return 'Enter a valid email';
@@ -149,12 +170,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _passwordController,
                   labelText: 'Password',
                   obscureText: !_isPasswordVisible,
-                  prefixIcon: Icons.lock_outline_rounded,
+                  prefixIcon: AppIcons.lock_outline_rounded,
                   suffixIcon: IconButton(
                     icon: Icon(
                       _isPasswordVisible
-                          ? Icons.visibility_off_outlined
-                          : Icons.visibility_outlined,
+                          ? AppIcons.visibility_off_outlined
+                          : AppIcons.visibility_outlined,
                       size: 20,
                     ),
                     onPressed: () => setState(
@@ -219,8 +240,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm),
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
                       child: Text(
                         'or',
                         style: theme.textTheme.bodySmall,

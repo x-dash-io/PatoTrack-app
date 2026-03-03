@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pato_track/app_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -33,30 +34,30 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
 
   final _nameController = TextEditingController();
   static const List<IconData> _selectableIcons = [
-    Icons.shopping_cart_rounded,
-    Icons.restaurant_rounded,
-    Icons.home_rounded,
-    Icons.flight_rounded,
-    Icons.receipt_long_rounded,
-    Icons.local_hospital_rounded,
-    Icons.school_rounded,
-    Icons.pets_rounded,
-    Icons.phone_android_rounded,
-    Icons.wifi_rounded,
-    Icons.movie_rounded,
-    Icons.spa_rounded,
-    Icons.build_rounded,
-    Icons.book_rounded,
-    Icons.music_note_rounded,
-    Icons.directions_car_rounded,
-    Icons.attach_money_rounded,
-    Icons.work_rounded,
-    Icons.card_giftcard_rounded,
-    Icons.savings_rounded,
-    Icons.sports_esports_rounded,
-    Icons.fitness_center_rounded,
-    Icons.shopping_bag_rounded,
-    Icons.local_gas_station_rounded,
+    AppIcons.shopping_cart_rounded,
+    AppIcons.restaurant_rounded,
+    AppIcons.home_rounded,
+    AppIcons.flight_rounded,
+    AppIcons.receipt_long_rounded,
+    AppIcons.local_hospital_rounded,
+    AppIcons.school_rounded,
+    AppIcons.pets_rounded,
+    AppIcons.phone_android_rounded,
+    AppIcons.wifi_rounded,
+    AppIcons.movie_rounded,
+    AppIcons.spa_rounded,
+    AppIcons.build_rounded,
+    AppIcons.book_rounded,
+    AppIcons.music_note_rounded,
+    AppIcons.directions_car_rounded,
+    AppIcons.attach_money_rounded,
+    AppIcons.work_rounded,
+    AppIcons.card_giftcard_rounded,
+    AppIcons.savings_rounded,
+    AppIcons.sports_esports_rounded,
+    AppIcons.fitness_center_rounded,
+    AppIcons.shopping_bag_rounded,
+    AppIcons.local_gas_station_rounded,
   ];
 
   @override
@@ -93,7 +94,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
     if (category.iconCodePoint != null) {
       return IconData(category.iconCodePoint!, fontFamily: 'MaterialIcons');
     }
-    return Icons.label_rounded;
+    return AppIcons.label_rounded;
   }
 
   void _showCategoryDialog({Category? category, required String type}) {
@@ -101,8 +102,8 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
     IconData? selectedIcon = category?.iconCodePoint != null
         ? IconData(category!.iconCodePoint!, fontFamily: 'MaterialIcons')
         : (type == 'expense'
-            ? Icons.category_rounded
-            : Icons.account_balance_wallet_rounded);
+            ? AppIcons.category_rounded
+            : AppIcons.account_balance_wallet_rounded);
 
     showModalBottomSheet(
       context: context,
@@ -156,7 +157,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                   StandardTextFormField(
                     controller: _nameController,
                     labelText: 'Category Name',
-                    prefixIcon: Icons.label_rounded,
+                    prefixIcon: AppIcons.label_rounded,
                   ),
                   const SizedBox(height: 24),
                   // Icon Selection
@@ -211,7 +212,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                             }
                           },
                           icon: Icon(
-                            Icons.arrow_forward_ios_rounded,
+                            AppIcons.arrow_forward_ios_rounded,
                             size: 18,
                             color: colorScheme.onSurfaceVariant,
                           ),
@@ -373,7 +374,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
               ),
-              itemCount: _selectableIcons.length,
+              itemCount: _selectableAppIcons.length,
               itemBuilder: (context, index) {
                 final icon = _selectableIcons[index];
                 return InkWell(
@@ -413,7 +414,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                Icons.category_outlined,
+                AppIcons.category_outlined,
                 size: 64,
                 color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
               ),
@@ -441,19 +442,23 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
       );
     }
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 96),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg, AppSpacing.md, AppSpacing.lg, 96),
       itemCount: categories.length,
       itemBuilder: (context, index) {
         final category = categories[index];
         final isDark = Theme.of(context).brightness == Brightness.dark;
         return Container(
           margin: const EdgeInsets.only(bottom: AppSpacing.xs),
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 12),
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md, vertical: 12),
           decoration: BoxDecoration(
             color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
             borderRadius: AppSpacing.radiusLg,
             border: Border.all(
-              color: isDark ? AppColors.surfaceBorderDark : AppColors.surfaceBorderLight,
+              color: isDark
+                  ? AppColors.surfaceBorderDark
+                  : AppColors.surfaceBorderLight,
               width: 1,
             ),
             boxShadow: AppShadows.subtle(),
@@ -483,8 +488,9 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                 ),
               ),
               IconButton(
-                icon: Icon(Icons.edit_rounded,
-                    color: isDark ? AppColors.brandDark : AppColors.brand, size: 20),
+                icon: Icon(AppIcons.edit_rounded,
+                    color: isDark ? AppColors.brandDark : AppColors.brand,
+                    size: 20),
                 onPressed: () => _showCategoryDialog(
                   category: category,
                   type: category.type,
@@ -493,7 +499,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                 visualDensity: VisualDensity.compact,
               ),
               IconButton(
-                icon: const Icon(Icons.delete_outline_rounded,
+                icon: const Icon(AppIcons.delete_outline_rounded,
                     color: AppColors.expense, size: 20),
                 onPressed: () async {
                   if (currentUser == null) return;
@@ -535,7 +541,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
           style: GoogleFonts.manrope(fontWeight: FontWeight.w600),
         ),
         systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
+          statusBarColor: isDark ? AppColors.bgDark : AppColors.bgLight,
           statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
           statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
         ),
@@ -544,11 +550,11 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
           labelStyle: GoogleFonts.manrope(fontWeight: FontWeight.w600),
           tabs: const [
             Tab(
-              icon: Icon(Icons.arrow_upward_rounded),
+              icon: Icon(AppIcons.arrow_upward_rounded),
               text: 'Expenses',
             ),
             Tab(
-              icon: Icon(Icons.arrow_downward_rounded),
+              icon: Icon(AppIcons.arrow_downward_rounded),
               text: 'Income',
             ),
           ],
@@ -569,7 +575,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
           final type = _tabController.index == 0 ? 'expense' : 'income';
           _showCategoryDialog(type: type);
         },
-        icon: const Icon(Icons.add_rounded),
+        icon: const Icon(AppIcons.add_rounded),
         label: Text(
           'Add Category',
           style: GoogleFonts.manrope(fontWeight: FontWeight.w600),

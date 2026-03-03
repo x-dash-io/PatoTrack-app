@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:pato_track/app_icons.dart';
 import 'package:flutter/material.dart';
 
 /// Loading widgets and skeleton placeholders.
@@ -245,7 +246,7 @@ class LoadingOverlay extends StatelessWidget {
             right: 16,
             child: FilledButton.tonalIcon(
               onPressed: onCancel,
-              icon: const Icon(Icons.close_rounded),
+              icon: const Icon(AppIcons.close_rounded),
               label: const Text('Cancel'),
             ),
           ),

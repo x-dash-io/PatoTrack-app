@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pato_track/app_icons.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'login_screen.dart';
@@ -7,7 +8,6 @@ import '../widgets/input_fields.dart';
 import '../services/google_sign_in_service.dart';
 import '../helpers/notification_helper.dart';
 import '../widgets/app_screen_background.dart';
-import '../styles/app_colors.dart';
 import '../styles/app_shadows.dart';
 import '../styles/app_spacing.dart';
 
@@ -57,10 +57,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     try {
       // Create the user
-      final userCredential = await _auth.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+      final userCredential = await _auth
+          .createUserWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          )
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () => throw Exception(
+              'Sign up timed out. Please check your connection and try again.',
+            ),
+          );
 
       if (userCredential.user == null) {
         throw Exception('Failed to create user account');
@@ -111,6 +118,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
       final userCredential = await GoogleSignInService.signInWithGoogle();
 
       if (userCredential == null) {
+        if (mounted) {
+          NotificationHelper.showInfo(
+            context,
+            message: 'Google sign-in was cancelled.',
+          );
+        }
         return;
       }
 
@@ -178,7 +191,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         boxShadow: AppShadows.subtle(colorScheme.primary),
                       ),
                       child: Icon(
-                        Icons.person_add_alt_1,
+                        AppIcons.person_add_alt_1,
                         size: 50,
                         color: colorScheme.onPrimary,
                       ),
@@ -224,7 +237,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             controller: _nameController,
                             labelText: 'Full Name',
                             keyboardType: TextInputType.name,
-                            prefixIcon: Icons.person_outline,
+                            prefixIcon: AppIcons.person_outline,
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'Please enter your name';
@@ -240,7 +253,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             controller: _emailController,
                             labelText: 'Email',
                             keyboardType: TextInputType.emailAddress,
-                            prefixIcon: Icons.email_outlined,
+                            prefixIcon: AppIcons.email_outlined,
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'Please enter your email';
@@ -259,7 +272,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             controller: _passwordController,
                             labelText: 'Password',
                             obscureText: !_isPasswordVisible,
-                            prefixIcon: Icons.lock_outline,
+                            prefixIcon: AppIcons.lock_outline,
                             suffixIcon: IconButton(
                               onPressed: () {
                                 setState(() {
@@ -268,8 +281,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               },
                               icon: Icon(
                                 _isPasswordVisible
-                                    ? Icons.visibility_off_outlined
-                                    : Icons.visibility_outlined,
+                                    ? AppIcons.visibility_off_outlined
+                                    : AppIcons.visibility_outlined,
                                 color: colorScheme.onSurfaceVariant,
                               ),
                             ),
@@ -360,7 +373,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               width: 20,
                               errorBuilder: (context, error, stackTrace) {
                                 // Fallback if Google logo asset doesn't exist
-                                return const Icon(Icons.g_mobiledata, size: 24);
+                                return const Icon(AppIcons.g_mobiledata,
+                                    size: 24);
                               },
                             ),
                             label: Text(
@@ -417,6 +431,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 }
--e 
+
 // Alias for backward compat
 typedef SignupScreen = SignUpScreen;

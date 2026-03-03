@@ -1,6 +1,7 @@
 // lib/screens/add_bill_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:pato_track/app_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -13,6 +14,7 @@ import '../helpers/notification_helper.dart';
 import '../models/bill.dart';
 import '../models/frequency.dart';
 import '../providers/currency_provider.dart';
+import '../styles/app_colors.dart';
 import '../widgets/modern_date_picker.dart';
 import '../widgets/input_fields.dart';
 import '../widgets/app_screen_background.dart';
@@ -280,7 +282,7 @@ class _AddBillScreenState extends State<AddBillScreen> {
     return Scaffold(
       appBar: AppBar(
         systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
+          statusBarColor: isDark ? AppColors.bgDark : AppColors.bgLight,
           statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
           statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
         ),
@@ -301,7 +303,7 @@ class _AddBillScreenState extends State<AddBillScreen> {
                 controller: _nameController,
                 labelText: 'Bill Name',
                 hintText: 'e.g., Rent, Netflix, Internet',
-                prefixIcon: Icons.receipt_long_rounded,
+                prefixIcon: AppIcons.receipt_long_rounded,
                 validator: (value) => value == null || value.isEmpty
                     ? 'Please enter a name'
                     : null,
@@ -312,7 +314,7 @@ class _AddBillScreenState extends State<AddBillScreen> {
                 labelText: 'Amount',
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
-                prefixIcon: Icons.attach_money_rounded,
+                prefixIcon: AppIcons.attach_money_rounded,
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
                 ],
@@ -377,7 +379,7 @@ class _AddBillScreenState extends State<AddBillScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Icon(
-                              Icons.repeat_rounded,
+                              AppIcons.repeat_rounded,
                               color: colorScheme.onPrimaryContainer,
                               size: 24,
                             ),
@@ -440,7 +442,7 @@ class _AddBillScreenState extends State<AddBillScreen> {
                             child: StandardDropdownFormField<Frequency>(
                               value: _selectedFrequency,
                               labelText: 'Frequency',
-                              prefixIcon: Icons.repeat_rounded,
+                              prefixIcon: AppIcons.repeat_rounded,
                               items: _frequencies.map((frequency) {
                                 return DropdownMenuItem<Frequency>(
                                   value: frequency,
@@ -469,7 +471,7 @@ class _AddBillScreenState extends State<AddBillScreen> {
                                 await _loadFrequencies();
                               }
                             },
-                            icon: const Icon(Icons.settings_rounded),
+                            icon: const Icon(AppIcons.settings_rounded),
                             tooltip: 'Manage Frequencies',
                             style: IconButton.styleFrom(
                               backgroundColor:

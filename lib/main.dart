@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pato_track/app_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
@@ -44,12 +45,14 @@ class PatoTrack extends StatelessWidget {
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
+        statusBarColor: isDark ? AppColors.bgDark : AppColors.bgLight,
         statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
         statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
-        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarColor:
+            isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         systemNavigationBarIconBrightness:
             isDark ? Brightness.light : Brightness.dark,
+        systemNavigationBarContrastEnforced: true,
       ),
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -105,23 +108,23 @@ class _MainScreenState extends State<MainScreen> {
           elevation: 0,
           destinations: const <NavigationDestination>[
             NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home_rounded),
+              icon: Icon(AppIcons.home_outlined),
+              selectedIcon: Icon(AppIcons.home_rounded),
               label: 'Home',
             ),
             NavigationDestination(
-              icon: Icon(Icons.receipt_long_outlined),
-              selectedIcon: Icon(Icons.receipt_long_rounded),
+              icon: Icon(AppIcons.receipt_long_outlined),
+              selectedIcon: Icon(AppIcons.receipt_long_rounded),
               label: 'Transactions',
             ),
             NavigationDestination(
-              icon: Icon(Icons.bar_chart_outlined),
-              selectedIcon: Icon(Icons.bar_chart_rounded),
+              icon: Icon(AppIcons.bar_chart_outlined),
+              selectedIcon: Icon(AppIcons.bar_chart_rounded),
               label: 'Reports',
             ),
             NavigationDestination(
-              icon: Icon(Icons.person_outline_rounded),
-              selectedIcon: Icon(Icons.person_rounded),
+              icon: Icon(AppIcons.person_outline_rounded),
+              selectedIcon: Icon(AppIcons.person_rounded),
               label: 'Profile',
             ),
           ],

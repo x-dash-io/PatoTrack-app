@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
@@ -16,17 +17,18 @@ class AppTheme {
   AppTheme._();
 
   static ThemeData get light => _build(Brightness.light);
-  static ThemeData get dark  => _build(Brightness.dark);
+  static ThemeData get dark => _build(Brightness.dark);
 
   static ThemeData _build(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
 
     final colorScheme = isDark ? _darkScheme : _lightScheme;
-    final textTheme   = _textTheme(isDark, colorScheme);
+    final textTheme = _textTheme(isDark, colorScheme);
 
-    final fieldRadius    = BorderRadius.circular(14);
+    final fieldRadius = BorderRadius.circular(14);
     final fieldBorderSide = BorderSide(
-      color: isDark ? AppColors.surfaceBorderDark : AppColors.surfaceBorderLight,
+      color:
+          isDark ? AppColors.surfaceBorderDark : AppColors.surfaceBorderLight,
       width: 1.2,
     );
     final fieldBorder = OutlineInputBorder(
@@ -39,12 +41,9 @@ class AppTheme {
       brightness: brightness,
       colorScheme: colorScheme,
       textTheme: textTheme,
-      scaffoldBackgroundColor:
-          isDark ? AppColors.bgDark : AppColors.bgLight,
+      scaffoldBackgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
       visualDensity: VisualDensity.adaptivePlatformDensity,
-      dividerColor: isDark
-          ? AppColors.dividerDark
-          : AppColors.dividerLight,
+      dividerColor: isDark ? AppColors.dividerDark : AppColors.dividerLight,
 
       // ── Cards ────────────────────────────────────────────────────────────
       cardTheme: CardThemeData(
@@ -109,6 +108,16 @@ class AppTheme {
         centerTitle: false,
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: isDark ? AppColors.bgDark : AppColors.bgLight,
+          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+          statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+          systemNavigationBarColor:
+              isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+          systemNavigationBarIconBrightness:
+              isDark ? Brightness.light : Brightness.dark,
+          systemNavigationBarContrastEnforced: true,
+        ),
         foregroundColor:
             isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
         titleTextStyle: GoogleFonts.dmSans(
@@ -236,9 +245,8 @@ class AppTheme {
         shape: const RoundedRectangleBorder(
           borderRadius: AppSpacing.sheetRadius,
         ),
-        dragHandleColor: isDark
-            ? AppColors.surfaceBorderDark
-            : AppColors.surfaceBorderLight,
+        dragHandleColor:
+            isDark ? AppColors.surfaceBorderDark : AppColors.surfaceBorderLight,
         dragHandleSize: const Size(40, 4),
       ),
 
@@ -274,8 +282,9 @@ class AppTheme {
               : AppColors.surfaceBorderLight,
           width: 1,
         ),
-        backgroundColor:
-            isDark ? AppColors.surfaceElevatedDark : AppColors.surfaceElevatedLight,
+        backgroundColor: isDark
+            ? AppColors.surfaceElevatedDark
+            : AppColors.surfaceElevatedLight,
         labelStyle: GoogleFonts.dmSans(
           fontSize: 13,
           fontWeight: FontWeight.w600,
@@ -321,8 +330,7 @@ class AppTheme {
                   ? AppColors.surfaceBorderDark
                   : AppColors.surfaceBorderLight);
         }),
-        trackOutlineColor:
-            const WidgetStatePropertyAll(Colors.transparent),
+        trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
       ),
 
       extensions: const [],
@@ -405,8 +413,7 @@ class AppTheme {
   // ─── Text Theme ───────────────────────────────────────────────────────────
 
   static TextTheme _textTheme(bool isDark, ColorScheme scheme) {
-    final primary =
-        isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final primary = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
     final secondary =
         isDark ? AppColors.textSecondaryDark : AppColors.textSecondary;
     final tertiary =
@@ -415,72 +422,99 @@ class AppTheme {
     return TextTheme(
       // Display
       displayLarge: GoogleFonts.dmSans(
-        fontSize: 56, fontWeight: FontWeight.w700,
-        letterSpacing: -1.2, color: primary,
+        fontSize: 56,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -1.2,
+        color: primary,
       ),
       displayMedium: GoogleFonts.dmSans(
-        fontSize: 44, fontWeight: FontWeight.w700,
-        letterSpacing: -0.8, color: primary,
+        fontSize: 44,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.8,
+        color: primary,
       ),
       displaySmall: GoogleFonts.dmSans(
-        fontSize: 36, fontWeight: FontWeight.w700,
-        letterSpacing: -0.5, color: primary,
+        fontSize: 36,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.5,
+        color: primary,
       ),
 
       // Headlines
       headlineLarge: GoogleFonts.dmSans(
-        fontSize: 32, fontWeight: FontWeight.w700,
-        letterSpacing: -0.5, color: primary,
+        fontSize: 32,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.5,
+        color: primary,
       ),
       headlineMedium: GoogleFonts.dmSans(
-        fontSize: 28, fontWeight: FontWeight.w700,
-        letterSpacing: -0.4, color: primary,
+        fontSize: 28,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.4,
+        color: primary,
       ),
       headlineSmall: GoogleFonts.dmSans(
-        fontSize: 24, fontWeight: FontWeight.w700,
-        letterSpacing: -0.3, color: primary,
+        fontSize: 24,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.3,
+        color: primary,
       ),
 
       // Titles
       titleLarge: GoogleFonts.dmSans(
-        fontSize: 20, fontWeight: FontWeight.w700,
-        letterSpacing: -0.2, color: primary,
+        fontSize: 20,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.2,
+        color: primary,
       ),
       titleMedium: GoogleFonts.dmSans(
-        fontSize: 16, fontWeight: FontWeight.w600,
-        letterSpacing: -0.1, color: primary,
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.1,
+        color: primary,
       ),
       titleSmall: GoogleFonts.dmSans(
-        fontSize: 14, fontWeight: FontWeight.w600,
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
         color: primary,
       ),
 
       // Body
       bodyLarge: GoogleFonts.dmSans(
-        fontSize: 16, fontWeight: FontWeight.w400,
-        height: 1.5, color: primary,
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+        height: 1.5,
+        color: primary,
       ),
       bodyMedium: GoogleFonts.dmSans(
-        fontSize: 14, fontWeight: FontWeight.w400,
-        height: 1.45, color: primary,
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        height: 1.45,
+        color: primary,
       ),
       bodySmall: GoogleFonts.dmSans(
-        fontSize: 12, fontWeight: FontWeight.w400,
-        height: 1.4, color: secondary,
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+        height: 1.4,
+        color: secondary,
       ),
 
       // Labels
       labelLarge: GoogleFonts.dmSans(
-        fontSize: 14, fontWeight: FontWeight.w600, color: primary,
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: primary,
       ),
       labelMedium: GoogleFonts.dmSans(
-        fontSize: 12, fontWeight: FontWeight.w600, color: secondary,
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        color: secondary,
       ),
       labelSmall: GoogleFonts.dmSans(
-        fontSize: 11, fontWeight: FontWeight.w500, color: tertiary,
+        fontSize: 11,
+        fontWeight: FontWeight.w500,
+        color: tertiary,
       ),
     );
   }
 }
-
-

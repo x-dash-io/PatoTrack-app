@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pato_track/app_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../helpers/responsive_helper.dart';
 
@@ -16,7 +17,7 @@ class NotificationHelper {
         content: Row(
           children: [
             Icon(
-              Icons.check_circle_rounded,
+              AppIcons.check_circle_rounded,
               color: Colors.white,
               size: ResponsiveHelper.iconSize(context, 20),
             ),
@@ -56,7 +57,7 @@ class NotificationHelper {
         content: Row(
           children: [
             Icon(
-              Icons.error_rounded,
+              AppIcons.error_rounded,
               color: Colors.white,
               size: ResponsiveHelper.iconSize(context, 20),
             ),
@@ -98,7 +99,7 @@ class NotificationHelper {
         content: Row(
           children: [
             Icon(
-              Icons.info_rounded,
+              AppIcons.info_rounded,
               color: Colors.white,
               size: ResponsiveHelper.iconSize(context, 20),
             ),
@@ -138,7 +139,7 @@ class NotificationHelper {
         content: Row(
           children: [
             Icon(
-              Icons.warning_rounded,
+              AppIcons.warning_rounded,
               color: Colors.white,
               size: ResponsiveHelper.iconSize(context, 20),
             ),

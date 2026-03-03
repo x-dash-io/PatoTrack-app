@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:pato_track/app_icons.dart';
 import 'package:flutter/material.dart';
 
 import '../../../providers/currency_provider.dart';
@@ -232,8 +233,8 @@ class _BalancePill extends StatelessWidget {
         children: [
           Icon(
             isPositive
-                ? Icons.arrow_upward_rounded
-                : Icons.arrow_downward_rounded,
+                ? AppIcons.arrow_upward_rounded
+                : AppIcons.arrow_downward_rounded,
             size: 12,
             color: Colors.white.withValues(alpha: 0.85),
           ),

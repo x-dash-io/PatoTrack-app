@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pato_track/app_icons.dart';
 
 class SettingListTile extends StatelessWidget {
   final IconData icon;
@@ -55,7 +56,7 @@ class SettingListTile extends StatelessWidget {
           (onTap == null
               ? null
               : Icon(
-                  Icons.chevron_right_rounded,
+                  AppIcons.chevron_right_rounded,
                   size: 24,
                   color: colorScheme.onSurfaceVariant,
                 )),

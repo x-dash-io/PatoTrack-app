@@ -1,4 +1,5 @@
 import '../styles/app_colors.dart';
+import 'package:pato_track/app_icons.dart';
 import '../styles/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -167,7 +168,7 @@ class StandardDropdownFormField<T> extends StatelessWidget {
           ? colorScheme.surfaceContainerHighest
           : Colors.white,
       icon: Icon(
-        Icons.arrow_drop_down_rounded,
+        AppIcons.arrow_drop_down_rounded,
         color: colorScheme.onSurfaceVariant,
         size: 28,
       ),
@@ -253,7 +254,7 @@ class StandardDateSelectorTile extends StatelessWidget {
     super.key,
     required this.label,
     required this.valueText,
-    this.icon = Icons.calendar_today_rounded,
+    this.icon = AppIcons.calendar_today_rounded,
     this.helperText,
     this.onTap,
     this.enabled = true,
@@ -278,7 +279,7 @@ class StandardDateSelectorTile extends StatelessWidget {
             helperText: helperText,
             prefixIcon: Icon(icon),
             suffixIcon: Icon(
-              Icons.expand_more_rounded,
+              AppIcons.expand_more_rounded,
               color: enabled
                   ? colorScheme.onSurfaceVariant
                   : colorScheme.onSurfaceVariant.withValues(alpha: 0.5),

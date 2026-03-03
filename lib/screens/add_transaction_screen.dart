@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pato_track/app_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
@@ -126,7 +127,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         ),
         elevation: 0,
         systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
+          statusBarColor: isDark ? AppColors.bgDark : AppColors.bgLight,
           statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
           statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
         ),
@@ -142,13 +143,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: isDark ? AppColors.surfaceElevatedDark : AppColors.surfaceElevatedLight,
+                  color: isDark
+                      ? AppColors.surfaceElevatedDark
+                      : AppColors.surfaceElevatedLight,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Row(
                   children: ['expense', 'income'].map((type) {
                     final isSelected = _transactionType == type;
-                    final color = type == 'income' ? AppColors.income : AppColors.expense;
+                    final color =
+                        type == 'income' ? AppColors.income : AppColors.expense;
                     return Expanded(
                       child: GestureDetector(
                         onTap: () {
@@ -163,7 +167,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? (isDark ? AppColors.surfaceDark : Colors.white)
+                                ? (isDark
+                                    ? AppColors.surfaceDark
+                                    : Colors.white)
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: isSelected ? AppShadows.subtle() : null,
@@ -173,18 +179,28 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             children: [
                               Icon(
                                 type == 'income'
-                                    ? Icons.arrow_downward_rounded
-                                    : Icons.arrow_upward_rounded,
+                                    ? AppIcons.arrow_downward_rounded
+                                    : AppIcons.arrow_upward_rounded,
                                 size: 16,
-                                color: isSelected ? color : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondary),
+                                color: isSelected
+                                    ? color
+                                    : (isDark
+                                        ? AppColors.textSecondaryDark
+                                        : AppColors.textSecondary),
                               ),
                               const SizedBox(width: 6),
                               Text(
                                 type == 'income' ? 'Income' : 'Expense',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                  color: isSelected ? color : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondary),
+                                  fontWeight: isSelected
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                  color: isSelected
+                                      ? color
+                                      : (isDark
+                                          ? AppColors.textSecondaryDark
+                                          : AppColors.textSecondary),
                                 ),
                               ),
                             ],
@@ -203,7 +219,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 labelText: 'Amount',
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
-                prefixIcon: Icons.attach_money_rounded,
+                prefixIcon: AppIcons.attach_money_rounded,
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
                 ],
@@ -238,8 +254,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           value: _selectedCategoryId,
                           labelText: 'Category',
                           prefixIcon: _transactionType == 'expense'
-                              ? Icons.category_rounded
-                              : Icons.account_balance_wallet_rounded,
+                              ? AppIcons.category_rounded
+                              : AppIcons.account_balance_wallet_rounded,
                           items: categories.map((category) {
                             return DropdownMenuItem<int>(
                               value: category.id,
@@ -269,7 +285,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.settings_outlined),
+                      icon: const Icon(AppIcons.settings_outlined),
                       tooltip: 'Manage Categories',
                       onPressed: () async {
                         await Navigator.of(context).push(
@@ -290,7 +306,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               StandardTextFormField(
                 controller: _descriptionController,
                 labelText: 'Description / Note (Optional)',
-                prefixIcon: Icons.description_rounded,
+                prefixIcon: AppIcons.description_rounded,
                 maxLines: 3,
               ),
               const SizedBox(height: 16),

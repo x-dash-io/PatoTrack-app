@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:pato_track/app_icons.dart';
 import 'package:intl/intl.dart';
 
+import '../../../helpers/mpesa_transaction_helper.dart';
 import '../../../models/transaction.dart' as model;
 import '../../../providers/currency_provider.dart';
 import '../../../styles/app_colors.dart';
@@ -43,12 +45,11 @@ class RecentTransactionsSection extends StatelessWidget {
               GestureDetector(
                 onTap: onViewAll,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? AppColors.brandSoftDark
-                        : AppColors.brandSoft,
+                    color:
+                        isDark ? AppColors.brandSoftDark : AppColors.brandSoft,
                     borderRadius: AppSpacing.radiusFull,
                   ),
                   child: Text(
@@ -56,9 +57,7 @@ class RecentTransactionsSection extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: isDark
-                          ? AppColors.brandDark
-                          : AppColors.brand,
+                      color: isDark ? AppColors.brandDark : AppColors.brand,
                     ),
                   ),
                 ),
@@ -105,8 +104,7 @@ class _TransactionRow extends StatelessWidget {
     final isIncome = transaction.type == 'income';
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final amountColor = isIncome ? AppColors.income : AppColors.expense;
-    final bgColor =
-        isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
+    final bgColor = isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
     final borderColor =
         isDark ? AppColors.surfaceBorderDark : AppColors.surfaceBorderLight;
 
@@ -115,6 +113,7 @@ class _TransactionRow extends StatelessWidget {
     final desc = transaction.description.isEmpty
         ? transaction.type
         : transaction.description;
+    final isMpesa = isMpesaTransaction(description: desc);
 
     return Semantics(
       button: true,
@@ -141,20 +140,30 @@ class _TransactionRow extends StatelessWidget {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? amountColor.withValues(alpha: 0.18)
-                      : (isIncome
-                          ? AppColors.incomeSoft
-                          : AppColors.expenseSoft),
+                  color: isMpesa
+                      ? (isDark ? AppColors.brandSoftDark : AppColors.brandSoft)
+                      : (isDark
+                          ? amountColor.withValues(alpha: 0.18)
+                          : (isIncome
+                              ? AppColors.incomeSoft
+                              : AppColors.expenseSoft)),
                   borderRadius: AppSpacing.radiusMd,
                 ),
-                child: Icon(
-                  isIncome
-                      ? Icons.arrow_downward_rounded
-                      : Icons.arrow_upward_rounded,
-                  color: amountColor,
-                  size: 18,
-                ),
+                child: isMpesa
+                    ? Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Image.asset(
+                          'assets/mpesa_logo.png',
+                          fit: BoxFit.contain,
+                        ),
+                      )
+                    : Icon(
+                        isIncome
+                            ? AppIcons.arrow_downward_rounded
+                            : AppIcons.arrow_upward_rounded,
+                        color: amountColor,
+                        size: 18,
+                      ),
               ),
               const SizedBox(width: AppSpacing.sm),
 
@@ -221,7 +230,7 @@ class _EmptyState extends StatelessWidget {
               borderRadius: AppSpacing.radiusXl,
             ),
             child: Icon(
-              Icons.receipt_long_rounded,
+              AppIcons.receipt_long_rounded,
               color: isDark ? AppColors.brandDark : AppColors.brand,
               size: 26,
             ),
@@ -240,7 +249,7 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           FilledButton.icon(
             onPressed: onAddTransaction,
-            icon: const Icon(Icons.add_rounded, size: 18),
+            icon: const Icon(AppIcons.add_rounded, size: 18),
             label: const Text('Add transaction'),
           ),
         ],

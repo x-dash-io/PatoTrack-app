@@ -22,14 +22,14 @@ class GoogleSignInService {
     await _ensureInitialized();
 
     try {
-      // Always sign out first to force account selection
-      // This ensures the account picker is shown every time
-      await _googleSignIn.signOut();
-
       // Trigger the Google Sign-In flow with account selection
-      // This will show the account picker if multiple accounts exist
       final GoogleSignInAccount googleUser = await _googleSignIn.authenticate(
         scopeHint: const ['email', 'profile'],
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () => throw Exception(
+          'Google Sign-In timed out. Please try again.',
+        ),
       );
 
       // Obtain the auth details from the request
@@ -37,7 +37,9 @@ class GoogleSignInService {
 
       // Verify we have valid tokens
       if (googleAuth.idToken == null) {
-        throw Exception('Failed to obtain authentication tokens from Google');
+        throw Exception(
+          'Could not get a Google ID token. Check your Google Sign-In setup in Firebase and try again.',
+        );
       }
 
       // Create a new credential
@@ -46,7 +48,13 @@ class GoogleSignInService {
       );
 
       // Sign in to Firebase with the Google credential
-      final userCredential = await _auth.signInWithCredential(credential);
+      final userCredential =
+          await _auth.signInWithCredential(credential).timeout(
+                const Duration(seconds: 30),
+                onTimeout: () => throw Exception(
+                  'Firebase authentication timed out. Please try again.',
+                ),
+              );
 
       return userCredential;
     } on GoogleSignInException catch (e) {

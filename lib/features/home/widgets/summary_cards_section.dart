@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pato_track/app_icons.dart';
 
 import '../../../providers/currency_provider.dart';
 import '../../../styles/app_colors.dart';
@@ -29,7 +30,7 @@ class SummaryCardsSection extends StatelessWidget {
             child: _MetricCard(
               label: 'Income',
               value: currency.format(income, decimalDigits: 0),
-              icon: Icons.arrow_downward_rounded,
+              icon: AppIcons.arrow_downward_rounded,
               accentColor: AppColors.income,
               softColor: AppColors.incomeSoft,
             ),
@@ -39,7 +40,7 @@ class SummaryCardsSection extends StatelessWidget {
             child: _MetricCard(
               label: 'Expenses',
               value: currency.format(expenses, decimalDigits: 0),
-              icon: Icons.arrow_upward_rounded,
+              icon: AppIcons.arrow_upward_rounded,
               accentColor: AppColors.expense,
               softColor: AppColors.expenseSoft,
             ),
@@ -68,8 +69,7 @@ class _MetricCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor =
-        isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
+    final bgColor = isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
     final borderColor =
         isDark ? AppColors.surfaceBorderDark : AppColors.surfaceBorderLight;
 
@@ -89,9 +89,7 @@ class _MetricCard extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: isDark
-                  ? accentColor.withValues(alpha: 0.18)
-                  : softColor,
+              color: isDark ? accentColor.withValues(alpha: 0.18) : softColor,
               borderRadius: AppSpacing.radiusSm,
             ),
             child: Icon(icon, color: accentColor, size: 18),

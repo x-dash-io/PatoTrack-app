@@ -36,7 +36,9 @@ class SpendingTrendChartCard extends StatelessWidget {
           color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
           borderRadius: const BorderRadius.all(Radius.circular(20)),
           border: Border.all(
-            color: isDark ? AppColors.surfaceBorderDark : AppColors.surfaceBorderLight,
+            color: isDark
+                ? AppColors.surfaceBorderDark
+                : AppColors.surfaceBorderLight,
             width: 1,
           ),
         ),
@@ -65,7 +67,9 @@ class SpendingTrendChartCard extends StatelessWidget {
                       drawVerticalLine: false,
                       horizontalInterval: _axisInterval(points),
                       getDrawingHorizontalLine: (v) => FlLine(
-                        color: (isDark ? AppColors.surfaceBorderDark : AppColors.surfaceBorderLight)
+                        color: (isDark
+                                ? AppColors.surfaceBorderDark
+                                : AppColors.surfaceBorderLight)
                             .withValues(alpha: 0.6),
                         strokeWidth: 1,
                         dashArray: [4, 4],
@@ -74,9 +78,10 @@ class SpendingTrendChartCard extends StatelessWidget {
                     borderData: FlBorderData(show: false),
                     lineTouchData: LineTouchData(
                       touchTooltipData: LineTouchTooltipData(
-                        getTooltipColor: (_) =>
-                            isDark ? AppColors.surfaceElevatedDark : AppColors.surfaceElevatedDark,
-                        tooltipRoundedRadius: 10,
+                        getTooltipColor: (_) => isDark
+                            ? AppColors.surfaceElevatedDark
+                            : AppColors.surfaceElevatedDark,
+                        tooltipBorderRadius: BorderRadius.circular(10),
                         getTooltipItems: (spots) => spots.map((spot) {
                           final label = points[spot.x.toInt()].label;
                           return LineTooltipItem(
@@ -90,8 +95,10 @@ class SpendingTrendChartCard extends StatelessWidget {
                       ),
                     ),
                     titlesData: FlTitlesData(
-                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      topTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false)),
+                      rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false)),
                       leftTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
@@ -101,7 +108,8 @@ class SpendingTrendChartCard extends StatelessWidget {
                             padding: const EdgeInsets.only(right: 6),
                             child: Text(
                               currency.formatCompact(value),
-                              style: theme.textTheme.labelSmall?.copyWith(fontSize: 10),
+                              style: theme.textTheme.labelSmall
+                                  ?.copyWith(fontSize: 10),
                             ),
                           ),
                         ),
@@ -119,7 +127,8 @@ class SpendingTrendChartCard extends StatelessWidget {
                               padding: const EdgeInsets.only(top: 6),
                               child: Text(
                                 points[index].label,
-                                style: theme.textTheme.labelSmall?.copyWith(fontSize: 10),
+                                style: theme.textTheme.labelSmall
+                                    ?.copyWith(fontSize: 10),
                               ),
                             );
                           },
@@ -162,7 +171,8 @@ class SpendingTrendChartCard extends StatelessWidget {
 
   static double _axisInterval(List<TrendPoint> points) {
     if (points.isEmpty) return 1000;
-    final maxVal = points.fold<double>(0, (m, p) => m < p.income ? p.income : (m < p.expense ? p.expense : m));
+    final maxVal = points.fold<double>(
+        0, (m, p) => m < p.income ? p.income : (m < p.expense ? p.expense : m));
     if (maxVal <= 0) return 1000;
     return (maxVal / 4).ceilToDouble();
   }
@@ -217,7 +227,8 @@ class CategoryBarChartCard extends StatelessWidget {
 
     if (categories.isEmpty) return const SizedBox.shrink();
 
-    final maxVal = categories.fold<double>(0, (m, c) => m < c.total ? c.total : m);
+    final maxVal =
+        categories.fold<double>(0, (m, c) => m < c.total ? c.total : m);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -227,7 +238,9 @@ class CategoryBarChartCard extends StatelessWidget {
           color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
           borderRadius: const BorderRadius.all(Radius.circular(20)),
           border: Border.all(
-            color: isDark ? AppColors.surfaceBorderDark : AppColors.surfaceBorderLight,
+            color: isDark
+                ? AppColors.surfaceBorderDark
+                : AppColors.surfaceBorderLight,
             width: 1,
           ),
         ),
@@ -247,7 +260,7 @@ class CategoryBarChartCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            c.categoryName,
+                            c.name,
                             style: theme.textTheme.bodySmall?.copyWith(
                               fontWeight: FontWeight.w600,
                               color: isDark

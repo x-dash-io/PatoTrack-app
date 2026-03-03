@@ -40,6 +40,7 @@ dependencies:
 
   # NEW: Package for creating a secure upload signature
   crypto: ^3.0.3
+  lucide_icons_flutter: ^3.1.10
 
 
 dev_dependencies:

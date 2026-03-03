@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pato_track/app_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
@@ -122,8 +123,8 @@ class SummaryMetricCard extends StatelessWidget {
                           children: [
                             Icon(
                               isPositive!
-                                  ? Icons.arrow_upward_rounded
-                                  : Icons.arrow_downward_rounded,
+                                  ? AppIcons.arrow_upward_rounded
+                                  : AppIcons.arrow_downward_rounded,
                               size: ResponsiveHelper.iconSize(context, 14),
                               color: isPositive! ? Colors.green : Colors.orange,
                             ),

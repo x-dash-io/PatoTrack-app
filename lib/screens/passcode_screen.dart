@@ -1,6 +1,7 @@
 // lib/screens/passcode_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:pato_track/app_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../main.dart';
@@ -220,7 +221,7 @@ class _PasscodeScreenState extends State<PasscodeScreen>
               ),
               elevation: 0,
               systemOverlayStyle: SystemUiOverlayStyle(
-                statusBarColor: Colors.transparent,
+                statusBarColor: isDark ? AppColors.bgDark : AppColors.bgLight,
                 statusBarIconBrightness:
                     isDark ? Brightness.light : Brightness.dark,
                 statusBarBrightness:
@@ -261,7 +262,7 @@ class _PasscodeScreenState extends State<PasscodeScreen>
                             boxShadow: AppShadows.subtle(AppColors.brand),
                           ),
                           child: Icon(
-                            Icons.lock_outline_rounded,
+                            AppIcons.lock_outline_rounded,
                             size: 50,
                             color: colorScheme.onPrimary,
                           ),
@@ -329,7 +330,9 @@ class _PasscodeScreenState extends State<PasscodeScreen>
                                       borderSide: BorderSide(
                                         color: _hasError
                                             ? AppColors.expense
-                                            : Theme.of(context).colorScheme.outline
+                                            : Theme.of(context)
+                                                .colorScheme
+                                                .outline
                                                 .withValues(alpha: 0.3),
                                         width: 2.5,
                                       ),
@@ -392,15 +395,14 @@ class _PasscodeScreenState extends State<PasscodeScreen>
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color:
-                            AppColors.brandSoft,
+                        color: AppColors.brandSoft,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            Icons.check_circle_rounded,
+                            AppIcons.check_circle_rounded,
                             size: 16,
                             color: colorScheme.primary,
                           ),

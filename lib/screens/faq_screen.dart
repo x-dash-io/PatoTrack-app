@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:pato_track/app_icons.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -173,7 +174,7 @@ class _FaqScreenState extends State<FaqScreen> {
         ),
         elevation: 0,
         systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
+          statusBarColor: isDark ? AppColors.bgDark : AppColors.bgLight,
           statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
           statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
         ),
@@ -189,7 +190,8 @@ class _FaqScreenState extends State<FaqScreen> {
                 child: Container(
                   decoration: BoxDecoration(
                     color: Theme.of(context).brightness == Brightness.dark
-                        ? AppColors.surfaceDark : AppColors.surfaceLight,
+                        ? AppColors.surfaceDark
+                        : AppColors.surfaceLight,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: const [AppShadows.card],
                   ),
@@ -206,7 +208,7 @@ class _FaqScreenState extends State<FaqScreen> {
                             .withValues(alpha: 0.6),
                       ),
                       prefixIcon: Icon(
-                        Icons.search_rounded,
+                        AppIcons.search_rounded,
                         color: Theme.of(context)
                             .colorScheme
                             .onSurfaceVariant
@@ -216,7 +218,7 @@ class _FaqScreenState extends State<FaqScreen> {
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
                               icon: Icon(
-                                Icons.clear_rounded,
+                                AppIcons.clear_rounded,
                                 color: Theme.of(context)
                                     .colorScheme
                                     .onSurfaceVariant,
@@ -292,12 +294,14 @@ class _FaqScreenState extends State<FaqScreen> {
                               Container(
                                 padding: const EdgeInsets.all(20),
                                 decoration: BoxDecoration(
-                                  color: Theme.of(context).brightness == Brightness.dark
-                                      ? AppColors.surfaceElevatedDark : AppColors.surfaceElevatedLight,
+                                  color: Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? AppColors.surfaceElevatedDark
+                                      : AppColors.surfaceElevatedLight,
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(
-                                  Icons.search_off_rounded,
+                                  AppIcons.search_off_rounded,
                                   size: 48,
                                   color: Theme.of(context)
                                       .colorScheme
@@ -382,8 +386,12 @@ class _FAQCardState extends State<_FAQCard> {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: _isExpanded
-            ? (Theme.of(context).brightness == Brightness.dark ? AppColors.surfaceDark : AppColors.surfaceLight)
-            : (Theme.of(context).brightness == Brightness.dark ? AppColors.surfaceElevatedDark : AppColors.surfaceElevatedLight),
+            ? (Theme.of(context).brightness == Brightness.dark
+                ? AppColors.surfaceDark
+                : AppColors.surfaceLight)
+            : (Theme.of(context).brightness == Brightness.dark
+                ? AppColors.surfaceElevatedDark
+                : AppColors.surfaceElevatedLight),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: _isExpanded
@@ -415,8 +423,8 @@ class _FAQCardState extends State<_FAQCard> {
                     ),
                     child: Icon(
                       _isExpanded
-                          ? Icons.help_rounded
-                          : Icons.help_outline_rounded,
+                          ? AppIcons.help_rounded
+                          : AppIcons.help_outline_rounded,
                       size: 22,
                       color: AppColors.brand,
                     ),
@@ -439,8 +447,8 @@ class _FAQCardState extends State<_FAQCard> {
                   const SizedBox(width: 12),
                   Icon(
                     _isExpanded
-                        ? Icons.expand_less_rounded
-                        : Icons.expand_more_rounded,
+                        ? AppIcons.expand_less_rounded
+                        : AppIcons.expand_more_rounded,
                     size: 28,
                     color: AppColors.brand,
                   ),
@@ -465,7 +473,7 @@ class _FAQCardState extends State<_FAQCard> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          Icons.label_rounded,
+                          AppIcons.label_rounded,
                           size: 14,
                           color: AppColors.brand,
                         ),
@@ -486,7 +494,9 @@ class _FAQCardState extends State<_FAQCard> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.surfaceElevatedDark : AppColors.surfaceElevatedLight,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.surfaceElevatedDark
+                          : AppColors.surfaceElevatedLight,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Text(
@@ -530,7 +540,9 @@ class _CategoryChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.brand
-              : (Theme.of(context).brightness == Brightness.dark ? AppColors.surfaceDark : AppColors.surfaceLight),
+              : (Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.surfaceDark
+                  : AppColors.surfaceLight),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(

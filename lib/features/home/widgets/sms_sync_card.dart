@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pato_track/app_icons.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -44,8 +45,7 @@ class SmsSyncCard extends StatelessWidget {
             ? 'Open settings'
             : 'Enable import';
 
-    final bgColor =
-        isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
+    final bgColor = isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
     final borderColor =
         isDark ? AppColors.surfaceBorderDark : AppColors.surfaceBorderLight;
 
@@ -69,13 +69,12 @@ class SmsSyncCard extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? AppColors.brandSoftDark
-                        : AppColors.brandSoft,
+                    color:
+                        isDark ? AppColors.brandSoftDark : AppColors.brandSoft,
                     borderRadius: AppSpacing.radiusMd,
                   ),
                   child: Icon(
-                    Icons.sms_rounded,
+                    AppIcons.sms_rounded,
                     color: isDark ? AppColors.brandDark : AppColors.brand,
                     size: 18,
                   ),
@@ -101,7 +100,6 @@ class SmsSyncCard extends StatelessWidget {
                 _StatusPill(status: syncStatus),
               ],
             ),
-
             if (syncMessage != null) ...[
               const SizedBox(height: AppSpacing.xs),
               Text(
@@ -113,20 +111,19 @@ class SmsSyncCard extends StatelessWidget {
                     ),
               ),
             ],
-
             if (isSyncing) ...[
               const SizedBox(height: AppSpacing.sm),
               ClipRRect(
                 borderRadius: AppSpacing.radiusFull,
                 child: LinearProgressIndicator(
                   minHeight: 3,
-                  backgroundColor:
-                      isDark ? AppColors.surfaceBorderDark : AppColors.brandSoft,
+                  backgroundColor: isDark
+                      ? AppColors.surfaceBorderDark
+                      : AppColors.brandSoft,
                   color: AppColors.brand,
                 ),
               ),
             ],
-
             const SizedBox(height: AppSpacing.sm),
             Row(
               children: [
@@ -184,7 +181,7 @@ class SmsSyncCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      child: const Icon(Icons.refresh_rounded, size: 18),
+                      child: const Icon(AppIcons.refresh_rounded, size: 18),
                     ),
                   ),
                 ],
@@ -201,7 +198,7 @@ class SmsSyncCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      child: const Icon(Icons.close_rounded, size: 18),
+                      child: const Icon(AppIcons.close_rounded, size: 18),
                     ),
                   ),
                 ],

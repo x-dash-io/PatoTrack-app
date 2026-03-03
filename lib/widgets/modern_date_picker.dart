@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pato_track/app_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'dialog_helpers.dart';
@@ -408,7 +409,7 @@ class _ModernDateRangePickerBottomSheetState
                   ],
                 ),
                 Icon(
-                  Icons.arrow_forward,
+                  AppIcons.arrow_forward,
                   color: colorScheme.onSurfaceVariant,
                 ),
                 Column(

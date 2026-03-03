@@ -13,8 +13,7 @@ class AppSpacing {
   static const double xxl = 48;
 
   // ─── Semantic padding shortcuts ──────────────────────────────────────────
-  static const EdgeInsets pageHorizontal =
-      EdgeInsets.symmetric(horizontal: lg);
+  static const EdgeInsets pageHorizontal = EdgeInsets.symmetric(horizontal: lg);
   static const EdgeInsets pageHorizontalCompact =
       EdgeInsets.symmetric(horizontal: md);
   static const EdgeInsets cardPadding = EdgeInsets.all(md);
@@ -23,16 +22,17 @@ class AppSpacing {
       EdgeInsets.symmetric(horizontal: lg, vertical: md);
 
   // ─── Border radius tokens ─────────────────────────────────────────────────
-  static const BorderRadius radiusXs   = BorderRadius.all(Radius.circular(8));
-  static const BorderRadius radiusSm   = BorderRadius.all(Radius.circular(12));
-  static const BorderRadius radiusMd   = BorderRadius.all(Radius.circular(16));
-  static const BorderRadius radiusLg   = BorderRadius.all(Radius.circular(20));
-  static const BorderRadius radiusXl   = BorderRadius.all(Radius.circular(24));
-  static const BorderRadius radiusXxl  = BorderRadius.all(Radius.circular(32));
+  static const BorderRadius radiusXs = BorderRadius.all(Radius.circular(8));
+  static const BorderRadius radiusSm = BorderRadius.all(Radius.circular(12));
+  static const BorderRadius radiusMd = BorderRadius.all(Radius.circular(16));
+  static const BorderRadius radiusLg = BorderRadius.all(Radius.circular(20));
+  static const BorderRadius radiusXl = BorderRadius.all(Radius.circular(24));
+  static const BorderRadius radiusXxl = BorderRadius.all(Radius.circular(32));
   static const BorderRadius radiusFull = BorderRadius.all(Radius.circular(999));
 
   // Legacy aliases
   static const BorderRadius cardRadius = radiusLg;
+  static const EdgeInsets cardPaddingLarge = cardPaddingLg;
   static const BorderRadius sheetRadius =
       BorderRadius.vertical(top: Radius.circular(28));
 }
