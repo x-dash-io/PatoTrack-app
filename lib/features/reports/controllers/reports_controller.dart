@@ -237,7 +237,7 @@ class ReportsController extends ChangeNotifier {
 
         points.add(
           TrendPoint(
-            x: month.toDouble(),
+            x: (month - 1).toDouble(),
             label: label,
             income: monthIncome,
             expense: monthExpense,

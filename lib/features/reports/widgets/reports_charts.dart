@@ -1,9 +1,9 @@
+import 'dart:math' as math;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../../../providers/currency_provider.dart';
-import '../../../styles/app_theme.dart';
 import '../../../styles/app_colors.dart';
-import '../../../styles/app_shadows.dart';
 import '../../../styles/app_spacing.dart';
 import '../models/reports_view_data.dart';
 
@@ -21,7 +21,7 @@ class SpendingTrendChartCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final colorScheme = theme.colorScheme;
+    final axis = _axisScale(points);
 
     final expenseSpots =
         points.map((p) => FlSpot(p.x, p.expense)).toList(growable: false);
@@ -47,10 +47,10 @@ class SpendingTrendChartCard extends StatelessWidget {
           children: [
             Text('Income vs Spending', style: theme.textTheme.titleSmall),
             const SizedBox(height: AppSpacing.xs),
-            Row(
+            const Row(
               children: [
                 _LegendDot(color: AppColors.income, label: 'Income'),
-                const SizedBox(width: AppSpacing.md),
+                SizedBox(width: AppSpacing.md),
                 _LegendDot(color: AppColors.expense, label: 'Expenses'),
               ],
             ),
@@ -61,11 +61,12 @@ class SpendingTrendChartCard extends StatelessWidget {
                 height: 180,
                 child: LineChart(
                   LineChartData(
-                    minY: 0,
+                    minY: axis.min,
+                    maxY: axis.max,
                     gridData: FlGridData(
                       show: true,
                       drawVerticalLine: false,
-                      horizontalInterval: _axisInterval(points),
+                      horizontalInterval: axis.interval,
                       getDrawingHorizontalLine: (v) => FlLine(
                         color: (isDark
                                 ? AppColors.surfaceBorderDark
@@ -102,14 +103,18 @@ class SpendingTrendChartCard extends StatelessWidget {
                       leftTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
-                          reservedSize: 52,
-                          interval: _axisInterval(points),
+                          reservedSize: 96,
+                          interval: axis.interval,
                           getTitlesWidget: (value, meta) => Padding(
-                            padding: const EdgeInsets.only(right: 6),
-                            child: Text(
-                              currency.formatCompact(value),
-                              style: theme.textTheme.labelSmall
-                                  ?.copyWith(fontSize: 10),
+                            padding: const EdgeInsets.only(right: 8),
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                currency.format(value, decimalDigits: 0),
+                                textAlign: TextAlign.right,
+                                style: theme.textTheme.labelSmall
+                                    ?.copyWith(fontSize: 10),
+                              ),
                             ),
                           ),
                         ),
@@ -144,6 +149,8 @@ class SpendingTrendChartCard extends StatelessWidget {
                         dotData: const FlDotData(show: false),
                         belowBarData: BarAreaData(
                           show: true,
+                          applyCutOffY: true,
+                          cutOffY: 0,
                           color: AppColors.income.withValues(alpha: 0.08),
                         ),
                       ),
@@ -155,6 +162,8 @@ class SpendingTrendChartCard extends StatelessWidget {
                         dotData: const FlDotData(show: false),
                         belowBarData: BarAreaData(
                           show: true,
+                          applyCutOffY: true,
+                          cutOffY: 0,
                           color: AppColors.expense.withValues(alpha: 0.06),
                         ),
                       ),
@@ -169,18 +178,73 @@ class SpendingTrendChartCard extends StatelessWidget {
     );
   }
 
-  static double _axisInterval(List<TrendPoint> points) {
-    if (points.isEmpty) return 1000;
-    final maxVal = points.fold<double>(
-        0, (m, p) => m < p.income ? p.income : (m < p.expense ? p.expense : m));
-    if (maxVal <= 0) return 1000;
-    return (maxVal / 4).ceilToDouble();
+  static _YAxisScale _axisScale(List<TrendPoint> points) {
+    if (points.isEmpty) {
+      return const _YAxisScale(min: 0, max: 1000, interval: 250);
+    }
+
+    double minValue = 0;
+    double maxValue = 0;
+    for (final point in points) {
+      minValue = math.min(minValue, math.min(point.income, point.expense));
+      maxValue = math.max(maxValue, math.max(point.income, point.expense));
+    }
+
+    if (minValue == maxValue) {
+      if (maxValue == 0) {
+        maxValue = 1000;
+      } else {
+        final pad = (maxValue.abs() * 0.2).clamp(1.0, double.infinity);
+        minValue -= pad;
+        maxValue += pad;
+      }
+    }
+
+    final range = maxValue - minValue;
+    final interval = _niceInterval(range / 4);
+
+    final scaledMin = minValue < 0
+        ? (minValue / interval).floorToDouble() * interval
+        : 0.0;
+    final scaledMax = maxValue > 0
+        ? (maxValue / interval).ceilToDouble() * interval
+        : 0.0;
+
+    return _YAxisScale(
+      min: scaledMin,
+      max: scaledMax,
+      interval: interval,
+    );
+  }
+
+  static double _niceInterval(double rawStep) {
+    if (rawStep <= 0) return 1;
+    final exponent = (math.log(rawStep) / math.ln10).floor();
+    final magnitude = math.pow(10.0, exponent).toDouble();
+    final normalized = rawStep / magnitude;
+
+    if (normalized <= 1) return magnitude;
+    if (normalized <= 2) return 2 * magnitude;
+    if (normalized <= 5) return 5 * magnitude;
+    return 10 * magnitude;
   }
 
   static double _xInterval(List<TrendPoint> points) {
     if (points.length <= 7) return 1;
     return (points.length / 6).ceilToDouble();
   }
+}
+
+class _YAxisScale {
+  const _YAxisScale({
+    required this.min,
+    required this.max,
+    required this.interval,
+  });
+
+  final double min;
+  final double max;
+  final double interval;
 }
 
 class _LegendDot extends StatelessWidget {

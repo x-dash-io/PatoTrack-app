@@ -15,9 +15,7 @@ import '../models/bill.dart';
 import '../models/transaction.dart' as model;
 import '../providers/currency_provider.dart';
 import '../styles/app_colors.dart';
-import '../styles/app_shadows.dart';
 import '../styles/app_spacing.dart';
-import '../styles/app_theme.dart';
 import '../widgets/loading_widgets.dart';
 import 'add_bill_screen.dart';
 import 'add_transaction_screen.dart';
@@ -70,6 +68,16 @@ class _HomeScreenState extends State<HomeScreen>
     final user = FirebaseAuth.instance.currentUser;
     await Navigator.of(context).push(
       MaterialPageRoute<void>(builder: (_) => const AddBillScreen()),
+    );
+    if (user != null && mounted) await _homeController.refresh(user.uid);
+  }
+
+  Future<void> _openEditBill(Bill bill) async {
+    final user = FirebaseAuth.instance.currentUser;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => AddBillScreen(billToEdit: bill),
+      ),
     );
     if (user != null && mounted) await _homeController.refresh(user.uid);
   }
@@ -294,6 +302,7 @@ class _HomeScreenState extends State<HomeScreen>
                           currency: currency,
                           onAddBill: _openAddBill,
                           onPayBill: _handlePayBill,
+                          onEditBill: _openEditBill,
                         ),
                         const SizedBox(height: AppSpacing.sm),
                         RecentTransactionsSection(

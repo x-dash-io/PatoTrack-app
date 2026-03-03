@@ -226,6 +226,7 @@ class HomeController extends ChangeNotifier {
         _loadBills(userId),
         _loadTransactions(userId),
       ]);
+      notifyListeners();
       return null;
     } catch (_) {
       return 'Could not mark the bill as paid. Please try again.';
