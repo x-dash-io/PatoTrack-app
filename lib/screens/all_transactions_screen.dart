@@ -431,7 +431,19 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                       ],
                     ),
                   ),
-                // List
+                if (_allTransactions.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: Text(
+                      _filteredTransactions.isEmpty
+                          ? 'No transactions found matching your search'
+                          : 'Showing ${_filteredTransactions.length} ${_filteredTransactions.length == 1 ? "transaction" : "transactions"}',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 Expanded(
                   child: _filteredTransactions.isEmpty
                       ? Center(
