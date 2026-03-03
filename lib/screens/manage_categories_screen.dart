@@ -374,7 +374,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
               ),
-              itemCount: _selectableAppIcons.length,
+              itemCount: _selectableIcons.length,
               itemBuilder: (context, index) {
                 final icon = _selectableIcons[index];
                 return InkWell(
