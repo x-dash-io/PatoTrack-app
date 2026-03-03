@@ -33,7 +33,7 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'PatoTrack.db');
     return await openDatabase(
       path,
-      version: 8,
+      version: 9,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -60,7 +60,11 @@ class DatabaseHelper {
         date TEXT NOT NULL,
         category_id INTEGER,
         userId TEXT NOT NULL,
-        tag TEXT NOT NULL DEFAULT 'business'
+        tag TEXT NOT NULL DEFAULT 'business',
+        source TEXT NOT NULL DEFAULT 'manual',
+        confidence REAL DEFAULT 1.0,
+        is_reviewed INTEGER NOT NULL DEFAULT 1,
+        balance_after REAL
       )
     ''');
     await db.execute('''
@@ -127,6 +131,15 @@ class DatabaseHelper {
       ''');
       // Insert default frequencies for all users
       await _insertDefaultFrequencies(db);
+    }
+    if (oldVersion < 9) {
+      await db.execute(
+          "ALTER TABLE transactions ADD COLUMN source TEXT NOT NULL DEFAULT 'manual'");
+      await db.execute(
+          "ALTER TABLE transactions ADD COLUMN confidence REAL DEFAULT 1.0");
+      await db.execute(
+          "ALTER TABLE transactions ADD COLUMN is_reviewed INTEGER NOT NULL DEFAULT 1");
+      await db.execute("ALTER TABLE transactions ADD COLUMN balance_after REAL");
     }
   }
 
@@ -203,6 +216,37 @@ class DatabaseHelper {
         where: 'userId = ?', whereArgs: [userId], orderBy: 'date DESC');
     return List.generate(
         maps.length, (i) => model.Transaction.fromMap(maps[i]));
+  }
+
+  Future<List<model.Transaction>> getUnreviewedTransactions(String userId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query('transactions',
+        where: 'userId = ? AND is_reviewed = 0',
+        whereArgs: [userId],
+        orderBy: 'date DESC');
+    return List.generate(
+        maps.length, (i) => model.Transaction.fromMap(maps[i]));
+  }
+
+  Future<int> markAsReviewed(int transactionId, String userId) async {
+    final db = await database;
+    final result = await db.update(
+      'transactions',
+      {'is_reviewed': 1},
+      where: 'id = ? AND userId = ?',
+      whereArgs: [transactionId, userId],
+    );
+    try {
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('transactions')
+          .doc(transactionId.toString())
+          .update({'is_reviewed': 1});
+    } catch (e) {
+      developer.log('Firestore sync failed for markAsReviewed: $e');
+    }
+    return result;
   }
 
   // NEW: Function to update a transaction in both local DB and Firestore

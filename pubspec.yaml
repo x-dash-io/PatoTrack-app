@@ -42,6 +42,12 @@ dependencies:
   crypto: ^3.0.3
   lucide_icons_flutter: ^3.1.10
 
+  # Tier 1 Dependencies
+  google_mlkit_text_recognition: ^0.13.0
+  decimal: ^2.3.3
+  flutter_background_service: ^5.0.10
+  image: ^4.3.0
+
 
 dev_dependencies:
   flutter_test:

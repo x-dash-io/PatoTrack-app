@@ -505,6 +505,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                               description: tx.description,
                               categoryName: categoryName,
                             );
+                            final isReceipt = tx.source == 'receipt';
 
                             return GestureDetector(
                               onTap: () async {
@@ -538,7 +539,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                                       width: 40,
                                       height: 40,
                                       decoration: BoxDecoration(
-                                        color: isMpesa
+                                        color: (isMpesa || isReceipt)
                                             ? (isDark
                                                 ? AppColors.brandSoftDark
                                                 : AppColors.brandSoft)
@@ -554,15 +555,23 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                                                 fit: BoxFit.contain,
                                               ),
                                             )
-                                          : Icon(
-                                              isIncome
-                                                  ? AppIcons
-                                                      .arrow_downward_rounded
-                                                  : AppIcons
-                                                      .arrow_upward_rounded,
-                                              color: amountColor,
-                                              size: 18,
-                                            ),
+                                          : (isReceipt
+                                              ? Icon(
+                                                  AppIcons.receipt_long_rounded,
+                                                  color: isDark
+                                                      ? AppColors.brandDark
+                                                      : AppColors.brand,
+                                                  size: 18,
+                                                )
+                                              : Icon(
+                                                  isIncome
+                                                      ? AppIcons
+                                                          .arrow_downward_rounded
+                                                      : AppIcons
+                                                          .arrow_upward_rounded,
+                                                  color: amountColor,
+                                                  size: 18,
+                                                )),
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(

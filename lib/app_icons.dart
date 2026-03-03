@@ -31,6 +31,7 @@ class AppIcons {
   static const IconData category_rounded = LucideIcons.tags;
   static const IconData chat_outlined = LucideIcons.messageCircle;
   static const IconData check_circle_rounded = LucideIcons.circleCheck;
+  static const IconData check_circle_outline_rounded = LucideIcons.circleCheck;
   static const IconData checklist_rounded = LucideIcons.listChecks;
   static const IconData chevron_right_rounded = LucideIcons.chevronRight;
   static const IconData clear_rounded = LucideIcons.x;
@@ -85,6 +86,7 @@ class AppIcons {
   static const IconData picture_as_pdf_rounded = LucideIcons.fileText;
   static const IconData question_answer_outlined = LucideIcons.messagesSquare;
   static const IconData question_answer_rounded = LucideIcons.messagesSquare;
+  static const IconData priority_high_rounded = LucideIcons.circleAlert;
   static const IconData receipt_long_outlined = LucideIcons.receiptText;
   static const IconData receipt_long_rounded = LucideIcons.receiptText;
   static const IconData receipt_outlined = LucideIcons.receipt;

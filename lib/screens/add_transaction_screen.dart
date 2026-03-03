@@ -16,6 +16,10 @@ import '../helpers/notification_helper.dart';
 import '../styles/app_colors.dart';
 import '../styles/app_shadows.dart';
 import '../styles/app_spacing.dart';
+import '../features/capture/services/ocr_service.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'dart:io';
 
 class AddTransactionScreen extends StatefulWidget {
   const AddTransactionScreen({super.key});
@@ -37,6 +41,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   final dbHelper = DatabaseHelper();
   final User? _currentUser = FirebaseAuth.instance.currentUser;
+  final _ocrService = OcrService();
+  final _imagePicker = ImagePicker();
+  bool _isScanning = false;
+  String _currentSource = 'manual';
 
   @override
   void initState() {
@@ -57,6 +65,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   void dispose() {
     _amountController.dispose();
     _descriptionController.dispose();
+    _ocrService.dispose();
     super.dispose();
   }
 
@@ -79,6 +88,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         date: _selectedDate.toIso8601String(),
         categoryId: _selectedCategoryId,
         tag: 'business', // Always business
+        source: _currentSource,
       );
 
       await dbHelper.addTransaction(newTransaction, _currentUser.uid);
@@ -92,6 +102,105 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         setState(() => _isSaving = false);
         NotificationHelper.showError(context,
             message: 'Error saving transaction: $e');
+      }
+    }
+  }
+
+  Future<void> _showScanOptions() async {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(AppIcons.camera_alt_rounded),
+              title: const Text('Take Photo'),
+              onTap: () {
+                Navigator.pop(context);
+                _scanReceipt(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(AppIcons.shopping_bag_rounded), // Using a bag/file icon for gallery
+              title: const Text('Upload from Gallery'),
+              onTap: () {
+                Navigator.pop(context);
+                _scanReceipt(ImageSource.gallery);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _scanReceipt(ImageSource source) async {
+    // Explicitly request permissions to ensure system dialogs appear
+    if (source == ImageSource.camera) {
+      final status = await Permission.camera.request();
+      if (!status.isGranted) {
+        if (mounted) {
+          NotificationHelper.showError(context, message: 'Camera permission is required');
+        }
+        return;
+      }
+    } else {
+      // For gallery, handling varies by platform/version but explicit request helps visibility
+      if (Platform.isAndroid) {
+         // Try requesting both to cover different Android versions
+         await Permission.photos.request();
+         await Permission.storage.request();
+      } else {
+         await Permission.photos.request();
+      }
+    }
+
+    final XFile? image = await _imagePicker.pickImage(
+      source: source,
+      imageQuality: 85,
+    );
+
+    if (image == null) return;
+
+    setState(() => _isScanning = true);
+
+    try {
+      final result = await _ocrService.processReceipt(File(image.path));
+
+      if (!mounted) return;
+
+      if (!result.isReceipt) {
+        setState(() => _isScanning = false);
+        NotificationHelper.showWarning(context,
+            message: result.error ?? 'This image doesn\'t look like a valid receipt.');
+        return;
+      }
+
+      setState(() {
+        if (result.amount != null) {
+          _amountController.text = result.amount!.toStringAsFixed(2);
+        }
+        if (result.merchant != null) {
+          _descriptionController.text = result.merchant!;
+        }
+        if (result.date != null) {
+          _selectedDate = result.date!;
+        }
+        _currentSource = 'receipt';
+        _isScanning = false;
+      });
+
+      NotificationHelper.showSuccess(context,
+          message: 'Receipt scanned successfully');
+    } catch (e) {
+      setState(() => _isScanning = false);
+      if (mounted) {
+        NotificationHelper.showError(context,
+            message: 'Error scanning receipt: $e');
       }
     }
   }
@@ -131,6 +240,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
           statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(AppIcons.camera_alt_rounded),
+            onPressed: _isScanning ? null : _showScanOptions,
+            tooltip: 'Scan Receipt',
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: AppScreenBackground(
         includeSafeArea: false,
@@ -139,6 +256,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           child: ListView(
             padding: const EdgeInsets.all(16.0),
             children: [
+              if (_isScanning)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 24),
+                  child: ModernLoadingIndicator(
+                      message: 'Analyzing receipt...'),
+                ),
               // Transaction Type — fintech pill toggle
               Container(
                 padding: const EdgeInsets.all(4),
@@ -159,6 +282,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           setState(() {
                             _transactionType = type;
                             _selectedCategoryId = null;
+                            _currentSource = 'manual'; // Reset source when manually toggle
                             _loadCategories();
                           });
                         },

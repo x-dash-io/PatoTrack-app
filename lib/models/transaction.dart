@@ -7,8 +7,11 @@ class Transaction {
   final String description;
   final String date;
   final int? categoryId;
-  // Indicates whether the transaction is tagged as 'business' or 'personal'.
   final String tag;
+  final String source; // manual | receipt | sms | api
+  final double confidence;
+  final bool isReviewed;
+  final double? balanceAfter;
 
   Transaction({
     this.id,
@@ -17,11 +20,13 @@ class Transaction {
     required this.description,
     required this.date,
     this.categoryId,
-    // Defaults to 'business' if not specified.
     this.tag = 'business',
+    this.source = 'manual',
+    this.confidence = 1.0,
+    this.isReviewed = true,
+    this.balanceAfter,
   });
 
-  // Creates a copy of this transaction with optional new values for each property.
   Transaction copyWith({
     int? id,
     String? type,
@@ -30,6 +35,10 @@ class Transaction {
     String? date,
     int? categoryId,
     String? tag,
+    String? source,
+    double? confidence,
+    bool? isReviewed,
+    double? balanceAfter,
   }) {
     return Transaction(
       id: id ?? this.id,
@@ -39,6 +48,10 @@ class Transaction {
       date: date ?? this.date,
       categoryId: categoryId ?? this.categoryId,
       tag: tag ?? this.tag,
+      source: source ?? this.source,
+      confidence: confidence ?? this.confidence,
+      isReviewed: isReviewed ?? this.isReviewed,
+      balanceAfter: balanceAfter ?? this.balanceAfter,
     );
   }
 
@@ -50,8 +63,11 @@ class Transaction {
       'description': description,
       'date': date,
       'category_id': categoryId,
-      // Include the tag property in the map for database storage.
       'tag': tag,
+      'source': source,
+      'confidence': confidence,
+      'is_reviewed': isReviewed ? 1 : 0,
+      'balance_after': balanceAfter,
     };
   }
 
@@ -63,8 +79,11 @@ class Transaction {
       description: map['description'],
       date: map['date'],
       categoryId: map['category_id'],
-      // Retrieve the tag from the map, defaulting to 'business' for legacy data.
       tag: map['tag'] ?? 'business',
+      source: map['source'] ?? 'manual',
+      confidence: (map['confidence'] as num?)?.toDouble() ?? 1.0,
+      isReviewed: (map['is_reviewed'] ?? 1) == 1,
+      balanceAfter: (map['balance_after'] as num?)?.toDouble(),
     );
   }
 }

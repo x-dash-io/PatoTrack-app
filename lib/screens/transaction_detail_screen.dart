@@ -206,6 +206,64 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
           child: ListView(
             padding: const EdgeInsets.all(16.0),
             children: [
+              if (widget.transaction.source != 'manual')
+                Container(
+                  margin: const EdgeInsets.only(bottom: 20),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: (Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.brandSoftDark
+                            : AppColors.brandSoft)
+                        .withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.brandDark.withValues(alpha: 0.3)
+                          : AppColors.brand.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        widget.transaction.source == 'sms'
+                            ? AppIcons.sms_rounded
+                            : AppIcons.receipt_long_rounded,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.brandDark
+                            : AppColors.brand,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Captured via \${widget.transaction.source.toUpperCase()}',
+                              style: GoogleFonts.manrope(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).brightness == Brightness.dark
+                                    ? AppColors.brandDark
+                                    : AppColors.brand,
+                              ),
+                            ),
+                            if (widget.transaction.confidence < 1.0)
+                              Text(
+                                'Confidence: \${(widget.transaction.confidence * 100).toInt()}%',
+                                style: GoogleFonts.manrope(
+                                  fontSize: 11,
+                                  color: Theme.of(context).brightness == Brightness.dark
+                                      ? AppColors.brandDark.withValues(alpha: 0.7)
+                                      : AppColors.brand.withValues(alpha: 0.7),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               // Transaction Type
               Container(
                 padding: const EdgeInsets.all(4),

@@ -114,6 +114,7 @@ class _TransactionRow extends StatelessWidget {
         ? transaction.type
         : transaction.description;
     final isMpesa = isMpesaTransaction(description: desc);
+    final isReceipt = transaction.source == 'receipt';
 
     return Semantics(
       button: true,
@@ -140,7 +141,7 @@ class _TransactionRow extends StatelessWidget {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: isMpesa
+                  color: (isMpesa || isReceipt)
                       ? (isDark ? AppColors.brandSoftDark : AppColors.brandSoft)
                       : (isDark
                           ? amountColor.withValues(alpha: 0.18)
@@ -157,13 +158,21 @@ class _TransactionRow extends StatelessWidget {
                           fit: BoxFit.contain,
                         ),
                       )
-                    : Icon(
-                        isIncome
-                            ? AppIcons.arrow_downward_rounded
-                            : AppIcons.arrow_upward_rounded,
-                        color: amountColor,
-                        size: 18,
-                      ),
+                    : (isReceipt
+                        ? Icon(
+                            AppIcons.receipt_long_rounded,
+                            color: isDark
+                                ? AppColors.brandDark
+                                : AppColors.brand,
+                            size: 18,
+                          )
+                        : Icon(
+                            isIncome
+                                ? AppIcons.arrow_downward_rounded
+                                : AppIcons.arrow_upward_rounded,
+                            color: amountColor,
+                            size: 18,
+                          )),
               ),
               const SizedBox(width: AppSpacing.sm),
 

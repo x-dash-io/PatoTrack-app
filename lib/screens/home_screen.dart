@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:pato_track/app_icons.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
@@ -21,6 +22,7 @@ import 'add_bill_screen.dart';
 import 'add_transaction_screen.dart';
 import 'all_transactions_screen.dart';
 import 'transaction_detail_screen.dart';
+import 'review_queue_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -97,6 +99,14 @@ class _HomeScreenState extends State<HomeScreen>
     final user = FirebaseAuth.instance.currentUser;
     await Navigator.of(context).push(
       MaterialPageRoute<void>(builder: (_) => const AllTransactionsScreen()),
+    );
+    if (user != null && mounted) await _homeController.refresh(user.uid);
+  }
+
+  Future<void> _openReviewQueue() async {
+    final user = FirebaseAuth.instance.currentUser;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const ReviewQueueScreen()),
     );
     if (user != null && mounted) await _homeController.refresh(user.uid);
   }
@@ -261,6 +271,16 @@ class _HomeScreenState extends State<HomeScreen>
                             greeting: _greeting(),
                             balance: home.balance,
                             currency: currency),
+                        if (home.unreviewedTransactions.isNotEmpty) ...[
+                          const SizedBox(height: AppSpacing.md),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.lg),
+                            child: _ReviewQueueBanner(
+                                count: home.unreviewedTransactions.length,
+                                onTap: _openReviewQueue),
+                          ),
+                        ],
                         const SizedBox(height: AppSpacing.md),
                         SummaryCardsSection(
                           currency: currency,
@@ -447,6 +467,61 @@ class _QuickAction extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+class _ReviewQueueBanner extends StatelessWidget {
+  final int count;
+  final VoidCallback onTap;
+
+  const _ReviewQueueBanner({required this.count, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.expense.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.expense.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.expense.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(AppIcons.priority_high_rounded,
+                  color: AppColors.expense, size: 20),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '$count Pending Reviews',
+                    style: GoogleFonts.manrope(
+                        fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  Text(
+                    'Some transactions need your attention.',
+                    style: GoogleFonts.manrope(
+                        fontSize: 12, color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(AppIcons.chevron_right_rounded,
+                color: AppColors.textSecondary),
           ],
         ),
       ),

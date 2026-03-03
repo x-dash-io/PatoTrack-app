@@ -32,6 +32,7 @@ class HomeController extends ChangeNotifier {
   bool _isInitialized = false;
 
   List<model.Transaction> _transactions = <model.Transaction>[];
+  List<model.Transaction> _unreviewedTransactions = <model.Transaction>[];
   List<Bill> _bills = <Bill>[];
 
   PermissionStatus _smsPermissionStatus = PermissionStatus.denied;
@@ -49,6 +50,9 @@ class HomeController extends ChangeNotifier {
       List<model.Transaction>.unmodifiable(_transactions);
 
   List<Bill> get bills => List<Bill>.unmodifiable(_bills);
+
+  List<model.Transaction> get unreviewedTransactions =>
+      List<model.Transaction>.unmodifiable(_unreviewedTransactions);
 
   PermissionStatus get smsPermissionStatus => _smsPermissionStatus;
   DateTime? get lastSmsSyncAt => _lastSmsSyncAt;
@@ -88,6 +92,7 @@ class HomeController extends ChangeNotifier {
       await Future.wait(<Future<void>>[
         _loadSmsState(),
         _loadTransactions(userId),
+        _loadUnreviewedTransactions(userId),
         _loadBills(userId),
       ]);
     } catch (_) {
@@ -311,5 +316,9 @@ class HomeController extends ChangeNotifier {
 
   Future<void> _loadBills(String userId) async {
     _bills = await _dbHelper.getBills(userId);
+  }
+
+  Future<void> _loadUnreviewedTransactions(String userId) async {
+    _unreviewedTransactions = await _dbHelper.getUnreviewedTransactions(userId);
   }
 }
