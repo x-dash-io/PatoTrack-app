@@ -431,19 +431,6 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                       ],
                     ),
                   ),
-                // Count label
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-                  child: Row(
-                    children: [
-                      Text(
-                        '\${_filteredTransactions.length} transaction\${_filteredTransactions.length == 1 ? "" : "s"}',
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
-                ),
                 // List
                 Expanded(
                   child: _filteredTransactions.isEmpty
