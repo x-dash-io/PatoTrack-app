@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../providers/currency_provider.dart';
+import '../../../styles/app_colors.dart';
+import '../../../styles/app_shadows.dart';
 import '../../../styles/app_spacing.dart';
 
 class SummaryCardsSection extends StatelessWidget {
@@ -21,36 +23,26 @@ class SummaryCardsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      child: Column(
+      child: Row(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: _SummaryCard(
-                  label: 'Income',
-                  value: currency.format(income, decimalDigits: 0),
-                  icon: Icons.trending_up_rounded,
-                  color: Colors.green,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: _SummaryCard(
-                  label: 'Expenses',
-                  value: currency.format(expenses, decimalDigits: 0),
-                  icon: Icons.trending_down_rounded,
-                  color: Colors.red,
-                ),
-              ),
-            ],
+          Expanded(
+            child: _MetricCard(
+              label: 'Income',
+              value: currency.format(income, decimalDigits: 0),
+              icon: Icons.arrow_downward_rounded,
+              accentColor: AppColors.income,
+              softColor: AppColors.incomeSoft,
+            ),
           ),
-          const SizedBox(height: AppSpacing.sm),
-          _SummaryCard(
-            label: 'Balance',
-            value: currency.format(balance, decimalDigits: 0),
-            icon: Icons.account_balance_wallet_rounded,
-            color: balance >= 0 ? Colors.teal : Colors.deepOrange,
-            width: double.infinity,
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: _MetricCard(
+              label: 'Expenses',
+              value: currency.format(expenses, decimalDigits: 0),
+              icon: Icons.arrow_upward_rounded,
+              accentColor: AppColors.expense,
+              softColor: AppColors.expenseSoft,
+            ),
           ),
         ],
       ),
@@ -58,68 +50,79 @@ class SummaryCardsSection extends StatelessWidget {
   }
 }
 
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({
+class _MetricCard extends StatelessWidget {
+  const _MetricCard({
     required this.label,
     required this.value,
     required this.icon,
-    required this.color,
-    this.width,
+    required this.accentColor,
+    required this.softColor,
   });
 
   final String label;
   final String value;
   final IconData icon;
-  final Color color;
-  final double? width;
+  final Color accentColor;
+  final Color softColor;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return SizedBox(
-      width: width,
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Semantics(
-                    label: '$label icon',
-                    child: Container(
-                      padding: const EdgeInsets.all(AppSpacing.xs),
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(icon, color: color),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Text(
-                      label,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                value,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: color,
-                    ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor =
+        isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
+    final borderColor =
+        isDark ? AppColors.surfaceBorderDark : AppColors.surfaceBorderLight;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: AppSpacing.radiusXl,
+        border: Border.all(color: borderColor, width: 1),
+        boxShadow: AppShadows.subtle(),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Icon pill
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: isDark
+                  ? accentColor.withValues(alpha: 0.18)
+                  : softColor,
+              borderRadius: AppSpacing.radiusSm,
+            ),
+            child: Icon(icon, color: accentColor, size: 18),
           ),
-        ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: isDark
+                  ? AppColors.textSecondaryDark
+                  : AppColors.textSecondary,
+              letterSpacing: 0.2,
+            ),
+          ),
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: accentColor,
+                letterSpacing: -0.5,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

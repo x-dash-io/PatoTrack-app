@@ -13,8 +13,10 @@ import '../helpers/notification_helper.dart';
 import '../models/bill.dart';
 import '../models/transaction.dart' as model;
 import '../providers/currency_provider.dart';
+import '../styles/app_colors.dart';
+import '../styles/app_shadows.dart';
 import '../styles/app_spacing.dart';
-import '../widgets/app_screen_background.dart';
+import '../styles/app_theme.dart';
 import '../widgets/loading_widgets.dart';
 import 'add_bill_screen.dart';
 import 'add_transaction_screen.dart';
@@ -39,9 +41,7 @@ class _HomeScreenState extends State<HomeScreen>
   void initState() {
     super.initState();
     final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      _homeController.initialize(user.uid);
-    }
+    if (user != null) _homeController.initialize(user.uid);
   }
 
   @override
@@ -52,87 +52,56 @@ class _HomeScreenState extends State<HomeScreen>
 
   String _greeting() {
     final hour = DateTime.now().hour;
-    if (hour < 12) {
-      return 'Good morning';
-    }
-    if (hour < 17) {
-      return 'Good afternoon';
-    }
-    return 'Good evening';
+    if (hour < 12) return 'Good morning,';
+    if (hour < 17) return 'Good afternoon,';
+    return 'Good evening,';
   }
 
   Future<void> _openAddTransaction() async {
     final user = FirebaseAuth.instance.currentUser;
     await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => const AddTransactionScreen(),
-      ),
+      MaterialPageRoute<void>(builder: (_) => const AddTransactionScreen()),
     );
-
-    if (user != null && mounted) {
-      await _homeController.refresh(user.uid);
-    }
+    if (user != null && mounted) await _homeController.refresh(user.uid);
   }
 
   Future<void> _openAddBill() async {
     final user = FirebaseAuth.instance.currentUser;
     await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => const AddBillScreen(),
-      ),
+      MaterialPageRoute<void>(builder: (_) => const AddBillScreen()),
     );
-
-    if (user != null && mounted) {
-      await _homeController.refresh(user.uid);
-    }
+    if (user != null && mounted) await _homeController.refresh(user.uid);
   }
 
   Future<void> _openTransactionDetails(model.Transaction transaction) async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      return;
-    }
-
+    if (user == null) return;
     final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
         builder: (_) => TransactionDetailScreen(transaction: transaction),
       ),
     );
-
-    if (result == true && mounted) {
-      await _homeController.refresh(user.uid);
-    }
+    if (result == true && mounted) await _homeController.refresh(user.uid);
   }
 
   Future<void> _openAllTransactions() async {
     final user = FirebaseAuth.instance.currentUser;
     await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => const AllTransactionsScreen(),
-      ),
+      MaterialPageRoute<void>(builder: (_) => const AllTransactionsScreen()),
     );
-
-    if (user != null && mounted) {
-      await _homeController.refresh(user.uid);
-    }
+    if (user != null && mounted) await _homeController.refresh(user.uid);
   }
 
   Future<void> _handlePayBill(Bill bill) async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      return;
-    }
-
+    if (user == null) return;
     final error = await _homeController.markBillPaid(bill, user.uid);
-    if (!mounted) {
-      return;
-    }
-
+    if (!mounted) return;
     if (error == null) {
       NotificationHelper.showSuccess(
         context,
         message: bill.isRecurring
-            ? 'Bill paid. Next due date has been scheduled.'
+            ? 'Bill paid. Next due date scheduled.'
             : 'Bill marked as paid.',
       );
     } else {
@@ -142,51 +111,39 @@ class _HomeScreenState extends State<HomeScreen>
 
   Future<void> _handleSmsImportAction() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      return;
-    }
+    if (user == null) return;
 
     if (_homeController.smsPermissionGranted) {
       await _homeController.syncMpesaMessages(user.uid);
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       _showSyncFeedback();
       return;
     }
 
     if (_homeController.smsPermissionPermanentlyDenied) {
       final opened = await openAppSettings();
-      if (opened) {
-        await _homeController.refreshPermissionState();
-      }
+      if (opened) await _homeController.refreshPermissionState();
       return;
     }
 
     final shouldContinue = await _showPermissionRationaleSheet();
-    if (!shouldContinue) {
-      return;
-    }
+    if (!shouldContinue) return;
 
     final status = await _homeController.requestSmsPermission();
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
 
     if (!status.isGranted) {
       NotificationHelper.showWarning(
         context,
         message: status.isPermanentlyDenied
-            ? 'SMS permission is blocked. Open app settings to enable it later.'
-            : 'No problem. You can keep tracking manually from the add transaction flow.',
+            ? 'SMS permission blocked. Open settings to enable it.'
+            : 'No problem — add transactions manually.',
       );
       return;
     }
 
     await _homeController.syncMpesaMessages(user.uid);
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
     _showSyncFeedback();
   }
 
@@ -194,53 +151,44 @@ class _HomeScreenState extends State<HomeScreen>
     final result = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              AppSpacing.md,
-              AppSpacing.lg,
-              AppSpacing.lg,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Enable SMS import?',
-                  style: Theme.of(sheetContext).textTheme.titleLarge,
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  'PatoTrack reads only M-Pesa messages when you tap sync. We never read personal chats. You can skip this and add transactions manually.',
-                  style: Theme.of(sheetContext).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.of(sheetContext).pop(false),
-                        child: const Text('Not now'),
-                      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Enable M-Pesa import?',
+                  style: Theme.of(ctx).textTheme.titleLarge),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'PatoTrack only reads M-Pesa messages when you tap Sync. Personal chats are never accessed.',
+                style: Theme.of(ctx).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(ctx).pop(false),
+                      child: const Text('Not now'),
                     ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: FilledButton(
-                        onPressed: () => Navigator.of(sheetContext).pop(true),
-                        child: const Text('Continue'),
-                      ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () => Navigator.of(ctx).pop(true),
+                      child: const Text('Continue'),
                     ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
-
     return result ?? false;
   }
 
@@ -248,34 +196,28 @@ class _HomeScreenState extends State<HomeScreen>
     final status = _homeController.syncStatus;
     final message = _homeController.syncMessage ??
         _homeController.syncStatusMessageFallback();
-
     switch (status) {
       case SyncStatus.success:
         NotificationHelper.showSuccess(context, message: message);
-        return;
+        break;
       case SyncStatus.error:
         NotificationHelper.showError(context, message: message);
-        return;
+        break;
       case SyncStatus.cancelled:
         NotificationHelper.showWarning(context, message: message);
-        return;
-      case SyncStatus.idle:
-      case SyncStatus.syncing:
+        break;
+      default:
         NotificationHelper.showInfo(context, message: message);
-        return;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       return const Scaffold(
-        body: Center(
-          child: Text('Sign in to view your dashboard.'),
-        ),
+        body: Center(child: Text('Sign in to view your dashboard.')),
       );
     }
 
@@ -284,105 +226,213 @@ class _HomeScreenState extends State<HomeScreen>
       child: Consumer2<HomeController, CurrencyProvider>(
         builder: (context, home, currency, _) {
           return Scaffold(
-            body: AppScreenBackground(
-              child: RefreshIndicator(
-                onRefresh: () => home.refresh(user.uid),
-                child: home.isLoading
-                    ? ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        children: const [
-                          SizedBox(height: 180),
-                          Center(
-                            child: ModernLoadingIndicator(
-                              message: 'Loading your dashboard…',
-                            ),
+            body: RefreshIndicator(
+              onRefresh: () => home.refresh(user.uid),
+              child: home.isLoading
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: const [
+                        SizedBox(height: 200),
+                        Center(
+                          child: ModernLoadingIndicator(
+                            message: 'Loading your dashboard…',
                           ),
-                        ],
-                      )
-                    : ListView(
-                        padding: const EdgeInsets.only(
-                          top: AppSpacing.sm,
-                          bottom: 96,
                         ),
-                        children: [
-                          HomeHeader(user: user, greeting: _greeting()),
-                          const SizedBox(height: AppSpacing.sm),
-                          SummaryCardsSection(
-                            currency: currency,
-                            income: home.totalIncome,
-                            expenses: home.totalExpenses,
-                            balance: home.balance,
-                          ),
-                          const SizedBox(height: AppSpacing.sm),
-                          SmsSyncCard(
-                            permissionStatus: home.smsPermissionStatus,
-                            syncStatus: home.syncStatus,
-                            syncMessage: home.syncMessage,
-                            lastSyncAt: home.lastSmsSyncAt,
-                            onPrimaryAction: _handleSmsImportAction,
-                            onRetry: _handleSmsImportAction,
-                            onCancel: home.cancelSmsSync,
-                            onOpenSettings: () async {
-                              final opened = await openAppSettings();
-                              if (opened) {
-                                await home.refreshPermissionState();
-                              }
-                            },
-                            onFallbackManual: _openAddTransaction,
-                          ),
-                          const SizedBox(height: AppSpacing.sm),
-                          UpcomingBillsCard(
-                            bills: home.bills,
-                            currency: currency,
+                      ],
+                    )
+                  : ListView(
+                      padding: const EdgeInsets.only(bottom: 96),
+                      children: [
+                        // Safe area top
+                        SizedBox(
+                          height: MediaQuery.of(context).padding.top + 8,
+                        ),
+                        HomeHeader(user: user, greeting: _greeting(), balance: home.balance, currency: currency),
+                        const SizedBox(height: AppSpacing.md),
+                        SummaryCardsSection(
+                          currency: currency,
+                          income: home.totalIncome,
+                          expenses: home.totalExpenses,
+                          balance: home.balance,
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        // Quick action row
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.lg),
+                          child: _QuickActionsRow(
+                            onAddTransaction: _openAddTransaction,
                             onAddBill: _openAddBill,
-                            onPayBill: _handlePayBill,
+                            onViewAll: _openAllTransactions,
                           ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        SmsSyncCard(
+                          permissionStatus: home.smsPermissionStatus,
+                          syncStatus: home.syncStatus,
+                          syncMessage: home.syncMessage,
+                          lastSyncAt: home.lastSmsSyncAt,
+                          onPrimaryAction: _handleSmsImportAction,
+                          onRetry: _handleSmsImportAction,
+                          onCancel: home.cancelSmsSync,
+                          onOpenSettings: () async {
+                            final opened = await openAppSettings();
+                            if (opened) {
+                              await home.refreshPermissionState();
+                            }
+                          },
+                          onFallbackManual: _openAddTransaction,
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        UpcomingBillsCard(
+                          bills: home.bills,
+                          currency: currency,
+                          onAddBill: _openAddBill,
+                          onPayBill: _handlePayBill,
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        RecentTransactionsSection(
+                          transactions: home.transactions,
+                          currency: currency,
+                          onViewAll: _openAllTransactions,
+                          onOpenTransaction: _openTransactionDetails,
+                          onAddTransaction: _openAddTransaction,
+                        ),
+                        if (home.errorMessage != null) ...[
                           const SizedBox(height: AppSpacing.sm),
                           Padding(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.lg,
-                            ),
-                            child: SizedBox(
-                              width: double.infinity,
-                              child: FilledButton.icon(
-                                onPressed: _openAddTransaction,
-                                icon: const Icon(Icons.add_rounded),
-                                label: const Text('Add transaction'),
-                              ),
+                                horizontal: AppSpacing.lg),
+                            child: Text(
+                              home.errorMessage!,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
                             ),
                           ),
-                          const SizedBox(height: AppSpacing.sm),
-                          RecentTransactionsSection(
-                            transactions: home.transactions,
-                            currency: currency,
-                            onViewAll: _openAllTransactions,
-                            onOpenTransaction: _openTransactionDetails,
-                            onAddTransaction: _openAddTransaction,
-                          ),
-                          if (home.errorMessage != null) ...[
-                            const SizedBox(height: AppSpacing.sm),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.lg,
-                              ),
-                              child: Text(
-                                home.errorMessage!,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                      color:
-                                          Theme.of(context).colorScheme.error,
-                                    ),
-                              ),
-                            ),
-                          ],
                         ],
-                      ),
-              ),
+                      ],
+                    ),
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _QuickActionsRow extends StatelessWidget {
+  const _QuickActionsRow({
+    required this.onAddTransaction,
+    required this.onAddBill,
+    required this.onViewAll,
+  });
+
+  final VoidCallback onAddTransaction;
+  final VoidCallback onAddBill;
+  final VoidCallback onViewAll;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _QuickAction(
+            icon: Icons.add_rounded,
+            label: 'Add',
+            onTap: onAddTransaction,
+            isPrimary: true,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.xs),
+        Expanded(
+          child: _QuickAction(
+            icon: Icons.receipt_long_rounded,
+            label: 'Transactions',
+            onTap: onViewAll,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.xs),
+        Expanded(
+          child: _QuickAction(
+            icon: Icons.calendar_month_rounded,
+            label: 'Add Bill',
+            onTap: onAddBill,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _QuickAction extends StatelessWidget {
+  const _QuickAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.isPrimary = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool isPrimary;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final brand = isDark ? AppColors.brandDark : AppColors.brand;
+
+    final bg = isPrimary
+        ? brand
+        : (isDark ? AppColors.surfaceDark : AppColors.surfaceLight);
+    final fg = isPrimary
+        ? Colors.white
+        : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimary);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm + 2),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(14),
+          border: isPrimary
+              ? null
+              : Border.all(
+                  color: isDark ? AppColors.surfaceBorderDark : AppColors.surfaceBorderLight,
+                  width: 1,
+                ),
+          boxShadow: isPrimary
+              ? [
+                  BoxShadow(
+                    color: brand.withValues(alpha: 0.28),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  )
+                ]
+              : null,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: fg, size: 20),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: fg,
+                fontWeight: FontWeight.w600,
+                fontSize: 11,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

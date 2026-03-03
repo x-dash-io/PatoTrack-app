@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 
 import '../../../models/bill.dart';
 import '../../../providers/currency_provider.dart';
+import '../../../styles/app_colors.dart';
+import '../../../styles/app_shadows.dart';
 import '../../../styles/app_spacing.dart';
 
 class UpcomingBillsCard extends StatefulWidget {
@@ -29,70 +31,83 @@ class _UpcomingBillsCardState extends State<UpcomingBillsCard> {
   @override
   Widget build(BuildContext context) {
     final bills = widget.bills;
-    final visibleBills =
+    final visible =
         _showAll || bills.length <= 3 ? bills : bills.take(3).toList();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        children: [
+          // Section header
+          Row(
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Upcoming bills',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ),
-                  TextButton.icon(
-                    onPressed: widget.onAddBill,
-                    icon: const Icon(Icons.add_rounded),
-                    label: const Text('Add'),
-                  ),
-                ],
+              Text(
+                'Upcoming Bills',
+                style: Theme.of(context).textTheme.titleMedium,
               ),
-              if (bills.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                  child: Text(
-                    'No upcoming bills yet. Add one to keep due dates visible.',
-                    style: Theme.of(context).textTheme.bodyMedium,
+              const Spacer(),
+              GestureDetector(
+                onTap: widget.onAddBill,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AppColors.brandSoftDark
+                        : AppColors.brandSoft,
+                    borderRadius: AppSpacing.radiusFull,
                   ),
-                )
-              else
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 240),
-                  child: Column(
-                    key: ValueKey<String>(
-                        'bills-$_showAll-${visibleBills.length}'),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      for (final bill in visibleBills)
-                        _BillRow(
-                          key: ValueKey<int?>(bill.id),
-                          bill: bill,
-                          currency: widget.currency,
-                          onPay: () {
-                            widget.onPayBill(bill);
-                          },
+                      Icon(
+                        Icons.add_rounded,
+                        size: 14,
+                        color: isDark ? AppColors.brandDark : AppColors.brand,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Add bill',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color:
+                              isDark ? AppColors.brandDark : AppColors.brand,
                         ),
+                      ),
                     ],
                   ),
                 ),
-              if (bills.length > 3)
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton(
-                    onPressed: () => setState(() => _showAll = !_showAll),
-                    child: Text(_showAll ? 'Show less' : 'Show more'),
-                  ),
-                ),
+              ),
             ],
           ),
-        ),
+          const SizedBox(height: AppSpacing.sm),
+
+          if (bills.isEmpty)
+            _EmptyBills(onAddBill: widget.onAddBill)
+          else
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              child: Column(
+                key: ValueKey<String>('bills-$_showAll-${visible.length}'),
+                children: visible
+                    .map((bill) => _BillRow(
+                          key: ValueKey<int?>(bill.id),
+                          bill: bill,
+                          currency: widget.currency,
+                          onPay: () => widget.onPayBill(bill),
+                        ))
+                    .toList(),
+              ),
+            ),
+
+          if (bills.length > 3)
+            TextButton(
+              onPressed: () => setState(() => _showAll = !_showAll),
+              child: Text(_showAll ? 'Show less' : 'Show ${bills.length - 3} more'),
+            ),
+        ],
       ),
     );
   }
@@ -117,90 +132,172 @@ class _BillRow extends StatelessWidget {
         DateTime(bill.dueDate.year, bill.dueDate.month, bill.dueDate.day);
     final today = DateTime(now.year, now.month, now.day);
     final days = dueDay.difference(today).inDays;
-    final textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final status = days < 0
-        ? 'Overdue'
+    final (statusLabel, statusColor) = days < 0
+        ? ('Overdue', AppColors.expense)
         : days == 0
-            ? 'Due today'
-            : 'Due in $days day${days == 1 ? '' : 's'}';
+            ? ('Due today', AppColors.warning)
+            : days <= 3
+                ? ('Due in $days day${days == 1 ? '' : 's'}',
+                    AppColors.warning)
+                : ('Due ${DateFormat('MMM d').format(bill.dueDate)}',
+                    isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondary);
 
-    final statusColor = days < 0
-        ? Colors.red
-        : days == 0
-            ? Colors.orange
-            : Theme.of(context).colorScheme.onSurfaceVariant;
+    final bgColor =
+        isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
+    final borderColor =
+        isDark ? AppColors.surfaceBorderDark : AppColors.surfaceBorderLight;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-      child: Semantics(
-        label:
-            '${bill.name}, ${currency.format(bill.amount, decimalDigits: 0)}, due ${DateFormat('MMM d').format(bill.dueDate)}',
-        child: Container(
-          padding: const EdgeInsets.all(AppSpacing.sm),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(14),
+    return Semantics(
+      label:
+          '${bill.name}, ${currency.format(bill.amount, decimalDigits: 0)}, $statusLabel',
+      child: Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.xs),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: 14,
+        ),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: AppSpacing.radiusLg,
+          border: Border.all(
+            color: days < 0
+                ? AppColors.expense.withValues(alpha: 0.25)
+                : borderColor,
+            width: 1,
           ),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final useStackedLayout =
-                  constraints.maxWidth < 360 || textScale > 1.15;
+          boxShadow: AppShadows.subtle(),
+        ),
+        child: Row(
+          children: [
+            // Icon
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: days < 0
+                    ? AppColors.expenseSoft
+                    : days <= 3
+                        ? AppColors.warningSoft
+                        : (isDark
+                            ? AppColors.surfaceElevatedDark
+                            : AppColors.surfaceElevatedLight),
+                borderRadius: AppSpacing.radiusMd,
+              ),
+              child: Icon(
+                days < 0
+                    ? Icons.warning_amber_rounded
+                    : Icons.receipt_outlined,
+                color: statusColor,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
 
-              final details = Column(
+            // Name + status
+            Expanded(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     bill.name,
-                    style: Theme.of(context).textTheme.titleSmall,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleSmall,
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${currency.format(bill.amount, decimalDigits: 0)} • $status',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: statusColor,
-                        ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    statusLabel,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: statusColor,
+                    ),
                   ),
                 ],
-              );
+              ),
+            ),
 
-              final payButton = FilledButton(
-                onPressed: onPay,
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size(88, 44),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+            const SizedBox(width: AppSpacing.sm),
+
+            // Amount + Pay button column
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  currency.format(bill.amount, decimalDigits: 0),
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: isDark
+                            ? AppColors.textPrimaryDark
+                            : AppColors.textPrimary,
+                      ),
                 ),
-                child: const Text('Pay'),
-              );
-
-              if (useStackedLayout) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    details,
-                    const SizedBox(height: AppSpacing.sm),
-                    SizedBox(
-                      width: double.infinity,
-                      child: payButton,
+                const SizedBox(height: 6),
+                SizedBox(
+                  height: 30,
+                  child: FilledButton(
+                    onPressed: onPay,
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(62, 30),
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 14),
+                      textStyle: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
-                  ],
-                );
-              }
-
-              return Row(
-                children: [
-                  Expanded(child: details),
-                  const SizedBox(width: AppSpacing.sm),
-                  payButton,
-                ],
-              );
-            },
-          ),
+                    child: const Text('Pay'),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
+      ),
+    );
+  }
+}
+
+class _EmptyBills extends StatelessWidget {
+  const _EmptyBills({required this.onAddBill});
+  final VoidCallback onAddBill;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: isDark
+                  ? AppColors.warningSoft.withValues(alpha: 0.15)
+                  : AppColors.warningSoft,
+              borderRadius: AppSpacing.radiusMd,
+            ),
+            child: const Icon(
+              Icons.calendar_today_outlined,
+              color: AppColors.warning,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              'No upcoming bills. Tap Add bill to track due dates.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+        ],
       ),
     );
   }

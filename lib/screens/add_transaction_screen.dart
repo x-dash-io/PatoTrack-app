@@ -12,6 +12,9 @@ import '../widgets/input_fields.dart';
 import '../widgets/app_screen_background.dart';
 import 'manage_categories_screen.dart';
 import '../helpers/notification_helper.dart';
+import '../styles/app_colors.dart';
+import '../styles/app_shadows.dart';
+import '../styles/app_spacing.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   const AddTransactionScreen({super.key});
@@ -135,40 +138,61 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           child: ListView(
             padding: const EdgeInsets.all(16.0),
             children: [
-              // Transaction Type
+              // Transaction Type — fintech pill toggle
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
+                  color: isDark ? AppColors.surfaceElevatedDark : AppColors.surfaceElevatedLight,
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: SegmentedButton<String>(
-                  segments: [
-                    ButtonSegment(
-                      value: 'expense',
-                      label: Text(
-                        'Expense',
-                        style: GoogleFonts.manrope(fontWeight: FontWeight.w500),
+                child: Row(
+                  children: ['expense', 'income'].map((type) {
+                    final isSelected = _transactionType == type;
+                    final color = type == 'income' ? AppColors.income : AppColors.expense;
+                    return Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _transactionType = type;
+                            _selectedCategoryId = null;
+                            _loadCategories();
+                          });
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 160),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? (isDark ? AppColors.surfaceDark : Colors.white)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: isSelected ? AppShadows.subtle() : null,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                type == 'income'
+                                    ? Icons.arrow_downward_rounded
+                                    : Icons.arrow_upward_rounded,
+                                size: 16,
+                                color: isSelected ? color : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondary),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                type == 'income' ? 'Income' : 'Expense',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                  color: isSelected ? color : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondary),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      icon: const Icon(Icons.arrow_upward, size: 18),
-                    ),
-                    ButtonSegment(
-                      value: 'income',
-                      label: Text(
-                        'Income',
-                        style: GoogleFonts.manrope(fontWeight: FontWeight.w500),
-                      ),
-                      icon: const Icon(Icons.arrow_downward, size: 18),
-                    ),
-                  ],
-                  selected: {_transactionType},
-                  onSelectionChanged: (Set<String> newSelection) {
-                    setState(() {
-                      _transactionType = newSelection.first;
-                      _selectedCategoryId = null;
-                      _loadCategories();
-                    });
-                  },
+                    );
+                  }).toList(),
                 ),
               ),
               const SizedBox(height: 24),

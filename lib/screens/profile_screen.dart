@@ -23,6 +23,7 @@ import '../widgets/input_fields.dart';
 import '../widgets/app_screen_background.dart';
 import '../widgets/profile/setting_list_tile.dart';
 import '../services/google_sign_in_service.dart';
+import '../styles/app_colors.dart';
 import '../styles/app_shadows.dart';
 import '../styles/app_spacing.dart';
 import 'passcode_screen.dart';
@@ -562,602 +563,432 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final currencyProvider = Provider.of<CurrencyProvider>(context);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      body: AppScreenBackground(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            if (currentUser != null)
-              Container(
-                width: double.infinity,
-                padding: ResponsiveHelper.edgeInsets(context, 32, 24, 32, 24),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer,
-                  boxShadow: AppShadows.subtle(colorScheme.primary),
+      appBar: AppBar(title: const Text('Profile')),
+      body: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          // ── Profile header ────────────────────────────────────────────────
+          if (currentUser != null)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF192236) : Colors.white,
+                border: Border(
+                  bottom: BorderSide(
+                    color: isDark ? const Color(0xFF243050) : const Color(0xFFE8EDF7),
+                    width: 1,
+                  ),
                 ),
-                child: Column(
-                  children: [
-                    SizedBox(height: ResponsiveHelper.spacing(context, 8)),
-                    // Modern Profile Image with Edit Badge
-                    GestureDetector(
-                      onTap: _pickAndUploadImage,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          // Outer ring with gradient
-                          Container(
-                            width: ResponsiveHelper.width(context, 120),
-                            height: ResponsiveHelper.width(context, 120),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: colorScheme.surface,
-                              boxShadow: const [AppShadows.elevated],
-                            ),
-                            padding: const EdgeInsets.all(4),
-                            child: CircleAvatar(
-                              radius: ResponsiveHelper.width(context, 56),
-                              backgroundImage: (currentUser!.photoURL != null)
-                                  ? CachedNetworkImageProvider(
-                                      currentUser!.photoURL!,
-                                    )
-                                  : null,
-                              backgroundColor: colorScheme.primary,
-                              child: (currentUser!.photoURL == null)
-                                  ? Icon(
-                                      Icons.person_rounded,
-                                      size: ResponsiveHelper.iconSize(
-                                          context, 60),
-                                      color: colorScheme.onPrimary,
-                                    )
-                                  : null,
-                            ),
-                          ),
-                          // Camera icon badge
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: Container(
-                              padding:
-                                  ResponsiveHelper.edgeInsetsAll(context, 8),
-                              decoration: BoxDecoration(
-                                color: colorScheme.primary,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 3,
-                                ),
-                                boxShadow: const [AppShadows.card],
-                              ),
-                              child: Icon(
-                                Icons.camera_alt_rounded,
-                                size: ResponsiveHelper.iconSize(context, 18),
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          // Uploading overlay
-                          if (_isUploading)
-                            Container(
-                              width: ResponsiveHelper.width(context, 120),
-                              height: ResponsiveHelper.width(context, 120),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.black.withValues(alpha: 0.15),
-                              ),
-                              child: const CircularProgressIndicator(
-                                strokeWidth: 3,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: ResponsiveHelper.spacing(context, 24)),
-                    // Name with Edit Button
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
+              ),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: _pickAndUploadImage,
+                    child: Stack(
+                      alignment: Alignment.bottomRight,
                       children: [
-                        Flexible(
-                          child: Text(
-                            currentUser!.displayName ?? 'User',
-                            style: GoogleFonts.manrope(
-                              fontSize: ResponsiveHelper.fontSize(context, 28),
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.onPrimaryContainer,
-                              letterSpacing: -0.5,
-                              height: 1.2,
-                            ),
-                            textAlign: TextAlign.center,
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                          ),
+                        CircleAvatar(
+                          radius: 36,
+                          backgroundColor: colorScheme.primary,
+                          backgroundImage: currentUser!.photoURL != null
+                              ? CachedNetworkImageProvider(currentUser!.photoURL!)
+                              : null,
+                          child: currentUser!.photoURL == null
+                              ? Icon(Icons.person_rounded,
+                                  size: 36, color: Colors.white)
+                              : null,
                         ),
-                        SizedBox(width: ResponsiveHelper.spacing(context, 10)),
-                        Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: _showUpdateNameDialog,
-                            borderRadius: BorderRadius.circular(
-                                ResponsiveHelper.radius(context, 12)),
-                            child: Container(
-                              padding:
-                                  ResponsiveHelper.edgeInsetsAll(context, 8),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.25),
-                                borderRadius: BorderRadius.circular(
-                                    ResponsiveHelper.radius(context, 12)),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.4),
-                                  width: 1.5,
-                                ),
-                                boxShadow: const [AppShadows.card],
-                              ),
-                              child: Icon(
-                                Icons.edit_rounded,
-                                size: ResponsiveHelper.iconSize(context, 18),
-                                color: colorScheme.onPrimaryContainer,
-                              ),
+                        Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: colorScheme.primary,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isDark ? const Color(0xFF192236) : Colors.white,
+                              width: 2,
                             ),
                           ),
+                          child: _isUploading
+                              ? const Padding(
+                                  padding: EdgeInsets.all(4),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                )
+                              : const Icon(Icons.camera_alt_rounded,
+                                  size: 12, color: Colors.white),
                         ),
                       ],
                     ),
-                    SizedBox(height: ResponsiveHelper.spacing(context, 10)),
-                    // Email with icon
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.email_outlined,
-                          size: ResponsiveHelper.iconSize(context, 16),
-                          color: colorScheme.onPrimaryContainer
-                              .withValues(alpha: 0.7),
-                        ),
-                        SizedBox(width: ResponsiveHelper.spacing(context, 6)),
-                        Flexible(
-                          child: Text(
-                            currentUser!.email ?? 'No email',
-                            style: GoogleFonts.manrope(
-                              fontSize: ResponsiveHelper.fontSize(context, 14),
-                              color: colorScheme.onPrimaryContainer
-                                  .withValues(alpha: 0.85),
-                              fontWeight: FontWeight.w500,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                currentUser!.displayName ?? 'User',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                            textAlign: TextAlign.center,
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                          ),
+                            GestureDetector(
+                              onTap: _showUpdateNameDialog,
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0xFF1E2A40) : const Color(0xFFF0F3FA),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(Icons.edit_outlined,
+                                    size: 14, color: colorScheme.onSurfaceVariant),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          currentUser!.email ?? '',
+                          style: theme.textTheme.bodySmall,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
-                AppSpacing.lg,
-                AppSpacing.lg,
-                AppSpacing.md,
-              ),
-              child: Text(
-                'App Settings',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  color: colorScheme.onSurface,
-                ),
+                  ),
+                ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              child: Card(
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  children: [
-                    SettingListTile(
-                      icon: Icons.dark_mode_rounded,
-                      title: 'Dark Mode',
-                      trailing: Switch(
-                        value: themeProvider.themeMode == ThemeMode.dark,
-                        onChanged: (value) => themeProvider.toggleTheme(value),
-                      ),
-                    ),
-                    Divider(
-                        height: 1,
-                        indent: 60,
-                        color: colorScheme.outline.withValues(alpha: 0.1)),
-                    SettingListTile(
-                      icon: Icons.lock_rounded,
-                      title: 'Passcode Lock',
-                      subtitle: 'Secure your app with a passcode',
-                      trailing: Switch(
-                        value: _isPasscodeEnabled,
-                        onChanged: (value) async {
-                          if (value) {
-                            final navigator = Navigator.of(context);
-                            final success =
-                                await navigator.push<bool>(MaterialPageRoute(
-                              builder: (context) =>
-                                  const PasscodeScreen(isSettingPasscode: true),
-                            ));
-                            if (success == true && mounted) {
-                              setState(() => _isPasscodeEnabled = true);
-                            }
-                          } else {
-                            final navigator = Navigator.of(context);
-                            final success =
-                                await navigator.push<bool>(MaterialPageRoute(
-                              builder: (context) => const PasscodeScreen(
-                                isSettingPasscode: false,
-                              ),
-                            ));
-                            if (success == true && mounted) {
-                              await _passcodeService.clearPasscode();
-                              setState(() => _isPasscodeEnabled = false);
-                            }
-                          }
-                        },
-                      ),
-                    ),
-                    if (_isPasscodeEnabled) ...[
-                      Divider(
-                          height: 1,
-                          indent: 60,
-                          color: colorScheme.outline.withValues(alpha: 0.1)),
-                      SettingListTile(
-                        icon: Icons.phonelink_lock_rounded,
-                        title: 'Change Passcode',
-                        onTap: () async {
-                          final navigator = Navigator.of(context);
-                          final verified =
-                              await navigator.push<bool>(MaterialPageRoute(
-                            builder: (context) =>
-                                const PasscodeScreen(isSettingPasscode: false),
-                          ));
-                          if (verified != true || !mounted) return;
-                          await navigator.push<bool>(
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const PasscodeScreen(isSettingPasscode: true),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                    Divider(
-                        height: 1,
-                        indent: 60,
-                        color: colorScheme.outline.withValues(alpha: 0.1)),
-                    SettingListTile(
-                      icon: Icons.currency_exchange_rounded,
-                      title: 'Currency',
-                      trailing: DropdownButton<String>(
-                        value: currencyProvider.code,
-                        underline: const SizedBox(),
-                        dropdownColor: theme.brightness == Brightness.dark
-                            ? colorScheme.surfaceContainerHighest
-                            : Colors.white,
-                        icon: Icon(
-                          Icons.arrow_drop_down_rounded,
-                          color: colorScheme.onSurfaceVariant,
-                          size: 24,
-                        ),
-                        iconSize: 24,
-                        borderRadius: BorderRadius.circular(12),
-                        menuMaxHeight: 200,
-                        items: currencyProvider.options
-                            .map<DropdownMenuItem<String>>(
-                                (option) => DropdownMenuItem<String>(
-                                      value: option.code,
-                                      child: Text(
-                                        '${option.symbol} · ${option.code}',
-                                        style: GoogleFonts.manrope(
-                                          fontWeight: FontWeight.w500,
-                                          color: colorScheme.onSurface,
-                                        ),
-                                      ),
-                                    ))
-                            .toList(),
-                        selectedItemBuilder: (BuildContext context) {
-                          return currencyProvider.options.map<Widget>((option) {
-                            return Text(
-                              option.symbol,
-                              style: GoogleFonts.manrope(
-                                fontWeight: FontWeight.w600,
-                                color: colorScheme.primary,
-                              ),
-                            );
-                          }).toList();
-                        },
-                        onChanged: (String? newValue) {
-                          if (newValue != null && mounted) {
-                            currencyProvider.setCurrency(newValue);
-                            NotificationHelper.showSuccess(
-                              context,
-                              message: 'Currency updated app-wide.',
-                            );
-                          }
-                        },
-                      ),
-                    ),
-                  ],
+
+          const SizedBox(height: 16),
+
+          // ── App Settings ──────────────────────────────────────────────────
+          _SectionHeader(title: 'App Settings'),
+          _SettingsCard(
+            children: [
+              SettingListTile(
+                icon: Icons.dark_mode_rounded,
+                title: 'Dark Mode',
+                trailing: Switch(
+                  value: themeProvider.themeMode == ThemeMode.dark,
+                  onChanged: (v) => themeProvider.toggleTheme(v),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
-                AppSpacing.lg,
-                AppSpacing.lg,
-                AppSpacing.md,
-              ),
-              child: Text(
-                'Account',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  color: colorScheme.onSurface,
+              _SettingDivider(),
+              SettingListTile(
+                icon: Icons.lock_rounded,
+                title: 'Passcode Lock',
+                subtitle: 'Secure your app with a PIN',
+                trailing: Switch(
+                  value: _isPasscodeEnabled,
+                  onChanged: (value) async {
+                    if (value) {
+                      final success = await Navigator.of(context).push<bool>(
+                        MaterialPageRoute(builder: (_) => const PasscodeScreen(isSettingPasscode: true)),
+                      );
+                      if (success == true && mounted) {
+                        setState(() => _isPasscodeEnabled = true);
+                      }
+                    } else {
+                      final success = await Navigator.of(context).push<bool>(
+                        MaterialPageRoute(builder: (_) => const PasscodeScreen(isSettingPasscode: false)),
+                      );
+                      if (success == true && mounted) {
+                        await _passcodeService.clearPasscode();
+                        setState(() => _isPasscodeEnabled = false);
+                      }
+                    }
+                  },
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              child: Card(
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+              if (_isPasscodeEnabled) ...[
+                _SettingDivider(),
+                SettingListTile(
+                  icon: Icons.phonelink_lock_rounded,
+                  title: 'Change Passcode',
+                  onTap: () async {
+                    final navigator = Navigator.of(context);
+                    final verified = await navigator.push<bool>(
+                      MaterialPageRoute(builder: (_) => const PasscodeScreen(isSettingPasscode: false)),
+                    );
+                    if (verified != true || !mounted) return;
+                    await navigator.push<bool>(
+                      MaterialPageRoute(builder: (_) => const PasscodeScreen(isSettingPasscode: true)),
+                    );
+                  },
                 ),
-                child: Column(
-                  children: [
-                    SettingListTile(
-                      icon: Icons.password_rounded,
-                      title: 'Change Password',
-                      trailing: _isSendingPasswordReset
-                          ? SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  colorScheme.primary,
-                                ),
-                              ),
-                            )
-                          : null,
-                      onTap: _isSendingPasswordReset
-                          ? null
-                          : _sendPasswordResetEmail,
-                    ),
-                    Divider(
-                        height: 1,
-                        indent: 60,
-                        color: colorScheme.outline.withValues(alpha: 0.1)),
-                    SettingListTile(
-                      icon: Icons.delete_forever_rounded,
-                      title: 'Delete Account',
-                      titleColor: Colors.red,
-                      iconColor: Colors.red,
-                      trailing: _isDeletingAccount
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.red,
-                                ),
-                              ),
-                            )
-                          : null,
-                      onTap: _isDeletingAccount ? null : _deleteAccount,
-                    ),
-                  ],
+              ],
+              _SettingDivider(),
+              SettingListTile(
+                icon: Icons.currency_exchange_rounded,
+                title: 'Currency',
+                trailing: DropdownButton<String>(
+                  value: currencyProvider.code,
+                  underline: const SizedBox(),
+                  dropdownColor: isDark ? const Color(0xFF1E2A40) : Colors.white,
+                  icon: Icon(Icons.arrow_drop_down_rounded,
+                      color: colorScheme.onSurfaceVariant, size: 24),
+                  borderRadius: BorderRadius.circular(12),
+                  menuMaxHeight: 200,
+                  items: currencyProvider.options.map((o) =>
+                    DropdownMenuItem(value: o.code, child: Text('${o.symbol} · ${o.code}'))
+                  ).toList(),
+                  selectedItemBuilder: (_) => currencyProvider.options.map((o) =>
+                    Text(o.symbol, style: theme.textTheme.labelLarge?.copyWith(
+                      color: colorScheme.primary, fontWeight: FontWeight.w700,
+                    ))
+                  ).toList(),
+                  onChanged: (v) {
+                    if (v != null && mounted) {
+                      currencyProvider.setCurrency(v);
+                      NotificationHelper.showSuccess(context, message: 'Currency updated.');
+                    }
+                  },
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
-                AppSpacing.lg,
-                AppSpacing.lg,
-                AppSpacing.md,
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+          // ── Account ───────────────────────────────────────────────────────
+          _SectionHeader(title: 'Account'),
+          _SettingsCard(
+            children: [
+              SettingListTile(
+                icon: Icons.password_rounded,
+                title: 'Change Password',
+                trailing: _isSendingPasswordReset
+                    ? const SizedBox(width: 20, height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2))
+                    : null,
+                onTap: _isSendingPasswordReset ? null : _sendPasswordResetEmail,
               ),
-              child: Text(
-                'Data & Sync',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  color: colorScheme.onSurface,
+              _SettingDivider(),
+              SettingListTile(
+                icon: Icons.delete_forever_rounded,
+                title: 'Delete Account',
+                titleColor: colorScheme.error,
+                iconColor: colorScheme.error,
+                trailing: _isDeletingAccount
+                    ? SizedBox(width: 20, height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(colorScheme.error)))
+                    : null,
+                onTap: _isDeletingAccount ? null : _deleteAccount,
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+          // ── Data & Sync ───────────────────────────────────────────────────
+          _SectionHeader(title: 'Data & Sync'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF192236) : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isDark ? const Color(0xFF243050) : const Color(0xFFE8EDF7),
+                  width: 1,
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              child: Card(
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: colorScheme.primaryContainer,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(
-                              Icons.cloud_sync_rounded,
-                              color: colorScheme.onPrimaryContainer,
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          Expanded(
-                            child: Text(
-                              'Cloud Sync',
-                              style: theme.textTheme.titleMedium,
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _cloudSyncStatusColor(colorScheme)
-                                  .withValues(alpha: 0.14),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Text(
-                              _cloudSyncStatusLabel(),
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                color: _cloudSyncStatusColor(colorScheme),
-                              ),
-                            ),
-                          ),
-                        ],
+                      Container(
+                        width: 36, height: 36,
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(Icons.cloud_sync_rounded,
+                            color: Colors.white, size: 18),
                       ),
-                      const SizedBox(height: AppSpacing.sm),
-                      Text(
-                        _cloudRestoreSubtitle(),
-                        style: theme.textTheme.bodySmall,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Cloud Sync', style: theme.textTheme.titleSmall),
+                            Text(_cloudRestoreSubtitle(), style: theme.textTheme.bodySmall?.copyWith(fontSize: 11)),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: AppSpacing.sm),
-                      Wrap(
-                        spacing: AppSpacing.xs,
-                        runSpacing: AppSpacing.xs,
-                        children: [
-                          FilledButton.icon(
-                            onPressed:
-                                _cloudSyncStatus == CloudSyncStatus.syncing
-                                    ? null
-                                    : _handleRestore,
-                            icon: const Icon(Icons.sync_rounded),
-                            label: Text(
-                              _cloudSyncStatus == CloudSyncStatus.error
-                                  ? 'Retry'
-                                  : 'Sync now',
-                            ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: _cloudSyncStatusColor(colorScheme).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          _cloudSyncStatusLabel(),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: _cloudSyncStatusColor(colorScheme),
+                            fontWeight: FontWeight.w600,
                           ),
-                          if (_cloudSyncStatus == CloudSyncStatus.syncing)
-                            OutlinedButton.icon(
-                              onPressed: _cancelRestore,
-                              icon: const Icon(Icons.close_rounded),
-                              label: const Text('Cancel'),
-                            ),
-                        ],
+                        ),
                       ),
                     ],
                   ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
-                AppSpacing.lg,
-                AppSpacing.lg,
-                AppSpacing.md,
-              ),
-              child: Text(
-                'Help & Support',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  color: colorScheme.onSurface,
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              child: Card(
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  children: [
-                    SettingListTile(
-                      icon: Icons.question_answer_rounded,
-                      title: 'FAQ',
-                      onTap: _showFaqScreen,
-                    ),
-                    Divider(
-                        height: 1,
-                        indent: 60,
-                        color: colorScheme.outline.withValues(alpha: 0.1)),
-                    SettingListTile(
-                      icon: Icons.help_outline_rounded,
-                      title: 'Help & Support',
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                              builder: (context) => const HelpScreen()),
-                        );
-                      },
-                    ),
-                    Divider(
-                        height: 1,
-                        indent: 60,
-                        color: colorScheme.outline.withValues(alpha: 0.1)),
-                    SettingListTile(
-                      icon: Icons.support_agent_rounded,
-                      title: 'Contact via WhatsApp',
-                      onTap: _launchWhatsApp,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
-                AppSpacing.xl,
-                AppSpacing.lg,
-                AppSpacing.xl,
-              ),
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: _isLoggingOut ? null : _logout,
-                  icon: _isLoggingOut
-                      ? SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 3,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              colorScheme.onPrimary,
-                            ),
-                          ),
-                        )
-                      : const Icon(Icons.logout_rounded),
-                  label: Text(
-                    'Logout',
-                    style: GoogleFonts.manrope(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: _cloudSyncStatus == CloudSyncStatus.syncing
+                              ? null : _handleRestore,
+                          icon: const Icon(Icons.sync_rounded, size: 16),
+                          label: Text(_cloudSyncStatus == CloudSyncStatus.error ? 'Retry' : 'Sync now'),
+                          style: FilledButton.styleFrom(minimumSize: const Size(0, 38)),
+                        ),
+                      ),
+                      if (_cloudSyncStatus == CloudSyncStatus.syncing) ...[
+                        const SizedBox(width: 8),
+                        IconButton.outlined(
+                          onPressed: _cancelRestore,
+                          icon: const Icon(Icons.close_rounded, size: 18),
+                          style: IconButton.styleFrom(
+                            minimumSize: const Size(38, 38), fixedSize: const Size(38, 38)),
+                        ),
+                      ],
+                    ],
                   ),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          // ── Help & Support ────────────────────────────────────────────────
+          _SectionHeader(title: 'Help & Support'),
+          _SettingsCard(
+            children: [
+              SettingListTile(
+                icon: Icons.question_answer_rounded,
+                title: 'FAQ',
+                onTap: _showFaqScreen,
+              ),
+              _SettingDivider(),
+              SettingListTile(
+                icon: Icons.help_outline_rounded,
+                title: 'Help & Support',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const HelpScreen()),
+                ),
+              ),
+              _SettingDivider(),
+              SettingListTile(
+                icon: Icons.support_agent_rounded,
+                title: 'Contact via WhatsApp',
+                onTap: _launchWhatsApp,
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 24),
+
+          // ── Logout ────────────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: OutlinedButton.icon(
+                onPressed: _isLoggingOut ? null : _logout,
+                icon: _isLoggingOut
+                    ? const SizedBox(width: 18, height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.logout_rounded),
+                label: const Text('Sign out'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: colorScheme.error,
+                  side: BorderSide(color: colorScheme.error, width: 1.5),
                 ),
               ),
             ),
-          ],
+          ),
+          const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Helper widgets ─────────────────────────────────────────────────────────────
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title});
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
+      child: Text(
+        title.toUpperCase(),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          letterSpacing: 1.0,
+          fontWeight: FontWeight.w700,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),
+    );
+  }
+}
+
+class _SettingsCard extends StatelessWidget {
+  const _SettingsCard({required this.children});
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF192236) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isDark ? const Color(0xFF243050) : const Color(0xFFE8EDF7),
+            width: 1,
+          ),
+        ),
+        child: Column(children: children),
+      ),
+    );
+  }
+}
+
+class _SettingDivider extends StatelessWidget {
+  const _SettingDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Divider(
+      height: 1,
+      indent: 60,
+      color: isDark ? const Color(0xFF243050) : const Color(0xFFE8EDF7),
     );
   }
 }

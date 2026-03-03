@@ -1,3 +1,5 @@
+import '../styles/app_colors.dart';
+import '../styles/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -72,39 +74,39 @@ class StandardTextFormField extends StatelessWidget {
             : null,
         suffixIcon: suffixIcon,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: const BorderRadius.all(Radius.circular(14)),
           borderSide: BorderSide(
             color: theme.brightness == Brightness.dark
-                ? Colors.transparent
-                : colorScheme.outline.withValues(alpha: 0.3),
+                ? AppColors.surfaceBorderDark
+                : AppColors.surfaceBorderLight,
             width: 1,
           ),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: const BorderRadius.all(Radius.circular(14)),
           borderSide: BorderSide(
             color: theme.brightness == Brightness.dark
-                ? Colors.transparent
-                : colorScheme.outline.withValues(alpha: 0.3),
+                ? AppColors.surfaceBorderDark
+                : AppColors.surfaceBorderLight,
             width: 1,
           ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: const BorderRadius.all(Radius.circular(14)),
           borderSide: BorderSide(
             color: colorScheme.primary,
             width: 2,
           ),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: const BorderRadius.all(Radius.circular(14)),
           borderSide: BorderSide(
             color: colorScheme.error,
             width: 1,
           ),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: const BorderRadius.all(Radius.circular(14)),
           borderSide: BorderSide(
             color: colorScheme.error,
             width: 2,
@@ -170,7 +172,7 @@ class StandardDropdownFormField<T> extends StatelessWidget {
         size: 28,
       ),
       iconSize: 28,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: const BorderRadius.all(Radius.circular(14)),
       menuMaxHeight: 300,
       isExpanded: true,
       decoration: InputDecoration(
@@ -183,39 +185,39 @@ class StandardDropdownFormField<T> extends StatelessWidget {
               )
             : null,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: const BorderRadius.all(Radius.circular(14)),
           borderSide: BorderSide(
             color: theme.brightness == Brightness.dark
-                ? Colors.transparent
-                : colorScheme.outline.withValues(alpha: 0.3),
+                ? AppColors.surfaceBorderDark
+                : AppColors.surfaceBorderLight,
             width: 1,
           ),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: const BorderRadius.all(Radius.circular(14)),
           borderSide: BorderSide(
             color: theme.brightness == Brightness.dark
-                ? Colors.transparent
-                : colorScheme.outline.withValues(alpha: 0.3),
+                ? AppColors.surfaceBorderDark
+                : AppColors.surfaceBorderLight,
             width: 1,
           ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: const BorderRadius.all(Radius.circular(14)),
           borderSide: BorderSide(
             color: colorScheme.primary,
             width: 2,
           ),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: const BorderRadius.all(Radius.circular(14)),
           borderSide: BorderSide(
             color: colorScheme.error,
             width: 1,
           ),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: const BorderRadius.all(Radius.circular(14)),
           borderSide: BorderSide(
             color: colorScheme.error,
             width: 2,
@@ -267,7 +269,7 @@ class StandardDateSelectorTile extends StatelessWidget {
       label: semanticsLabel ?? '$label: $valueText',
       child: InkWell(
         onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: const BorderRadius.all(Radius.circular(14)),
         child: InputDecorator(
           isFocused: false,
           isEmpty: false,

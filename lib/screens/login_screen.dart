@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'signup_screen.dart';
 import '../widgets/loading_widgets.dart';
 import '../widgets/input_fields.dart';
 import '../services/google_sign_in_service.dart';
-import '../helpers/responsive_helper.dart';
 import '../helpers/notification_helper.dart';
-import '../widgets/app_screen_background.dart';
-import '../styles/app_shadows.dart';
+import '../styles/app_colors.dart';
+import '../styles/app_theme.dart';
 import '../styles/app_spacing.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -23,9 +21,9 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   final _auth = FirebaseAuth.instance;
   final _formKey = GlobalKey<FormState>();
-
   bool _isPasswordVisible = false;
   bool _isLoading = false;
+  bool _isGoogleLoading = false;
   int _activeRequestToken = 0;
 
   @override
@@ -36,651 +34,269 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
-    // Validate form first - don't proceed if validation fails
     final isValid = _formKey.currentState?.validate() ?? false;
-    if (!isValid) {
-      // Ensure loading state is false when validation fails
-      if (mounted && _isLoading) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-      return;
-    }
-
-    // Only set loading state after validation passes
+    if (!isValid) return;
     if (!mounted) return;
-    final requestToken = ++_activeRequestToken;
-    setState(() {
-      _isLoading = true;
-    });
-
+    final token = ++_activeRequestToken;
+    setState(() => _isLoading = true);
     try {
-      final userCredential = await _auth.signInWithEmailAndPassword(
+      await _auth.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
-
-      if (userCredential.user == null ||
-          FirebaseAuth.instance.currentUser == null) {
-        throw Exception('Login failed - user not authenticated');
-      }
-      if (requestToken != _activeRequestToken) {
-        return;
-      }
+      if (token != _activeRequestToken) return;
     } on FirebaseAuthException catch (e) {
-      if (requestToken != _activeRequestToken) {
-        return;
-      }
+      if (token != _activeRequestToken) return;
       if (mounted) {
-        String errorMessage = 'Login failed. Please try again.';
-
-        // Provide user-friendly error messages
+        String msg;
         switch (e.code) {
           case 'user-not-found':
           case 'wrong-password':
           case 'invalid-credential':
-            errorMessage = 'Incorrect email or password. Please try again.';
-            break;
-          case 'invalid-email':
-            errorMessage = 'Invalid email address. Please check and try again.';
-            break;
-          case 'user-disabled':
-            errorMessage =
-                'This account has been disabled. Please contact support.';
+            msg = 'Email or password is incorrect.';
             break;
           case 'too-many-requests':
-            errorMessage = 'Too many failed attempts. Please try again later.';
-            break;
-          case 'network-request-failed':
-            errorMessage =
-                'Network error. Please check your connection and try again.';
+            msg = 'Too many attempts. Try again later.';
             break;
           default:
-            // Use the default message for unknown errors
-            errorMessage = 'Incorrect email or password. Please try again.';
+            msg = e.message ?? 'Login failed.';
         }
-
-        NotificationHelper.showError(context, message: errorMessage);
-      }
-    } catch (e) {
-      if (requestToken != _activeRequestToken) {
-        return;
-      }
-      if (mounted) {
-        NotificationHelper.showError(
-          context,
-          message: 'Login failed. Please try again.',
-        );
+        NotificationHelper.showError(context, message: msg);
       }
     } finally {
-      if (mounted && requestToken == _activeRequestToken) {
-        setState(() {
-          _isLoading = false;
-        });
+      if (mounted && _activeRequestToken == token) {
+        setState(() => _isLoading = false);
       }
     }
   }
 
-  Future<void> _signInWithGoogle() async {
-    if (!mounted) return;
-    final requestToken = ++_activeRequestToken;
-    setState(() {
-      _isLoading = true;
-    });
-
+  Future<void> _loginWithGoogle() async {
+    setState(() => _isGoogleLoading = true);
     try {
-      final userCredential = await GoogleSignInService.signInWithGoogle();
-
-      if (userCredential == null) {
-        return;
-      }
-
-      if (userCredential.user == null ||
-          FirebaseAuth.instance.currentUser == null) {
-        throw Exception('Authentication failed. Please try again.');
-      }
-      if (requestToken != _activeRequestToken) {
-        return;
-      }
+      await GoogleSignInService.signIn();
     } catch (e) {
-      if (requestToken != _activeRequestToken) {
-        return;
-      }
       if (mounted) {
-        NotificationHelper.showError(
-          context,
-          message: e.toString().replaceAll('Exception: ', ''),
-        );
+        NotificationHelper.showError(context, message: 'Google sign-in failed.');
       }
     } finally {
-      if (mounted && requestToken == _activeRequestToken) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  void _cancelAuthRequest() {
-    if (!_isLoading) {
-      return;
-    }
-    setState(() {
-      _activeRequestToken++;
-      _isLoading = false;
-    });
-    NotificationHelper.showInfo(
-      context,
-      message:
-          'Sign-in request cancelled. If the network call completes, it will be ignored.',
-    );
-  }
-
-  Future<void> _showForgotPasswordDialog() async {
-    final resetEmailController = TextEditingController();
-    final resetFormKey = GlobalKey<FormState>();
-    final colorScheme = Theme.of(context).colorScheme;
-    bool isSendingReset = false;
-
-    try {
-      await showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (dialogContext) {
-          return StatefulBuilder(
-            builder: (dialogContext, setDialogState) {
-              return Container(
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(dialogContext).viewInsets.bottom,
-                  left: 24,
-                  right: 24,
-                  top: 24,
-                ),
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(28)),
-                ),
-                child: Form(
-                  key: resetFormKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Handle bar
-                      Center(
-                        child: Container(
-                          width: 40,
-                          height: 4,
-                          margin: const EdgeInsets.only(bottom: 24),
-                          decoration: BoxDecoration(
-                            color: colorScheme.onSurfaceVariant
-                                .withValues(alpha: 0.4),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                      ),
-
-                      // Title
-                      Text(
-                        'Reset Password',
-                        style: GoogleFonts.manrope(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      // Description
-                      Text(
-                        'Enter your email address and we\'ll send you a link to reset your password.',
-                        style: GoogleFonts.manrope(
-                          fontSize: 14,
-                          color: colorScheme.onSurfaceVariant,
-                          height: 1.4,
-                        ),
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // Email input
-                      StandardTextFormField(
-                        controller: resetEmailController,
-                        labelText: 'Email',
-                        keyboardType: TextInputType.emailAddress,
-                        prefixIcon: Icons.email_outlined,
-                        enabled: !isSendingReset,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your email';
-                          }
-                          if (!value.contains('@')) {
-                            return 'Please enter a valid email';
-                          }
-                          return null;
-                        },
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // Send reset email button
-                      FilledButton(
-                        onPressed: isSendingReset
-                            ? null
-                            : () async {
-                                if (resetFormKey.currentState?.validate() ??
-                                    false) {
-                                  setDialogState(() {
-                                    isSendingReset = true;
-                                  });
-
-                                  try {
-                                    await _auth.sendPasswordResetEmail(
-                                      email: resetEmailController.text.trim(),
-                                    );
-
-                                    if (!dialogContext.mounted) return;
-                                    Navigator.of(dialogContext).pop();
-                                    if (!mounted) return;
-                                    NotificationHelper.showSuccess(
-                                      context,
-                                      message:
-                                          'Password reset email sent! Please check your inbox.',
-                                    );
-                                  } on FirebaseAuthException catch (e) {
-                                    var errorMessage =
-                                        'Failed to send reset email';
-                                    if (e.code == 'user-not-found') {
-                                      errorMessage =
-                                          'No account found with this email address.';
-                                    } else if (e.code == 'invalid-email') {
-                                      errorMessage = 'Invalid email address.';
-                                    } else if (e.code == 'too-many-requests') {
-                                      errorMessage =
-                                          'Too many requests. Please try again later.';
-                                    } else {
-                                      errorMessage = e.message ?? errorMessage;
-                                    }
-
-                                    if (dialogContext.mounted) {
-                                      setDialogState(() {
-                                        isSendingReset = false;
-                                      });
-                                    }
-                                    if (!mounted) return;
-                                    NotificationHelper.showError(
-                                      context,
-                                      message: errorMessage,
-                                    );
-                                  } catch (_) {
-                                    if (dialogContext.mounted) {
-                                      setDialogState(() {
-                                        isSendingReset = false;
-                                      });
-                                    }
-                                    if (!mounted) return;
-                                    NotificationHelper.showError(
-                                      context,
-                                      message:
-                                          'An error occurred. Please try again.',
-                                    );
-                                  }
-                                }
-                              },
-                        style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                        child: isSendingReset
-                            ? SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    colorScheme.onPrimary,
-                                  ),
-                                ),
-                              )
-                            : Text(
-                                'Send Reset Link',
-                                style: GoogleFonts.manrope(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // Cancel button
-                      TextButton(
-                        onPressed: isSendingReset
-                            ? null
-                            : () => Navigator.of(dialogContext).pop(),
-                        child: Text(
-                          'Cancel',
-                          style: GoogleFonts.manrope(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-
-                      SizedBox(
-                          height:
-                              MediaQuery.of(dialogContext).padding.bottom + 8),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-        },
-      );
-    } finally {
-      resetEmailController.dispose();
+      if (mounted) setState(() => _isGoogleLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      body: AppScreenBackground(
-        child: LoadingOverlay(
-          isLoading: _isLoading,
-          message: 'Signing in...',
-          onCancel: _cancelAuthRequest,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg,
-              vertical: AppSpacing.md,
-            ),
-            child: Form(
-              key: _formKey,
-              autovalidateMode: AutovalidateMode.onUserInteraction,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  SizedBox(height: ResponsiveHelper.spacing(context, 20)),
+      backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 48),
+                // Brand mark
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppColors.brand,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.account_balance_wallet_rounded,
+                    color: Colors.white,
+                    size: 26,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Text(
+                  'Welcome back',
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Sign in to your PatoTrack account',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xl),
 
-                  // App logo/icon with modern design
-                  Center(
-                    child: Container(
-                      width: ResponsiveHelper.width(context, 100),
-                      height: ResponsiveHelper.height(context, 100),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primaryContainer,
-                        shape: BoxShape.circle,
-                        boxShadow: const [AppShadows.card],
+                // Email field
+                StandardTextFormField(
+                  controller: _emailController,
+                  labelText: 'Email address',
+                  keyboardType: TextInputType.emailAddress,
+                  prefixIcon: Icons.email_outlined,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Enter your email';
+                    if (!v.contains('@')) return 'Enter a valid email';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: AppSpacing.sm),
+
+                // Password field
+                StandardTextFormField(
+                  controller: _passwordController,
+                  labelText: 'Password',
+                  obscureText: !_isPasswordVisible,
+                  prefixIcon: Icons.lock_outline_rounded,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _isPasswordVisible
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      size: 20,
+                    ),
+                    onPressed: () => setState(
+                        () => _isPasswordVisible = !_isPasswordVisible),
+                  ),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Enter your password';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: AppSpacing.xs),
+
+                // Forgot password
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      final email = _emailController.text.trim();
+                      if (email.isEmpty) {
+                        NotificationHelper.showWarning(context,
+                            message: 'Enter your email first.');
+                        return;
+                      }
+                      _auth.sendPasswordResetEmail(email: email);
+                      NotificationHelper.showSuccess(context,
+                          message: 'Password reset link sent.');
+                    },
+                    child: const Text('Forgot password?'),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+
+                // Sign in button
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: FilledButton(
+                    onPressed: _isLoading ? null : _login,
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Text('Sign in'),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+
+                // Divider
+                Row(
+                  children: [
+                    Expanded(
+                      child: Divider(
+                        color: isDark
+                            ? AppColors.surfaceBorderDark
+                            : AppColors.surfaceBorderLight,
                       ),
-                      child: Icon(
-                        Icons.account_balance_wallet,
-                        size: ResponsiveHelper.iconSize(context, 50),
-                        color: colorScheme.onPrimaryContainer,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm),
+                      child: Text(
+                        'or',
+                        style: theme.textTheme.bodySmall,
                       ),
                     ),
-                  ),
-
-                  SizedBox(height: ResponsiveHelper.spacing(context, 48)),
-
-                  // Modern title section
-                  Text(
-                    'Welcome Back',
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      color: colorScheme.onSurface,
+                    Expanded(
+                      child: Divider(
+                        color: isDark
+                            ? AppColors.surfaceBorderDark
+                            : AppColors.surfaceBorderLight,
+                      ),
                     ),
-                    textAlign: TextAlign.center,
-                  ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
 
-                  SizedBox(height: ResponsiveHelper.spacing(context, 12)),
-
-                  Text(
-                    'Sign in to continue tracking your expenses',
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  SizedBox(height: ResponsiveHelper.spacing(context, 48)),
-
-                  // Modern card container for form
-                  Card(
-                    elevation: 0,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: AppSpacing.cardRadius,
-                    ),
-                    child: Padding(
-                      padding: AppSpacing.cardPaddingLarge,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // Email field
-                          StandardTextFormField(
-                            controller: _emailController,
-                            labelText: 'Email',
-                            keyboardType: TextInputType.emailAddress,
-                            prefixIcon: Icons.email_outlined,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your email';
-                              }
-                              if (!value.contains('@')) {
-                                return 'Please enter a valid email';
-                              }
-                              return null;
-                            },
-                          ),
-
-                          SizedBox(
-                              height: ResponsiveHelper.spacing(context, 20)),
-
-                          // Password field
-                          StandardTextFormField(
-                            controller: _passwordController,
-                            labelText: 'Password',
-                            obscureText: !_isPasswordVisible,
-                            prefixIcon: Icons.lock_outline,
-                            suffixIcon: IconButton(
-                              onPressed: () {
-                                setState(() {
-                                  _isPasswordVisible = !_isPasswordVisible;
-                                });
-                              },
-                              icon: Icon(
-                                _isPasswordVisible
-                                    ? Icons.visibility_off_outlined
-                                    : Icons.visibility_outlined,
-                                color: colorScheme.onSurfaceVariant,
+                // Google sign in
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: OutlinedButton(
+                    onPressed: _isGoogleLoading ? null : _loginWithGoogle,
+                    child: _isGoogleLoading
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                isDark ? AppColors.brandDark : AppColors.brand,
                               ),
                             ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your password';
-                              }
-                              if (value.length < 6) {
-                                return 'Password must be at least 6 characters';
-                              }
-                              return null;
-                            },
-                          ),
-
-                          SizedBox(
-                              height: ResponsiveHelper.spacing(context, 12)),
-
-                          // Forgot password link
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed:
-                                  _isLoading ? null : _showForgotPasswordDialog,
-                              style: TextButton.styleFrom(
-                                padding: ResponsiveHelper.edgeInsetsSymmetric(
-                                    context, 8, 4),
-                                minimumSize: Size.zero,
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              ),
-                              child: Text(
-                                'Forgot Password?',
-                                style: GoogleFonts.manrope(
-                                  fontSize:
-                                      ResponsiveHelper.fontSize(context, 14),
-                                  fontWeight: FontWeight.w600,
-                                  color: colorScheme.primary,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          SizedBox(
-                              height: ResponsiveHelper.spacing(context, 20)),
-
-                          // Login button
-                          FilledButton(
-                            onPressed: _isLoading ? null : _login,
-                            style: FilledButton.styleFrom(
-                              padding: EdgeInsets.symmetric(
-                                  vertical: ResponsiveHelper.buttonHeight(
-                                      context, 16)),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                    ResponsiveHelper.radius(context, 16)),
-                              ),
-                            ),
-                            child: _isLoading
-                                ? SizedBox(
-                                    height:
-                                        ResponsiveHelper.iconSize(context, 20),
-                                    width:
-                                        ResponsiveHelper.iconSize(context, 20),
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        colorScheme.onPrimary,
-                                      ),
-                                    ),
-                                  )
-                                : Text(
-                                    'Sign In',
-                                    style: GoogleFonts.manrope(
-                                      fontSize: ResponsiveHelper.fontSize(
-                                          context, 17),
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                          ),
-
-                          SizedBox(
-                              height: ResponsiveHelper.spacing(context, 24)),
-
-                          // Divider with "OR"
-                          Row(
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Expanded(
-                                  child: Divider(color: colorScheme.outline)),
-                              Padding(
-                                padding: ResponsiveHelper.edgeInsetsSymmetric(
-                                    context, 16, 0),
-                                child: Text(
-                                  'OR',
-                                  style: GoogleFonts.manrope(
-                                    fontSize:
-                                        ResponsiveHelper.fontSize(context, 14),
-                                    color: colorScheme.onSurfaceVariant,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
+                              Image.asset(
+                                'assets/google_logo.png',
+                                width: 20,
+                                height: 20,
                               ),
-                              Expanded(
-                                  child: Divider(color: colorScheme.outline)),
+                              const SizedBox(width: AppSpacing.sm),
+                              const Text('Continue with Google'),
                             ],
                           ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xl),
 
-                          SizedBox(
-                              height: ResponsiveHelper.spacing(context, 24)),
-
-                          // Google Sign-In button
-                          OutlinedButton.icon(
-                            onPressed: _isLoading ? null : _signInWithGoogle,
-                            style: OutlinedButton.styleFrom(
-                              padding: EdgeInsets.symmetric(
-                                  vertical: ResponsiveHelper.buttonHeight(
-                                      context, 16)),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                    ResponsiveHelper.radius(context, 16)),
-                              ),
-                              side: BorderSide(
-                                color: colorScheme.outline,
-                                width: 1.5,
-                              ),
-                            ),
-                            icon: Image.asset(
-                              'assets/google_logo.png',
-                              height: 20,
-                              width: 20,
-                              errorBuilder: (context, error, stackTrace) {
-                                // Fallback if Google logo asset doesn't exist
-                                return const Icon(Icons.g_mobiledata, size: 24);
-                              },
-                            ),
-                            label: Text(
-                              'Continue with Google',
-                              style: GoogleFonts.manrope(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
+                // Sign up link
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Don't have an account? ",
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Sign up link with modern design
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Don't have an account? ",
-                        style: GoogleFonts.manrope(
-                          fontSize: 15,
-                          color: colorScheme.onSurfaceVariant,
+                    GestureDetector(
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                            builder: (_) => const SignupScreen()),
+                      ),
+                      child: Text(
+                        'Create one',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: isDark ? AppColors.brandDark : AppColors.brand,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const SignUpScreen(),
-                            ),
-                          );
-                        },
-                        child: Text(
-                          'Sign Up',
-                          style: GoogleFonts.manrope(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: colorScheme.primary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+              ],
             ),
           ),
         ),

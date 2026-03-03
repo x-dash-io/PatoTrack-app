@@ -416,3 +416,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 }
+-e 
+// Alias for backward compat
+typedef SignupScreen = SignUpScreen;
