@@ -13,7 +13,7 @@ import 'screens/home_screen.dart';
 import 'screens/all_transactions_screen.dart';
 import 'screens/reports_screen.dart';
 import 'screens/profile_screen.dart';
-import 'screens/trust_score_screen.dart';
+import 'screens/analytics_screen.dart';
 import 'styles/app_colors.dart';
 import 'styles/app_shadows.dart';
 import 'styles/app_theme.dart';
@@ -81,7 +81,7 @@ class _MainScreenState extends State<MainScreen> {
     HomeScreen(),
     AllTransactionsScreen(),
     ReportsScreen(),
-    TrustScoreScreen(),
+    AnalyticsScreen(),
     ProfileScreen(),
   ];
 
@@ -125,9 +125,9 @@ class _MainScreenState extends State<MainScreen> {
               label: 'Reports',
             ),
             NavigationDestination(
-              icon: Icon(AppIcons.shield_check_rounded),
-              selectedIcon: Icon(AppIcons.shield_check_rounded),
-              label: 'Trust',
+              icon: Icon(AppIcons.trending_up_rounded),
+              selectedIcon: Icon(AppIcons.trending_up_rounded),
+              label: 'Analytics',
             ),
             NavigationDestination(
               icon: Icon(AppIcons.person_outline_rounded),
