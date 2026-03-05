@@ -35,8 +35,7 @@ class RatiosService {
         .where((t) =>
             t.type == 'expense' &&
             cogsKeywords.any((kw) =>
-                (t.description.toLowerCase()).contains(kw) ||
-                (t.categoryName ?? '').toLowerCase().contains(kw)))
+                (t.description.toLowerCase()).contains(kw)))
         .fold(0.0, (s, t) => s + t.amount);
 
     final grossProfit = income - cogs;
@@ -59,7 +58,7 @@ class RatiosService {
     if (incomeTxns.length > 1) {
       final Map<String, double> byCat = {};
       for (final t in incomeTxns) {
-        final key = t.categoryName ?? 'Uncategorized';
+        final key = t.categoryId?.toString() ?? 'Uncategorized';
         byCat[key] = (byCat[key] ?? 0) + t.amount;
       }
       final maxVal =

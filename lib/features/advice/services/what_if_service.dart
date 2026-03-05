@@ -17,7 +17,7 @@ class WhatIfService {
     required double currentBalance,  // income - expense YTD
   }) {
     final baseRunway = burnRate > 0
-        ? (currentBalance / burnRate).clamp(0, 9999)
+        ? (currentBalance / burnRate).clamp(0.0, 9999.0)
         : 999.0;
 
     switch (type) {
@@ -57,7 +57,7 @@ class WhatIfService {
     final newBurnRate = math.max((expense + salary) / 30, 1.0);
     final newBalance = balance + newNet - (income * months - expense * months);
     final newRunway = newBurnRate > 0
-        ? (newBalance / newBurnRate).clamp(0, 9999)
+        ? (newBalance / newBurnRate).clamp(0.0, 9999.0)
         : baseRunway;
 
     // Break-even: how many months of extra sales needed to cover salary
@@ -96,7 +96,7 @@ class WhatIfService {
 
     final newBalance = balance + deltaIncome3m;
     final newRunway = burnRate > 0
-        ? (newBalance / burnRate).clamp(0, 9999)
+        ? (newBalance / burnRate).clamp(0.0, 9999.0)
         : baseRunway;
 
     final direction = pctChange >= 0 ? 'raise' : 'cut';
@@ -143,7 +143,7 @@ class WhatIfService {
     final newBalance = balance + loanAmount - monthlyRepayment * 3;
     final newBurnRate = math.max((expense + monthlyRepayment) / 30, 1.0);
     final newRunway = newBurnRate > 0
-        ? (newBalance / newBurnRate).clamp(0, 9999)
+        ? (newBalance / newBurnRate).clamp(0.0, 9999.0)
         : baseRunway;
 
     return WhatIfResult(
@@ -174,7 +174,7 @@ class WhatIfService {
     final deltaIncome3m = monthlyRevenue * 3;
     final newBalance = balance + deltaIncome3m;
     final newRunway = burnRate > 0
-        ? (newBalance / burnRate).clamp(0, 9999)
+        ? (newBalance / burnRate).clamp(0.0, 9999.0)
         : baseRunway;
 
     // Revenue concentration: what % of income does this client represent?

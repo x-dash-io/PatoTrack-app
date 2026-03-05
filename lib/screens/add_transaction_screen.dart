@@ -21,6 +21,7 @@ import '../widgets/app_screen_background.dart';
 import 'manage_categories_screen.dart';
 import '../helpers/notification_helper.dart';
 import '../styles/app_colors.dart';
+import '../styles/app_shadows.dart';
 import '../features/capture/services/ocr_service.dart';
 import '../features/categorization/categorization_service.dart';
 

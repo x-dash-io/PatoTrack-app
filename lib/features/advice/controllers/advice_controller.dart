@@ -90,7 +90,7 @@ class AdviceController extends ChangeNotifier {
       if (incomeTxns.isNotEmpty) {
         final Map<String, double> byCat = {};
         for (final t in incomeTxns) {
-          final key = t.categoryName ?? 'Uncategorized';
+          final key = t.categoryId?.toString() ?? 'Uncategorized';
           byCat[key] = (byCat[key] ?? 0) + t.amount;
         }
         final maxVal = byCat.values.reduce((a, b) => a > b ? a : b);

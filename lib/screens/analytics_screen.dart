@@ -9,10 +9,10 @@ import '../app_icons.dart';
 import '../features/analytics/controllers/analytics_controller.dart';
 import '../features/analytics/models/analytics_result.dart';
 import '../features/advice/controllers/advice_controller.dart';
+import '../features/advice/models/advice_models.dart';
 import '../features/compliance/controllers/compliance_controller.dart';
 import '../features/compliance/models/compliance_result.dart';
 import '../features/trust_score/controllers/trust_score_controller.dart';
-import '../features/trust_score/models/trust_score_result.dart';
 import '../features/trust_score/widgets/trust_score_gauge.dart';
 import '../providers/currency_provider.dart';
 import '../screens/advice_screen.dart';
@@ -100,6 +100,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                     analytics.refresh(user.uid);
                     trust.refresh(user.uid);
                     compliance.refresh(user.uid);
+                    advice.refresh(user.uid);
                   },
                 ),
               ],
@@ -112,6 +113,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                   await analytics.refresh(user.uid);
                   await trust.refresh(user.uid);
                   await compliance.refresh(user.uid);
+                  await advice.refresh(user.uid);
                 },
                 child: analytics.isLoading
                     ? ListView(
@@ -135,6 +137,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                             analytics: analytics,
                             trust: trust,
                             compliance: compliance,
+                            advice: advice,
                             currency: currency,
                             userId: user.uid,
                           ),
