@@ -152,7 +152,6 @@ class CategorizationService {
     'casual': {'Staff Salaries': 1.5},
     'allowance': {'Staff Salaries': 1.5},
     'per diem': {'Staff Salaries': 1.5},
-    'fee': {'Professional Fees': 1.0},
     'consulting': {'Professional Fees': 2.0},
     'legal': {'Professional Fees': 2.0},
     'lawyer': {'Professional Fees': 2.0},

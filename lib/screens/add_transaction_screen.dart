@@ -249,7 +249,25 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   Future<void> _scanReceipt(ImageSource source) async {
     if (source == ImageSource.camera) {
-      final status = await Permission.camera.request();
+      var status = await Permission.camera.status;
+      if (status.isDenied) {
+        status = await Permission.camera.request();
+      }
+      if (status.isPermanentlyDenied) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Camera permission disabled. Please enable in Settings.'),
+              action: SnackBarAction(
+                label: 'SETTINGS',
+                onPressed: () => openAppSettings(),
+              ),
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+        return;
+      }
       if (!status.isGranted) {
         if (mounted) {
           NotificationHelper.showError(context,
@@ -259,8 +277,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       }
     } else {
       if (Platform.isAndroid) {
-        await Permission.photos.request();
-        await Permission.storage.request();
+        var status = await Permission.photos.status;
+        if (status.isDenied) {
+          await Permission.photos.request();
+          await Permission.storage.request();
+        }
       } else {
         await Permission.photos.request();
       }
@@ -640,9 +661,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                   name: s.categoryName,
                                   type: _transactionType, // Assign to current tab type
                                 );
-                                final newId = await _dbHelper.insertCategory(
-                                    _currentUser!.uid, newCat);
-                                await _loadCategories(); // Reload dropdown
+                                final newId = await _dbHelper.addCategory(
+                                    newCat, _currentUser!.uid);
+                                _loadCategories(); // Reload dropdown
                                 setState(() => _selectedCategoryId = newId);
                                 
                                 // Record correction for learning
