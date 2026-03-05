@@ -176,7 +176,6 @@ class CategorizationService {
     'coffee': {'Food & Dining': 2.0},
     'tea': {'Food & Dining': 1.5},
     'snacks': {'Food & Dining': 2.0},
-    'water': {'Food & Dining': 1.0},
     'meal': {'Food & Dining': 2.0},
     'entertainment': {'Entertainment': 2.0},
     'event': {'Entertainment': 1.5},
