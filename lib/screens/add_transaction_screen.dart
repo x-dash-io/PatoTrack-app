@@ -1,10 +1,17 @@
+import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:pato_track/app_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'dart:io';
 import '../helpers/database_helper.dart';
+import '../helpers/config.dart';
 import '../models/category.dart';
 import '../models/transaction.dart' as model;
 import '../widgets/modern_date_picker.dart';
@@ -14,12 +21,8 @@ import '../widgets/app_screen_background.dart';
 import 'manage_categories_screen.dart';
 import '../helpers/notification_helper.dart';
 import '../styles/app_colors.dart';
-import '../styles/app_shadows.dart';
-import '../styles/app_spacing.dart';
 import '../features/capture/services/ocr_service.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'dart:io';
+import '../features/categorization/categorization_service.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   const AddTransactionScreen({super.key});
@@ -39,47 +42,83 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   late Future<List<Category>> _categoriesFuture;
   bool _isSaving = false;
 
-  final dbHelper = DatabaseHelper();
+  final _dbHelper = DatabaseHelper();
   final User? _currentUser = FirebaseAuth.instance.currentUser;
   final _ocrService = OcrService();
+  final _categorizationService = CategorizationService();
   final _imagePicker = ImagePicker();
   bool _isScanning = false;
   String _currentSource = 'manual';
+  String? _receiptImageUrl;
+
+  // Tier 2 – category suggestions
+  List<CategorySuggestion> _suggestions = [];
+  List<Map<String, dynamic>> _userCorrections = [];
+  Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
     _loadCategories();
+    _loadUserCorrections();
+    _descriptionController.addListener(_onDescriptionChanged);
   }
 
   void _loadCategories() {
     if (_currentUser != null) {
       setState(() {
         _categoriesFuture =
-            dbHelper.getCategories(_currentUser.uid, type: _transactionType);
+            _dbHelper.getCategories(_currentUser!.uid, type: _transactionType);
       });
     }
   }
 
+  Future<void> _loadUserCorrections() async {
+    if (_currentUser == null) return;
+    final corrections =
+        await _dbHelper.getUserCategoryCorrections(_currentUser!.uid);
+    if (mounted) setState(() => _userCorrections = corrections);
+  }
+
+  void _onDescriptionChanged() {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      final text = _descriptionController.text;
+      if (text.isEmpty) {
+        if (mounted) setState(() => _suggestions = []);
+        return;
+      }
+      final suggestions = _categorizationService.suggest(
+        text,
+        corrections: _userCorrections,
+      );
+      if (mounted) setState(() => _suggestions = suggestions);
+    });
+  }
+
   @override
   void dispose() {
+    _debounce?.cancel();
     _amountController.dispose();
     _descriptionController.dispose();
     _ocrService.dispose();
     super.dispose();
   }
 
-  Future<void> _saveTransaction() async {
-    if (!_formKey.currentState!.validate() || _currentUser == null) {
-      return;
-    }
-
-    if (_isSaving) return; // Prevent double submission
+  Future<void> _saveTransaction({
+    double? overrideConfidence,
+    bool autoSaved = false,
+  }) async {
+    if (!_formKey.currentState!.validate() || _currentUser == null) return;
+    if (_isSaving) return;
 
     setState(() => _isSaving = true);
 
     try {
       final navigator = Navigator.of(context);
+      final confidence = overrideConfidence ?? 1.0;
+      // confidence < 0.7 → goes to review queue (is_reviewed = false)
+      final isReviewed = confidence >= 0.7;
 
       final newTransaction = model.Transaction(
         type: _transactionType,
@@ -87,14 +126,60 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         description: _descriptionController.text,
         date: _selectedDate.toIso8601String(),
         categoryId: _selectedCategoryId,
-        tag: 'business', // Always business
+        tag: 'business',
         source: _currentSource,
+        confidence: confidence,
+        isReviewed: isReviewed,
+        receiptImageUrl: _receiptImageUrl,
       );
 
-      await dbHelper.addTransaction(newTransaction, _currentUser.uid);
+      final newId =
+          await _dbHelper.addTransaction(newTransaction, _currentUser!.uid);
+
+      // Record category correction for Tier 2 learning
+      if (_selectedCategoryId != null &&
+          _descriptionController.text.isNotEmpty) {
+        final cats = await _dbHelper.getCategories(_currentUser!.uid);
+        final selected =
+            cats.where((c) => c.id == _selectedCategoryId).firstOrNull;
+        if (selected != null) {
+          await _dbHelper.addUserCategoryCorrection(
+            userId: _currentUser!.uid,
+            description: _descriptionController.text,
+            categoryId: _selectedCategoryId!,
+            categoryName: selected.name,
+          );
+        }
+      }
 
       if (mounted) {
-        NotificationHelper.showSuccess(context, message: 'Transaction Saved');
+        if (autoSaved) {
+          // Offer undo for auto-saved transactions
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Receipt auto-saved (${(confidence * 100).toInt()}% confidence)',
+                style: GoogleFonts.manrope(),
+              ),
+              duration: const Duration(seconds: 8),
+              action: SnackBarAction(
+                label: 'UNDO',
+                onPressed: () async {
+                  await _dbHelper.deleteTransaction(newId, _currentUser!.uid);
+                  if (mounted) {
+                    NotificationHelper.showSuccess(context,
+                        message: 'Transaction removed');
+                  }
+                },
+              ),
+            ),
+          );
+        } else {
+          NotificationHelper.showSuccess(context,
+              message: isReviewed
+                  ? 'Transaction Saved'
+                  : 'Saved to review queue (low confidence)');
+        }
         navigator.pop();
       }
     } catch (e) {
@@ -125,7 +210,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(AppIcons.shopping_bag_rounded), // Using a bag/file icon for gallery
+              leading: const Icon(AppIcons.shopping_bag_rounded),
               title: const Text('Upload from Gallery'),
               onTap: () {
                 Navigator.pop(context);
@@ -138,24 +223,45 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
+  Future<String?> _uploadToCloudinary(File imageFile) async {
+    if (AppConfig.cloudinaryUploadPreset ==
+        'REPLACE_WITH_UNSIGNED_UPLOAD_PRESET') {
+      return null; // Cloudinary not configured — skip upload silently
+    }
+    try {
+      final url = Uri.parse(
+          'https://api.cloudinary.com/v1_1/${AppConfig.cloudinaryCloudName}/image/upload');
+      final request = http.MultipartRequest('POST', url)
+        ..files.add(await http.MultipartFile.fromPath('file', imageFile.path))
+        ..fields['upload_preset'] = AppConfig.cloudinaryUploadPreset;
+      final response = await request.send();
+      if (response.statusCode == 200) {
+        final json = jsonDecode(await response.stream.bytesToString())
+            as Map<String, dynamic>;
+        return json['secure_url'] as String?;
+      }
+    } catch (e) {
+      debugPrint('Cloudinary upload error: $e');
+    }
+    return null;
+  }
+
   Future<void> _scanReceipt(ImageSource source) async {
-    // Explicitly request permissions to ensure system dialogs appear
     if (source == ImageSource.camera) {
       final status = await Permission.camera.request();
       if (!status.isGranted) {
         if (mounted) {
-          NotificationHelper.showError(context, message: 'Camera permission is required');
+          NotificationHelper.showError(context,
+              message: 'Camera permission is required');
         }
         return;
       }
     } else {
-      // For gallery, handling varies by platform/version but explicit request helps visibility
       if (Platform.isAndroid) {
-         // Try requesting both to cover different Android versions
-         await Permission.photos.request();
-         await Permission.storage.request();
+        await Permission.photos.request();
+        await Permission.storage.request();
       } else {
-         await Permission.photos.request();
+        await Permission.photos.request();
       }
     }
 
@@ -163,13 +269,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       source: source,
       imageQuality: 85,
     );
-
     if (image == null) return;
 
     setState(() => _isScanning = true);
 
     try {
-      final result = await _ocrService.processReceipt(File(image.path));
+      final imageFile = File(image.path);
+      final result = await _ocrService.processReceipt(imageFile);
 
       if (!mounted) return;
 
@@ -179,6 +285,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             message: result.error ?? 'This image doesn\'t look like a valid receipt.');
         return;
       }
+
+      // Upload receipt image to Cloudinary in background
+      final uploadedUrl = await _uploadToCloudinary(imageFile);
+
+      if (!mounted) return;
 
       setState(() {
         if (result.amount != null) {
@@ -191,11 +302,30 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           _selectedDate = result.date!;
         }
         _currentSource = 'receipt';
+        _receiptImageUrl = uploadedUrl;
         _isScanning = false;
       });
 
-      NotificationHelper.showSuccess(context,
-          message: 'Receipt scanned successfully');
+      // Confidence routing
+      if (result.confidence >= 0.7) {
+        // High confidence → auto-save immediately
+        if (_selectedCategoryId == null) {
+          // Can't auto-save without a category — show form instead
+          NotificationHelper.showSuccess(context,
+              message:
+                  'Receipt scanned (${(result.confidence * 100).toInt()}% confidence) — pick a category to save');
+        } else {
+          await _saveTransaction(
+            overrideConfidence: result.confidence,
+            autoSaved: true,
+          );
+        }
+      } else {
+        // Low confidence → pre-fill form, save to review queue on submit
+        NotificationHelper.showWarning(context,
+            message:
+                'Low confidence (${(result.confidence * 100).toInt()}%) — please review and save');
+      }
     } catch (e) {
       setState(() => _isScanning = false);
       if (mounted) {
@@ -215,9 +345,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       showPresets: true,
     );
     if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-      });
+      setState(() => _selectedDate = picked);
     }
   }
 
@@ -225,7 +353,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
@@ -259,10 +386,32 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               if (_isScanning)
                 const Padding(
                   padding: EdgeInsets.only(bottom: 24),
-                  child: ModernLoadingIndicator(
-                      message: 'Analyzing receipt...'),
+                  child:
+                      ModernLoadingIndicator(message: 'Analyzing receipt...'),
                 ),
-              // Transaction Type — fintech pill toggle
+
+              // Receipt image indicator
+              if (_receiptImageUrl != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Row(
+                    children: [
+                      Icon(AppIcons.receipt_long_rounded,
+                          size: 16,
+                          color: isDark ? AppColors.brandDark : AppColors.brand),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Receipt image attached',
+                        style: GoogleFonts.manrope(
+                          fontSize: 12,
+                          color: isDark ? AppColors.brandDark : AppColors.brand,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              // Transaction Type pill toggle
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
@@ -282,7 +431,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           setState(() {
                             _transactionType = type;
                             _selectedCategoryId = null;
-                            _currentSource = 'manual'; // Reset source when manually toggle
+                            _currentSource = 'manual';
                             _loadCategories();
                           });
                         },
@@ -296,7 +445,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                     : Colors.white)
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(10),
-                            boxShadow: isSelected ? AppShadows.subtle() : null,
+                            boxShadow:
+                                isSelected ? AppShadows.subtle() : null,
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -345,7 +495,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     const TextInputType.numberWithOptions(decimal: true),
                 prefixIcon: AppIcons.attach_money_rounded,
                 inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                  FilteringTextInputFormatter.allow(
+                      RegExp(r'^\d+\.?\d{0,2}')),
                 ],
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -371,9 +522,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             ConnectionState.waiting) {
                           return const ModernLoadingIndicator();
                         }
-
                         final categories = snapshot.data ?? [];
-
                         return StandardDropdownFormField<int>(
                           value: _selectedCategoryId,
                           labelText: 'Category',
@@ -392,9 +541,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             );
                           }).toList(),
                           onChanged: (int? newValue) {
-                            setState(() {
-                              _selectedCategoryId = newValue;
-                            });
+                            setState(() => _selectedCategoryId = newValue);
                           },
                           validator: (value) =>
                               value == null ? 'Please select a category' : null,
@@ -433,12 +580,72 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 prefixIcon: AppIcons.description_rounded,
                 maxLines: 3,
               ),
+
+              // Tier 2 – Category suggestion chips
+              if (_suggestions.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                FutureBuilder<List<Category>>(
+                  future: _categoriesFuture,
+                  builder: (context, snapshot) {
+                    final categories = snapshot.data ?? [];
+                    return Wrap(
+                      spacing: 8,
+                      children: _suggestions.map((s) {
+                        // Try to match suggestion to existing category
+                        final match = categories
+                            .where((c) =>
+                                c.name.toLowerCase() ==
+                                s.categoryName.toLowerCase())
+                            .firstOrNull;
+                        return ActionChip(
+                          avatar: Icon(
+                            AppIcons.auto_awesome_rounded,
+                            size: 14,
+                            color: isDark
+                                ? AppColors.brandDark
+                                : AppColors.brand,
+                          ),
+                          label: Text(
+                            '${s.categoryName} (${(s.confidence * 100).toInt()}%)',
+                            style: GoogleFonts.manrope(fontSize: 12),
+                          ),
+                          backgroundColor: isDark
+                              ? AppColors.brandSoftDark
+                              : AppColors.brandSoft,
+                          onPressed: () {
+                            if (match != null) {
+                              setState(() =>
+                                  _selectedCategoryId = match.id);
+                              // Record correction for learning
+                              if (_currentUser != null) {
+                                _dbHelper.addUserCategoryCorrection(
+                                  userId: _currentUser!.uid,
+                                  description:
+                                      _descriptionController.text,
+                                  categoryId: match.id!,
+                                  categoryName: match.name,
+                                );
+                              }
+                            } else {
+                              NotificationHelper.showWarning(context,
+                                  message:
+                                      'Category "${s.categoryName}" not found — create it in Manage Categories');
+                            }
+                          },
+                        );
+                      }).toList(),
+                    );
+                  },
+                ),
+              ],
+
               const SizedBox(height: 16),
 
               // Date Field
               StandardDateSelectorTile(
                 label: 'Date',
-                valueText: DateFormat('MMMM dd, yyyy').format(_selectedDate),
+                valueText:
+                    DateFormat('MMMM dd, yyyy').format(_selectedDate),
                 helperText: 'Tap to change',
                 onTap: _pickDate,
               ),
@@ -454,7 +661,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  onPressed: _isSaving ? null : _saveTransaction,
+                  onPressed: _isSaving ? null : () => _saveTransaction(),
                   child: _isSaving
                       ? SizedBox(
                           height: 20,

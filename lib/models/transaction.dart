@@ -12,6 +12,7 @@ class Transaction {
   final double confidence;
   final bool isReviewed;
   final double? balanceAfter;
+  final String? receiptImageUrl;
 
   Transaction({
     this.id,
@@ -25,6 +26,7 @@ class Transaction {
     this.confidence = 1.0,
     this.isReviewed = true,
     this.balanceAfter,
+    this.receiptImageUrl,
   });
 
   Transaction copyWith({
@@ -39,6 +41,7 @@ class Transaction {
     double? confidence,
     bool? isReviewed,
     double? balanceAfter,
+    String? receiptImageUrl,
   }) {
     return Transaction(
       id: id ?? this.id,
@@ -52,6 +55,7 @@ class Transaction {
       confidence: confidence ?? this.confidence,
       isReviewed: isReviewed ?? this.isReviewed,
       balanceAfter: balanceAfter ?? this.balanceAfter,
+      receiptImageUrl: receiptImageUrl ?? this.receiptImageUrl,
     );
   }
 
@@ -68,6 +72,7 @@ class Transaction {
       'confidence': confidence,
       'is_reviewed': isReviewed ? 1 : 0,
       'balance_after': balanceAfter,
+      'receipt_image_url': receiptImageUrl,
     };
   }
 
@@ -84,6 +89,7 @@ class Transaction {
       confidence: (map['confidence'] as num?)?.toDouble() ?? 1.0,
       isReviewed: (map['is_reviewed'] ?? 1) == 1,
       balanceAfter: (map['balance_after'] as num?)?.toDouble(),
+      receiptImageUrl: map['receipt_image_url'] as String?,
     );
   }
 }

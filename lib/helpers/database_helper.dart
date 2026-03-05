@@ -33,7 +33,7 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'PatoTrack.db');
     return await openDatabase(
       path,
-      version: 9,
+      version: 10,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -64,7 +64,8 @@ class DatabaseHelper {
         source TEXT NOT NULL DEFAULT 'manual',
         confidence REAL DEFAULT 1.0,
         is_reviewed INTEGER NOT NULL DEFAULT 1,
-        balance_after REAL
+        balance_after REAL,
+        receipt_image_url TEXT
       )
     ''');
     await db.execute('''
@@ -87,6 +88,16 @@ class DatabaseHelper {
         value INTEGER NOT NULL,
         displayName TEXT NOT NULL,
         userId TEXT NOT NULL
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS category_corrections(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        userId TEXT NOT NULL,
+        description TEXT NOT NULL,
+        category_id INTEGER NOT NULL,
+        category_name TEXT NOT NULL,
+        timestamp TEXT NOT NULL
       )
     ''');
   }
@@ -141,6 +152,20 @@ class DatabaseHelper {
           "ALTER TABLE transactions ADD COLUMN is_reviewed INTEGER NOT NULL DEFAULT 1");
       await db.execute("ALTER TABLE transactions ADD COLUMN balance_after REAL");
     }
+    if (oldVersion < 10) {
+      await db.execute(
+          "ALTER TABLE transactions ADD COLUMN receipt_image_url TEXT");
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS category_corrections(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          userId TEXT NOT NULL,
+          description TEXT NOT NULL,
+          category_id INTEGER NOT NULL,
+          category_name TEXT NOT NULL,
+          timestamp TEXT NOT NULL
+        )
+      ''');
+    }
   }
 
   Future<void> _insertDefaultFrequencies(Database db) async {
@@ -192,8 +217,9 @@ class DatabaseHelper {
   Future<int> addTransaction(
       model.Transaction transaction, String userId) async {
     final db = await database;
-    final newId = await db.insert(
-        'transactions', transaction.toMap()..['userId'] = userId);
+    final map = transaction.toMap()..['userId'] = userId;
+    map.remove('id'); // Let autoincrement handle it
+    final newId = await db.insert('transactions', map);
     try {
       final docData = transaction.toMap()
         ..['id'] = newId
@@ -224,6 +250,38 @@ class DatabaseHelper {
         where: 'userId = ? AND is_reviewed = 0',
         whereArgs: [userId],
         orderBy: 'date DESC');
+    return List.generate(
+        maps.length, (i) => model.Transaction.fromMap(maps[i]));
+  }
+
+  /// Returns existing SMS transaction within [windowHours] to detect duplicates.
+  Future<model.Transaction?> getDuplicateSmsTransaction(
+      String userId, double amount, String type,
+      {int windowHours = 24}) async {
+    final db = await database;
+    final since = DateTime.now()
+        .subtract(Duration(hours: windowHours))
+        .toIso8601String();
+    final maps = await db.query(
+      'transactions',
+      where:
+          'userId = ? AND source = ? AND amount = ? AND type = ? AND date >= ?',
+      whereArgs: [userId, 'sms', amount, type, since],
+      limit: 1,
+    );
+    if (maps.isEmpty) return null;
+    return model.Transaction.fromMap(maps.first);
+  }
+
+  Future<List<model.Transaction>> getSmsTransactionsSince(
+      String userId, DateTime since) async {
+    final db = await database;
+    final maps = await db.query(
+      'transactions',
+      where: 'userId = ? AND source = ?',
+      whereArgs: [userId, 'sms'],
+      orderBy: 'date DESC',
+    );
     return List.generate(
         maps.length, (i) => model.Transaction.fromMap(maps[i]));
   }
@@ -711,5 +769,33 @@ class DatabaseHelper {
       developer.log('Firestore sync failed for deleteFrequency: $e');
     }
     return result;
+  }
+
+  // --- Category Correction Functions (Tier 2 Learning) ---
+  Future<void> addUserCategoryCorrection({
+    required String userId,
+    required String description,
+    required int categoryId,
+    required String categoryName,
+  }) async {
+    final db = await database;
+    await db.insert('category_corrections', {
+      'userId': userId,
+      'description': description.toLowerCase().trim(),
+      'category_id': categoryId,
+      'category_name': categoryName,
+      'timestamp': DateTime.now().toIso8601String(),
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> getUserCategoryCorrections(
+      String userId) async {
+    final db = await database;
+    return db.query(
+      'category_corrections',
+      where: 'userId = ?',
+      whereArgs: [userId],
+      orderBy: 'timestamp DESC',
+    );
   }
 }

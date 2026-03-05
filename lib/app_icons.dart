@@ -101,6 +101,9 @@ class AppIcons {
   static const IconData settings_rounded = LucideIcons.settings;
   static const IconData shopping_bag_rounded = LucideIcons.shoppingBag;
   static const IconData shopping_cart_rounded = LucideIcons.shoppingCart;
+  static const IconData auto_awesome_rounded = LucideIcons.sparkles;
+  static const IconData sms_failed_rounded = LucideIcons.messageSquareX;
+  static const IconData undo_rounded = LucideIcons.undo2;
   static const IconData sms_rounded = LucideIcons.messageSquare;
   static const IconData spa_rounded = LucideIcons.sparkles;
   static const IconData sports_esports_rounded = LucideIcons.gamepad2;
