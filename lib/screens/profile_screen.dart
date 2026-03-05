@@ -8,6 +8,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../helpers/notification_helper.dart';
 import 'package:http/http.dart' as http;
@@ -509,6 +511,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _clearReceiptCache() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear Receipt Images?'),
+        content: const Text('This will permanently delete all locally saved receipt photos to free up storage space. Your actual transaction data (amounts, dates, categories) will NOT be deleted.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+            onPressed: () => Navigator.pop(context, true), 
+            child: const Text('Delete Images')
+          ),
+        ],
+      )
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final receiptsDir = Directory('${directory.path}/receipts');
+      if (await receiptsDir.exists()) {
+        await receiptsDir.delete(recursive: true);
+      }
+      
+      if (currentUser != null) {
+        final db = await DatabaseHelper().database;
+        await db.update(
+          'transactions', 
+          {'receipt_image_url': null},
+          where: 'userId = ? AND receipt_image_url IS NOT NULL',
+          whereArgs: [currentUser!.uid],
+        );
+      }
+      
+      if (mounted) NotificationHelper.showSuccess(context, message: 'Receipt image cache cleared safely');
+    } catch (e) {
+      if (mounted) NotificationHelper.showError(context, message: 'Error clearing cache: $e');
+    }
+  }
+
   void _cancelRestore() {
     if (_cloudSyncStatus != CloudSyncStatus.syncing) {
       return;
@@ -917,6 +961,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
+          ),
+
+          const SizedBox(height: 8),
+          
+          _SettingsCard(
+            children: [
+              SettingListTile(
+                icon: AppIcons.cleaning_services_rounded, // fallback or exists
+                title: 'Clear Local Receipts',
+                titleColor: colorScheme.error,
+                iconColor: colorScheme.error,
+                onTap: _clearReceiptCache,
+              ),
+            ],
           ),
 
           const SizedBox(height: 8),

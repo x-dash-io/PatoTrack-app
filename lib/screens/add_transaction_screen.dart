@@ -219,10 +219,28 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 _scanReceipt(ImageSource.gallery);
               },
             ),
+            const Divider(),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  const Icon(AppIcons.lock_rounded, size: 16, color: Colors.green),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '100% Private. Scans are processed offline on this device. Images are never uploaded to the cloud.',
+                      style: GoogleFonts.manrope(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
           ],
         ),
       ),
     );
+
   }
 
   Future<String> _saveReceiptLocally(File imageFile) async {
