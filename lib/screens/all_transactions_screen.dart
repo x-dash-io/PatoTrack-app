@@ -42,7 +42,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
   final ScrollController _scrollController = ScrollController();
 
   // Pagination constants
-  static const int _itemsPerPage = 20;
+  static const int _itemsPerPage = 15;
   int _currentPage = 0;
   bool _hasMoreItems = true;
 

@@ -84,13 +84,13 @@ class _TrustScoreGaugeState extends State<TrustScoreGauge>
         final displayScore = _scoreAnim.value;
         return SizedBox(
           width: widget.size,
-          height: widget.size * 0.85,
+          height: widget.size * 0.95,
           child: Stack(
             alignment: Alignment.center,
             children: [
               // Arc painter
               CustomPaint(
-                size: Size(widget.size, widget.size * 0.85),
+                size: Size(widget.size, widget.size * 0.9),
                 painter: _ArcPainter(
                   progress: displayScore / 100.0,
                   trackColor: trackColor,
@@ -102,7 +102,7 @@ class _TrustScoreGaugeState extends State<TrustScoreGauge>
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const SizedBox(height: 20),
+                  SizedBox(height: widget.size * 0.1),
                   Text(
                     displayScore.toInt().toString(),
                     style: GoogleFonts.manrope(
@@ -112,7 +112,7 @@ class _TrustScoreGaugeState extends State<TrustScoreGauge>
                       height: 1,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  SizedBox(height: widget.size * 0.03),
                   Text(
                     'out of 100',
                     style: GoogleFonts.manrope(
@@ -122,9 +122,9 @@ class _TrustScoreGaugeState extends State<TrustScoreGauge>
                           : AppColors.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: widget.size * 0.05),
                   _RiskBadge(band: widget.riskBand, color: arcColor),
-                  const SizedBox(height: 4),
+                  SizedBox(height: widget.size * 0.02),
                   Text(
                     'Business Trust Score',
                     style: GoogleFonts.manrope(
