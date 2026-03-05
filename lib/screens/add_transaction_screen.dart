@@ -608,7 +608,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           ),
                           label: Text(
                             '${s.categoryName} (${(s.confidence * 100).toInt()}%)',
-                            style: GoogleFonts.manrope(fontSize: 12),
+                            style: GoogleFonts.manrope(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: isDark
+                                  ? AppColors.brandDark
+                                  : AppColors.brand,
+                            ),
                           ),
                           backgroundColor: isDark
                               ? AppColors.brandSoftDark
