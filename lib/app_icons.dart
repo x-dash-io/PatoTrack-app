@@ -115,6 +115,9 @@ class AppIcons {
   static const IconData visibility_outlined = LucideIcons.eye;
   static const IconData warning_amber_rounded = LucideIcons.triangleAlert;
   static const IconData warning_rounded = LucideIcons.triangleAlert;
+  static const IconData trending_up_rounded = LucideIcons.trendingUp;
+  static const IconData verified_rounded = LucideIcons.badgeCheck;
+  static const IconData shield_check_rounded = LucideIcons.shieldCheck;
   static const IconData wifi_rounded = LucideIcons.wifi;
   static const IconData work_rounded = LucideIcons.briefcase;
 }
