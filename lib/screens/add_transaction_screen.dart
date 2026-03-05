@@ -10,6 +10,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 import '../helpers/database_helper.dart';
 import '../helpers/config.dart';
 import '../models/category.dart';
@@ -224,27 +225,15 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
-  Future<String?> _uploadToCloudinary(File imageFile) async {
-    if (AppConfig.cloudinaryUploadPreset ==
-        'REPLACE_WITH_UNSIGNED_UPLOAD_PRESET') {
-      return null; // Cloudinary not configured — skip upload silently
+  Future<String> _saveReceiptLocally(File imageFile) async {
+    final directory = await getApplicationDocumentsDirectory();
+    final receiptsDir = Directory('${directory.path}/receipts');
+    if (!await receiptsDir.exists()) {
+      await receiptsDir.create(recursive: true);
     }
-    try {
-      final url = Uri.parse(
-          'https://api.cloudinary.com/v1_1/${AppConfig.cloudinaryCloudName}/image/upload');
-      final request = http.MultipartRequest('POST', url)
-        ..files.add(await http.MultipartFile.fromPath('file', imageFile.path))
-        ..fields['upload_preset'] = AppConfig.cloudinaryUploadPreset;
-      final response = await request.send();
-      if (response.statusCode == 200) {
-        final json = jsonDecode(await response.stream.bytesToString())
-            as Map<String, dynamic>;
-        return json['secure_url'] as String?;
-      }
-    } catch (e) {
-      debugPrint('Cloudinary upload error: $e');
-    }
-    return null;
+    final fileName = 'receipt_${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final savedFile = await imageFile.copy('${receiptsDir.path}/$fileName');
+    return savedFile.path;
   }
 
   Future<void> _scanReceipt(ImageSource source) async {
@@ -308,8 +297,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         return;
       }
 
-      // Upload receipt image to Cloudinary in background
-      final uploadedUrl = await _uploadToCloudinary(imageFile);
+      // Secure Privacy Update: Do not upload sensitive receipts to the cloud.
+      // Save them exclusively on-device in the app documents directory.
+      final localPath = await _saveReceiptLocally(imageFile);
 
       if (!mounted) return;
 
@@ -324,7 +314,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           _selectedDate = result.date!;
         }
         _currentSource = 'receipt';
-        _receiptImageUrl = uploadedUrl;
+        _receiptImageUrl = localPath; // Saving local file path instead of public URL
         _isScanning = false;
       });
 
