@@ -8,12 +8,14 @@ import 'package:provider/provider.dart';
 import '../app_icons.dart';
 import '../features/analytics/controllers/analytics_controller.dart';
 import '../features/analytics/models/analytics_result.dart';
+import '../features/advice/controllers/advice_controller.dart';
 import '../features/compliance/controllers/compliance_controller.dart';
 import '../features/compliance/models/compliance_result.dart';
 import '../features/trust_score/controllers/trust_score_controller.dart';
 import '../features/trust_score/models/trust_score_result.dart';
 import '../features/trust_score/widgets/trust_score_gauge.dart';
 import '../providers/currency_provider.dart';
+import '../screens/advice_screen.dart';
 import '../screens/compliance_screen.dart';
 import '../screens/trust_score_screen.dart';
 import '../styles/app_colors.dart';
@@ -34,6 +36,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
   final AnalyticsController _analyticsCtrl = AnalyticsController();
   final TrustScoreController _trustCtrl = TrustScoreController();
   final ComplianceController _complianceCtrl = ComplianceController();
+  final AdviceController _adviceCtrl = AdviceController();
 
   @override
   bool get wantKeepAlive => true;
@@ -46,6 +49,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
       _analyticsCtrl.initialize(user.uid);
       _trustCtrl.initialize(user.uid);
       _complianceCtrl.initialize(user.uid);
+      _adviceCtrl.initialize(user.uid);
     }
   }
 
@@ -54,6 +58,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
     _analyticsCtrl.dispose();
     _trustCtrl.dispose();
     _complianceCtrl.dispose();
+    _adviceCtrl.dispose();
     super.dispose();
   }
 
@@ -74,10 +79,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
         ChangeNotifierProvider<TrustScoreController>.value(value: _trustCtrl),
         ChangeNotifierProvider<ComplianceController>.value(
             value: _complianceCtrl),
+        ChangeNotifierProvider<AdviceController>.value(value: _adviceCtrl),
       ],
-      child: Consumer4<AnalyticsController, TrustScoreController,
-          ComplianceController, CurrencyProvider>(
-        builder: (context, analytics, trust, compliance, currency, _) {
+      child: Consumer<AnalyticsController>(builder: (context, analytics, _) {
+        final trust = context.watch<TrustScoreController>();
+        final compliance = context.watch<ComplianceController>();
+        final advice = context.watch<AdviceController>();
+        final currency = context.watch<CurrencyProvider>();
           return Scaffold(
             appBar: AppBar(
               title: Text(
@@ -146,6 +154,8 @@ class _AnalyticsBody extends StatelessWidget {
     required this.summary,
     required this.analytics,
     required this.trust,
+    required this.compliance,
+    required this.advice,
     required this.currency,
     required this.userId,
   });
@@ -154,6 +164,7 @@ class _AnalyticsBody extends StatelessWidget {
   final AnalyticsController analytics;
   final TrustScoreController trust;
   final ComplianceController compliance;
+  final AdviceController advice;
   final CurrencyProvider currency;
   final String userId;
 
@@ -255,6 +266,14 @@ class _AnalyticsBody extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: _ComplianceCard(compliance: compliance),
+        ),
+        const SizedBox(height: AppSpacing.md),
+
+        // Financial Advice card
+        _SectionHeader(title: 'Financial Advice', icon: AppIcons.lightbulb_rounded),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: _AdviceCard(advice: advice),
         ),
         const SizedBox(height: AppSpacing.md),
       ],
@@ -1313,6 +1332,129 @@ class _SectionHeader extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+// ─── Advice Card ──────────────────────────────────────────────────────────────
+
+class _AdviceCard extends StatelessWidget {
+  const _AdviceCard({required this.advice});
+  final AdviceController advice;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final summary = advice.summary;
+
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const AdviceScreen()),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+          borderRadius: AppSpacing.radiusXl,
+          border: Border.all(
+            color: AppColors.brand.withValues(alpha: 0.25),
+          ),
+          boxShadow: AppShadows.subtle(),
+        ),
+        child: advice.isLoading
+            ? const Center(
+                child: Padding(
+                padding: EdgeInsets.all(24),
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ))
+            : summary == null || summary.insights.isEmpty
+                ? Row(children: [
+                    const Icon(AppIcons.lightbulb_rounded,
+                        size: 20, color: AppColors.brand),
+                    const SizedBox(width: AppSpacing.sm),
+                    Text('No advice available yet',
+                        style: Theme.of(context).textTheme.bodySmall),
+                    const Spacer(),
+                    const Icon(AppIcons.chevron_right_rounded, size: 18),
+                  ])
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            '${summary.insights.length} Recommendation${summary.insights.length > 1 ? 's' : ''}',
+                            style: GoogleFonts.manrope(
+                                fontWeight: FontWeight.w700, fontSize: 14),
+                          ),
+                          const Spacer(),
+                          const Icon(AppIcons.chevron_right_rounded, size: 18),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      ...summary.insights.take(2).map(
+                            (ins) => Padding(
+                              padding: const EdgeInsets.only(
+                                  bottom: AppSpacing.xs),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      color: _categoryColor(ins.category),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(ins.title,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: GoogleFonts.manrope(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      if (summary.insights.length > 2)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            '+ ${summary.insights.length - 2} more…',
+                            style: TextStyle(
+                                fontSize: 11,
+                                color: isDark
+                                    ? AppColors.textTertiaryDark
+                                    : AppColors.textTertiary),
+                          ),
+                        ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        'Tap to explore What-If scenarios',
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.brand,
+                            fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+      ),
+    );
+  }
+
+  Color _categoryColor(AdviceCategory cat) {
+    switch (cat) {
+      case AdviceCategory.performance:
+        return AppColors.brand;
+      case AdviceCategory.risk:
+        return AppColors.expense;
+      case AdviceCategory.opportunity:
+        return AppColors.income;
+      case AdviceCategory.complianceLite:
+        return AppColors.warning;
+    }
   }
 }
 
