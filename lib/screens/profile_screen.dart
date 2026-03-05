@@ -968,7 +968,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _SettingsCard(
             children: [
               SettingListTile(
-                icon: AppIcons.cleaning_services_rounded, // fallback or exists
+                icon: Icons.cleaning_services_rounded, // Use standard material icon
                 title: 'Clear Local Receipts',
                 titleColor: colorScheme.error,
                 iconColor: colorScheme.error,

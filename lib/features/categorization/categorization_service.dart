@@ -165,7 +165,7 @@ class CategorizationService {
     'withdrawal': {'Bank Charges': 1.5},
     'paybill charge': {'Bank Charges': 2.0},
     'till number': {'Bank Charges': 1.0},
-    'interest': {'Interest Payments': 2.0},
+    'late fee': {'Interest Payments': 1.8},
     'loan repayment': {'Loan Repayment': 2.0},
     
     // Expenses - Miscellaneous
