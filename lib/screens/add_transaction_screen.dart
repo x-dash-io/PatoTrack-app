@@ -613,7 +613,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           backgroundColor: isDark
                               ? AppColors.brandSoftDark
                               : AppColors.brandSoft,
-                          onPressed: () {
+                          onPressed: () async {
                             if (match != null) {
                               setState(() =>
                                   _selectedCategoryId = match.id);
@@ -628,9 +628,34 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                 );
                               }
                             } else {
-                              NotificationHelper.showWarning(context,
-                                  message:
-                                      'Category "${s.categoryName}" not found — create it in Manage Categories');
+                              // Auto-create missing category
+                              if (_currentUser != null) {
+                                final newCat = Category(
+                                  name: s.categoryName,
+                                  type: _transactionType, // Assign to current tab type
+                                );
+                                final newId = await _dbHelper.insertCategory(
+                                    _currentUser!.uid, newCat);
+                                await _loadCategories(); // Reload dropdown
+                                setState(() => _selectedCategoryId = newId);
+                                
+                                // Record correction for learning
+                                _dbHelper.addUserCategoryCorrection(
+                                  userId: _currentUser!.uid,
+                                  description: _descriptionController.text,
+                                  categoryId: newId,
+                                  categoryName: s.categoryName,
+                                );
+                                
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Auto-created category "${s.categoryName}"'),
+                                      duration: const Duration(seconds: 2),
+                                    ),
+                                  );
+                                }
+                              }
                             }
                           },
                         );
