@@ -15,7 +15,6 @@ import '../widgets/app_screen_background.dart';
 import 'manage_categories_screen.dart';
 import '../helpers/notification_helper.dart';
 import '../styles/app_colors.dart';
-import '../styles/app_spacing.dart';
 
 class TransactionDetailScreen extends StatefulWidget {
   final model.Transaction transaction;

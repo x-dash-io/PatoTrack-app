@@ -98,7 +98,7 @@ class _Body extends StatelessWidget {
       children: [
         // Insights
         if (summary != null && summary.insights.isNotEmpty) ...[
-          _SectionTitle(
+          const _SectionTitle(
               title: 'AI Recommendations', icon: AppIcons.auto_awesome_rounded),
           const SizedBox(height: AppSpacing.sm),
           ...summary.insights
@@ -111,7 +111,7 @@ class _Body extends StatelessWidget {
         ],
 
         // What-If modeler
-        _SectionTitle(title: 'What-If Modeler', icon: AppIcons.lightbulb_rounded),
+        const _SectionTitle(title: 'What-If Modeler', icon: AppIcons.lightbulb_rounded),
         const SizedBox(height: AppSpacing.sm),
         _WhatIfPanel(ctrl: ctrl),
       ],

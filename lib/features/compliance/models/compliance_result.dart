@@ -1,4 +1,3 @@
-import '../../../models/transaction.dart' as model;
 
 // ── Checklist Item ────────────────────────────────────────────────────────────
 

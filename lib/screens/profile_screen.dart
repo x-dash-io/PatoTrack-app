@@ -13,22 +13,16 @@ import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../helpers/notification_helper.dart';
 import 'package:http/http.dart' as http;
-import 'package:google_fonts/google_fonts.dart';
 
 import '../helpers/config.dart';
 import '../helpers/database_helper.dart';
 import '../helpers/passcode_service.dart';
-import '../helpers/responsive_helper.dart';
 import '../providers/currency_provider.dart';
 import '../theme_provider.dart';
 import '../widgets/dialog_helpers.dart';
 import '../widgets/input_fields.dart';
-import '../widgets/app_screen_background.dart';
 import '../widgets/profile/setting_list_tile.dart';
 import '../services/google_sign_in_service.dart';
-import '../styles/app_colors.dart';
-import '../styles/app_shadows.dart';
-import '../styles/app_spacing.dart';
 import 'passcode_screen.dart';
 import 'help_screen.dart';
 import 'faq_screen.dart';
@@ -646,7 +640,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   currentUser!.photoURL!)
                               : null,
                           child: currentUser!.photoURL == null
-                              ? Icon(AppIcons.person_rounded,
+                              ? const Icon(AppIcons.person_rounded,
                                   size: 36, color: Colors.white)
                               : null,
                         ),
@@ -729,7 +723,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 16),
 
           // ── App Settings ──────────────────────────────────────────────────
-          _SectionHeader(title: 'App Settings'),
+          const _SectionHeader(title: 'App Settings'),
           _SettingsCard(
             children: [
               SettingListTile(
@@ -740,7 +734,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onChanged: (v) => themeProvider.toggleTheme(v),
                 ),
               ),
-              _SettingDivider(),
+              const _SettingDivider(),
               SettingListTile(
                 icon: AppIcons.lock_rounded,
                 title: 'Passcode Lock',
@@ -772,7 +766,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               if (_isPasscodeEnabled) ...[
-                _SettingDivider(),
+                const _SettingDivider(),
                 SettingListTile(
                   icon: AppIcons.phonelink_lock_rounded,
                   title: 'Change Passcode',
@@ -792,7 +786,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   },
                 ),
               ],
-              _SettingDivider(),
+              const _SettingDivider(),
               SettingListTile(
                 icon: AppIcons.currency_exchange_rounded,
                 title: 'Currency',
@@ -832,7 +826,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 8),
 
           // ── Account ───────────────────────────────────────────────────────
-          _SectionHeader(title: 'Account'),
+          const _SectionHeader(title: 'Account'),
           _SettingsCard(
             children: [
               SettingListTile(
@@ -846,7 +840,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     : null,
                 onTap: _isSendingPasswordReset ? null : _sendPasswordResetEmail,
               ),
-              _SettingDivider(),
+              const _SettingDivider(),
               SettingListTile(
                 icon: AppIcons.delete_forever_rounded,
                 title: 'Delete Account',
@@ -869,7 +863,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 8),
 
           // ── Data & Sync ───────────────────────────────────────────────────
-          _SectionHeader(title: 'Data & Sync'),
+          const _SectionHeader(title: 'Data & Sync'),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Container(
@@ -896,7 +890,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           color: colorScheme.primaryContainer,
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Icon(AppIcons.cloud_sync_rounded,
+                        child: const Icon(AppIcons.cloud_sync_rounded,
                             color: Colors.white, size: 18),
                       ),
                       const SizedBox(width: 12),
@@ -980,7 +974,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 8),
 
           // ── Help & Support ────────────────────────────────────────────────
-          _SectionHeader(title: 'Help & Support'),
+          const _SectionHeader(title: 'Help & Support'),
           _SettingsCard(
             children: [
               SettingListTile(
@@ -988,7 +982,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title: 'FAQ',
                 onTap: _showFaqScreen,
               ),
-              _SettingDivider(),
+              const _SettingDivider(),
               SettingListTile(
                 icon: AppIcons.help_outline_rounded,
                 title: 'Help & Support',
@@ -996,7 +990,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   MaterialPageRoute(builder: (_) => const HelpScreen()),
                 ),
               ),
-              _SettingDivider(),
+              const _SettingDivider(),
               SettingListTile(
                 icon: AppIcons.support_agent_rounded,
                 title: 'Contact via WhatsApp',

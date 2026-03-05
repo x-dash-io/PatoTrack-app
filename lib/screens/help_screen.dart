@@ -648,7 +648,7 @@ class _GuideStep extends StatelessWidget {
           Container(
             width: 40,
             height: 40,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppColors.brand,
               shape: BoxShape.circle,
             ),

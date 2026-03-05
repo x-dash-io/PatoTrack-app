@@ -78,7 +78,6 @@ class _ReportsScreenState extends State<ReportsScreen>
       child: Consumer2<ReportsController, CurrencyProvider>(
         builder: (context, reports, currency, child) {
           final viewData = reports.viewData;
-          final isDark = Theme.of(context).brightness == Brightness.dark;
 
           return Scaffold(
             appBar: AppBar(
@@ -328,8 +327,6 @@ class _KpiRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final netColor = net >= 0 ? AppColors.income : AppColors.expense;
-    final netBg = net >= 0 ? AppColors.incomeSoft : AppColors.expenseSoft;
 
     return Column(
       children: [

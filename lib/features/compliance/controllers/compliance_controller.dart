@@ -53,8 +53,4 @@ class ComplianceController extends ChangeNotifier {
     }
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
 }

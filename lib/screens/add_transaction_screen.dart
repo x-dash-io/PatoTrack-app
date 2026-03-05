@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:pato_track/app_icons.dart';
@@ -6,13 +5,11 @@ import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import '../helpers/database_helper.dart';
-import '../helpers/config.dart';
 import '../models/category.dart';
 import '../models/transaction.dart' as model;
 import '../widgets/modern_date_picker.dart';
@@ -70,7 +67,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     if (_currentUser != null) {
       setState(() {
         _categoriesFuture =
-            _dbHelper.getCategories(_currentUser!.uid, type: _transactionType);
+            _dbHelper.getCategories(_currentUser.uid, type: _transactionType);
       });
     }
   }
@@ -78,7 +75,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   Future<void> _loadUserCorrections() async {
     if (_currentUser == null) return;
     final corrections =
-        await _dbHelper.getUserCategoryCorrections(_currentUser!.uid);
+        await _dbHelper.getUserCategoryCorrections(_currentUser.uid);
     if (mounted) setState(() => _userCorrections = corrections);
   }
 
@@ -136,17 +133,17 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       );
 
       final newId =
-          await _dbHelper.addTransaction(newTransaction, _currentUser!.uid);
+          await _dbHelper.addTransaction(newTransaction, _currentUser.uid);
 
       // Record category correction for Tier 2 learning
       if (_selectedCategoryId != null &&
           _descriptionController.text.isNotEmpty) {
-        final cats = await _dbHelper.getCategories(_currentUser!.uid);
+        final cats = await _dbHelper.getCategories(_currentUser.uid);
         final selected =
             cats.where((c) => c.id == _selectedCategoryId).firstOrNull;
         if (selected != null) {
           await _dbHelper.addUserCategoryCorrection(
-            userId: _currentUser!.uid,
+            userId: _currentUser.uid,
             description: _descriptionController.text,
             categoryId: _selectedCategoryId!,
             categoryName: selected.name,
@@ -167,7 +164,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               action: SnackBarAction(
                 label: 'UNDO',
                 onPressed: () async {
-                  await _dbHelper.deleteTransaction(newId, _currentUser!.uid);
+                  await _dbHelper.deleteTransaction(newId, _currentUser.uid);
                   if (mounted) {
                     NotificationHelper.showSuccess(context,
                         message: 'Transaction removed');
@@ -655,7 +652,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               // Record correction for learning
                               if (_currentUser != null) {
                                 _dbHelper.addUserCategoryCorrection(
-                                  userId: _currentUser!.uid,
+                                  userId: _currentUser.uid,
                                   description:
                                       _descriptionController.text,
                                   categoryId: match.id!,
@@ -670,13 +667,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                   type: _transactionType, // Assign to current tab type
                                 );
                                 final newId = await _dbHelper.addCategory(
-                                    newCat, _currentUser!.uid);
+                                    newCat, _currentUser.uid);
                                 _loadCategories(); // Reload dropdown
                                 setState(() => _selectedCategoryId = newId);
                                 
                                 // Record correction for learning
                                 _dbHelper.addUserCategoryCorrection(
-                                  userId: _currentUser!.uid,
+                                  userId: _currentUser.uid,
                                   description: _descriptionController.text,
                                   categoryId: newId,
                                   categoryName: s.categoryName,

@@ -472,7 +472,7 @@ class _FAQCardState extends State<_FAQCard> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
+                        const Icon(
                           AppIcons.label_rounded,
                           size: 14,
                           color: AppColors.brand,

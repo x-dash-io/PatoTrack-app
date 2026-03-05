@@ -10,8 +10,6 @@ import '../widgets/dialog_helpers.dart';
 import '../widgets/loading_widgets.dart';
 import '../helpers/notification_helper.dart';
 import '../styles/app_colors.dart';
-import '../styles/app_shadows.dart';
-import '../styles/app_spacing.dart';
 import '../widgets/app_screen_background.dart';
 
 class ManageFrequenciesScreen extends StatefulWidget {

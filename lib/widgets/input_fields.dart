@@ -1,6 +1,5 @@
 import '../styles/app_colors.dart';
 import 'package:pato_track/app_icons.dart';
-import '../styles/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';

@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
-import 'app_shadows.dart';
 import 'app_spacing.dart';
 
 /// PatoTrack Design System — Clean-light fintech theme (Monzo / N26 inspired)
@@ -72,7 +71,7 @@ class AppTheme {
         enabledBorder: fieldBorder,
         focusedBorder: OutlineInputBorder(
           borderRadius: fieldRadius,
-          borderSide: BorderSide(
+          borderSide: const BorderSide(
             color: AppColors.brand,
             width: 1.8,
           ),
@@ -94,7 +93,7 @@ class AppTheme {
           fontSize: 14,
           fontWeight: FontWeight.w500,
         ),
-        floatingLabelStyle: TextStyle(
+        floatingLabelStyle: const TextStyle(
           color: AppColors.brand,
           fontSize: 12,
           fontWeight: FontWeight.w600,

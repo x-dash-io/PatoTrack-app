@@ -1,7 +1,6 @@
 import 'package:flutter_sms_inbox/flutter_sms_inbox.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'database_helper.dart';
-import '../models/transaction.dart' as model;
 import '../features/capture/services/sms_parser_service.dart';
 
 class SmsSyncCancelledException implements Exception {

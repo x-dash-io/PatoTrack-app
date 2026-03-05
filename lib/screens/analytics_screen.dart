@@ -195,7 +195,7 @@ class _AnalyticsBody extends StatelessWidget {
 
         // Forecast chart
         if (summary.forecast.hasEnoughData) ...[
-          _SectionHeader(title: '3-Month Forecast', icon: AppIcons.trending_up_rounded),
+          const _SectionHeader(title: '3-Month Forecast', icon: AppIcons.trending_up_rounded),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             child: _ForecastChartCard(
@@ -207,7 +207,7 @@ class _AnalyticsBody extends StatelessWidget {
         ],
 
         // Profitability ratios
-        _SectionHeader(title: 'Profitability', icon: AppIcons.bar_chart_rounded),
+        const _SectionHeader(title: 'Profitability', icon: AppIcons.bar_chart_rounded),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: _RatioGrid(ratios: summary.ratios, currency: currency),
@@ -215,7 +215,7 @@ class _AnalyticsBody extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
 
         // Scenario modeling
-        _SectionHeader(title: 'Scenario Outlook', icon: AppIcons.savings_rounded),
+        const _SectionHeader(title: 'Scenario Outlook', icon: AppIcons.savings_rounded),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: _ScenarioCard(scenarios: summary.scenarios, currency: currency),
@@ -257,7 +257,7 @@ class _AnalyticsBody extends StatelessWidget {
         ],
 
         // Trust Score card
-        _SectionHeader(title: 'Business Trust Score', icon: AppIcons.shield_check_rounded),
+        const _SectionHeader(title: 'Business Trust Score', icon: AppIcons.shield_check_rounded),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: _TrustCard(trust: trust),
@@ -265,7 +265,7 @@ class _AnalyticsBody extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
 
         // Compliance card
-        _SectionHeader(title: 'Compliance Check', icon: AppIcons.verified_rounded),
+        const _SectionHeader(title: 'Compliance Check', icon: AppIcons.verified_rounded),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: _ComplianceCard(compliance: compliance),
@@ -273,7 +273,7 @@ class _AnalyticsBody extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
 
         // Financial Advice card
-        _SectionHeader(title: 'Financial Advice', icon: AppIcons.lightbulb_rounded),
+        const _SectionHeader(title: 'Financial Advice', icon: AppIcons.lightbulb_rounded),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: _AdviceCard(advice: advice),
@@ -480,7 +480,7 @@ class _StatPill extends StatelessWidget {
           ),
           Text(
             value,
-            style: TextStyle(
+            style: const TextStyle(
                 fontSize: 11,
                 color: Colors.white,
                 fontWeight: FontWeight.w700),
@@ -603,7 +603,7 @@ class _ForecastChartCard extends StatelessWidget {
           // Legend
           Row(
             children: [
-              _LegendDot(
+              const _LegendDot(
                   color: AppColors.brand, label: 'Historical'),
               const SizedBox(width: 12),
               _LegendDot(
@@ -1098,7 +1098,7 @@ class _AnomalyTile extends StatelessWidget {
               color: AppColors.warning.withValues(alpha: 0.1),
               borderRadius: AppSpacing.radiusSm,
             ),
-            child: Icon(AppIcons.warning_amber_rounded,
+            child: const Icon(AppIcons.warning_amber_rounded,
                 color: AppColors.warning, size: 17),
           ),
           const SizedBox(width: AppSpacing.sm),
@@ -1326,7 +1326,7 @@ class _SectionHeader extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(badge!,
-                  style: TextStyle(
+                  style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       color: AppColors.brand)),
@@ -1434,7 +1434,7 @@ class _AdviceCard extends StatelessWidget {
                           ),
                         ),
                       const SizedBox(height: AppSpacing.sm),
-                      Text(
+                      const Text(
                         'Tap to explore What-If scenarios',
                         style: TextStyle(
                             fontSize: 11,

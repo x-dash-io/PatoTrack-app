@@ -42,7 +42,7 @@ class AdviceService {
       ));
     }
     if (expenseGrowing && !incomeGrowing) {
-      raw.add(_Raw(
+      raw.add(const _Raw(
         title: 'Costs Rising Faster Than Revenue',
         body: 'Expenses are trending upward while income stagnates. Audit '
             'recurring costs, pause non-essential spend, and accelerate invoicing.',
@@ -83,7 +83,7 @@ class AdviceService {
 
     // ── Opportunity ────────────────────────────────────────────────────────
     if (incomeGrowing && grossMargin >= 0.30) {
-      raw.add(_Raw(
+      raw.add(const _Raw(
         title: 'Growth Momentum — Scale Marketing',
         body: 'Income is trending up and your margin supports it. Now is a '
             'good time to invest in customer acquisition and retention.',
@@ -92,7 +92,7 @@ class AdviceService {
       ));
     }
     if (burnRate > 0 && monthlyIncome > 0 && monthlyIncome / burnRate / 30 > 2) {
-      raw.add(_Raw(
+      raw.add(const _Raw(
         title: 'Income-to-Burn Ratio Is Healthy',
         body: 'Your income covers expenses more than 2×. You have room to '
             'invest in growth, build a 3-month cash reserve, or explore equipment financing.',

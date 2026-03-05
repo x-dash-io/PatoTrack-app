@@ -105,7 +105,7 @@ class _SmsCaptureScreenState extends State<SmsCaptureScreen> {
       // Save — M-Pesa SMS is always high confidence (auto-approved)
       final newId = await _dbHelper.addTransaction(
         parsed,
-        _currentUser!.uid,
+        _currentUser.uid,
       );
       batchIds.add(newId);
       imported++;
@@ -142,7 +142,7 @@ class _SmsCaptureScreenState extends State<SmsCaptureScreen> {
   Future<void> _undoLastBatch() async {
     if (_lastBatchIds.isEmpty || _currentUser == null) return;
     for (final id in _lastBatchIds) {
-      await _dbHelper.deleteTransaction(id, _currentUser!.uid);
+      await _dbHelper.deleteTransaction(id, _currentUser.uid);
     }
     if (!mounted) return;
     setState(() {
@@ -266,7 +266,7 @@ class _SmsCaptureScreenState extends State<SmsCaptureScreen> {
               const SizedBox(height: 28),
               OutlinedButton.icon(
                 onPressed: _undoLastBatch,
-                icon: Icon(AppIcons.undo_rounded),
+                icon: const Icon(AppIcons.undo_rounded),
                 label: Text('Undo Import', style: GoogleFonts.manrope()),
               ),
             ],

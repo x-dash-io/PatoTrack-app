@@ -35,7 +35,7 @@ class _ReviewQueueScreenState extends State<ReviewQueueScreen> {
 
   Future<void> _loadSupport() async {
     if (_currentUser == null) return;
-    final uid = _currentUser!.uid;
+    final uid = _currentUser.uid;
     final cats = await dbHelper.getCategories(uid);
     final corrections = await dbHelper.getUserCategoryCorrections(uid);
     if (mounted) {
@@ -50,7 +50,7 @@ class _ReviewQueueScreenState extends State<ReviewQueueScreen> {
     if (_currentUser != null) {
       setState(() {
         _unreviewedFuture =
-            dbHelper.getUnreviewedTransactions(_currentUser!.uid);
+            dbHelper.getUnreviewedTransactions(_currentUser.uid);
       });
     }
   }
@@ -241,7 +241,7 @@ class _ReviewQueueScreenState extends State<ReviewQueueScreen> {
                                             : AppColors.brandSoft,
                                     onPressed: () async {
                                       if (_currentUser == null) return;
-                                      final uid = _currentUser!.uid;
+                                      final uid = _currentUser.uid;
                                       final messenger = ScaffoldMessenger.of(context);
                                       if (match != null) {
                                         // Apply category and mark reviewed

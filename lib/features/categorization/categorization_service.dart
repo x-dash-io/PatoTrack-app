@@ -6,6 +6,7 @@
 /// 3. Score each category: Σ(weight × frequency)
 /// 4. Return top 3 [CategorySuggestion] sorted by score
 /// 5. confidence < 0.7 → flagged for review
+library;
 
 class CategorySuggestion {
   final String categoryName;

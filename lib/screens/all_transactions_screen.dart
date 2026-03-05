@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:pato_track/app_icons.dart';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
@@ -12,12 +11,9 @@ import '../models/category.dart';
 import '../models/transaction.dart' as model;
 import '../providers/currency_provider.dart';
 import '../styles/app_colors.dart';
-import '../styles/app_shadows.dart';
-import '../styles/app_spacing.dart';
 import '../widgets/loading_widgets.dart';
 import '../widgets/modern_date_picker.dart';
 import '../widgets/input_fields.dart';
-import '../widgets/app_screen_background.dart';
 import 'transaction_detail_screen.dart';
 
 class AllTransactionsScreen extends StatefulWidget {
@@ -418,7 +414,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                           ),
                         if (_filterDateRange != null)
                           Chip(
-                            label: Text(
+                            label: const Text(
                               '\${DateFormat.MMMd().format(_filterDateRange!.start)} – \${DateFormat.MMMd().format(_filterDateRange!.end)}',
                             ),
                             onDeleted: () {

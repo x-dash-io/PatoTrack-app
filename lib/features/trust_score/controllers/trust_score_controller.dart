@@ -44,8 +44,4 @@ class TrustScoreController extends ChangeNotifier {
     }
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
 }

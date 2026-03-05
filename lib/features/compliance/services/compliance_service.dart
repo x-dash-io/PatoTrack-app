@@ -41,7 +41,7 @@ class ComplianceService {
       title: 'Receipts Attached (80%+ target)',
       detail: expenses.isEmpty
           ? 'No expenses found'
-          : '${withReceipt} of ${expenses.length} expenses have receipts attached (${(receiptPct * 100).toInt()}%)',
+          : '$withReceipt of ${expenses.length} expenses have receipts attached (${(receiptPct * 100).toInt()}%)',
       pct: receiptPct,
       weight: 0.25,
       passThreshold: 0.80,
@@ -74,7 +74,7 @@ class ComplianceService {
     final catItem = _makeItem(
       title: 'Documentation Complete',
       detail:
-          '${withCat} of ${transactions.length} transactions are categorized (${(catPct * 100).toInt()}%)',
+          '$withCat of ${transactions.length} transactions are categorized (${(catPct * 100).toInt()}%)',
       pct: catPct,
       weight: 0.15,
       passThreshold: 0.90,
