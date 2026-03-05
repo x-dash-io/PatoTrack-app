@@ -8,10 +8,13 @@ import 'package:provider/provider.dart';
 import '../app_icons.dart';
 import '../features/analytics/controllers/analytics_controller.dart';
 import '../features/analytics/models/analytics_result.dart';
+import '../features/compliance/controllers/compliance_controller.dart';
+import '../features/compliance/models/compliance_result.dart';
 import '../features/trust_score/controllers/trust_score_controller.dart';
 import '../features/trust_score/models/trust_score_result.dart';
 import '../features/trust_score/widgets/trust_score_gauge.dart';
 import '../providers/currency_provider.dart';
+import '../screens/compliance_screen.dart';
 import '../screens/trust_score_screen.dart';
 import '../styles/app_colors.dart';
 import '../styles/app_shadows.dart';
@@ -30,6 +33,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
     with AutomaticKeepAliveClientMixin<AnalyticsScreen> {
   final AnalyticsController _analyticsCtrl = AnalyticsController();
   final TrustScoreController _trustCtrl = TrustScoreController();
+  final ComplianceController _complianceCtrl = ComplianceController();
 
   @override
   bool get wantKeepAlive => true;
@@ -41,6 +45,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
     if (user != null) {
       _analyticsCtrl.initialize(user.uid);
       _trustCtrl.initialize(user.uid);
+      _complianceCtrl.initialize(user.uid);
     }
   }
 
@@ -48,6 +53,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
   void dispose() {
     _analyticsCtrl.dispose();
     _trustCtrl.dispose();
+    _complianceCtrl.dispose();
     super.dispose();
   }
 
@@ -66,10 +72,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
         ChangeNotifierProvider<AnalyticsController>.value(
             value: _analyticsCtrl),
         ChangeNotifierProvider<TrustScoreController>.value(value: _trustCtrl),
+        ChangeNotifierProvider<ComplianceController>.value(
+            value: _complianceCtrl),
       ],
-      child: Consumer3<AnalyticsController, TrustScoreController,
-          CurrencyProvider>(
-        builder: (context, analytics, trust, currency, _) {
+      child: Consumer4<AnalyticsController, TrustScoreController,
+          ComplianceController, CurrencyProvider>(
+        builder: (context, analytics, trust, compliance, currency, _) {
           return Scaffold(
             appBar: AppBar(
               title: Text(
@@ -83,6 +91,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                   onPressed: () {
                     analytics.refresh(user.uid);
                     trust.refresh(user.uid);
+                    compliance.refresh(user.uid);
                   },
                 ),
               ],
@@ -94,6 +103,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                 onRefresh: () async {
                   await analytics.refresh(user.uid);
                   await trust.refresh(user.uid);
+                  await compliance.refresh(user.uid);
                 },
                 child: analytics.isLoading
                     ? ListView(
@@ -116,6 +126,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                             summary: analytics.summary!,
                             analytics: analytics,
                             trust: trust,
+                            compliance: compliance,
                             currency: currency,
                             userId: user.uid,
                           ),
@@ -142,6 +153,7 @@ class _AnalyticsBody extends StatelessWidget {
   final AnalyticsSummary summary;
   final AnalyticsController analytics;
   final TrustScoreController trust;
+  final ComplianceController compliance;
   final CurrencyProvider currency;
   final String userId;
 
@@ -235,6 +247,14 @@ class _AnalyticsBody extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: _TrustCard(trust: trust),
+        ),
+        const SizedBox(height: AppSpacing.md),
+
+        // Compliance card
+        _SectionHeader(title: 'Compliance Check', icon: AppIcons.verified_rounded),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: _ComplianceCard(compliance: compliance),
         ),
         const SizedBox(height: AppSpacing.md),
       ],
@@ -1292,6 +1312,148 @@ class _SectionHeader extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+// ─── Compliance Card ──────────────────────────────────────────────────────────
+
+class _ComplianceCard extends StatelessWidget {
+  const _ComplianceCard({required this.compliance});
+  final ComplianceController compliance;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final result = compliance.result;
+
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const ComplianceScreen()),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+          borderRadius: AppSpacing.radiusXl,
+          border: Border.all(
+            color: isDark
+                ? AppColors.surfaceBorderDark
+                : AppColors.surfaceBorderLight,
+          ),
+          boxShadow: AppShadows.subtle(),
+        ),
+        child: compliance.isLoading
+            ? const Center(
+                child: Padding(
+                padding: EdgeInsets.all(24),
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ))
+            : result == null
+                ? Center(
+                    child: Text('Compliance data unavailable',
+                        style: Theme.of(context).textTheme.bodySmall))
+                : Row(
+                    children: [
+                      _ComplianceDonutMini(score: result.score,
+                          status: result.overallStatus),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Bookkeeping Compliance',
+                                style: GoogleFonts.manrope(
+                                    fontWeight: FontWeight.w700, fontSize: 14)),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${result.items.where((i) => i.status == ComplianceStatus.pass).length} of ${result.items.length} checks passing',
+                              style: GoogleFonts.manrope(
+                                fontSize: 12,
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            _StatusChip(status: result.overallStatus),
+                          ],
+                        ),
+                      ),
+                      const Icon(AppIcons.chevron_right_rounded, size: 18),
+                    ],
+                  ),
+      ),
+    );
+  }
+}
+
+class _ComplianceDonutMini extends StatelessWidget {
+  const _ComplianceDonutMini(
+      {required this.score, required this.status});
+  final double score;
+  final ComplianceStatus status;
+
+  Color get _color {
+    switch (status) {
+      case ComplianceStatus.pass:
+        return AppColors.income;
+      case ComplianceStatus.warn:
+        return AppColors.warning;
+      case ComplianceStatus.fail:
+        return AppColors.expense;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 72,
+      height: 72,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CircularProgressIndicator(
+            value: (score / 100).clamp(0, 1),
+            backgroundColor: _color.withValues(alpha: 0.15),
+            valueColor: AlwaysStoppedAnimation<Color>(_color),
+            strokeWidth: 7,
+            strokeCap: StrokeCap.round,
+          ),
+          Text(
+            '${score.toInt()}%',
+            style: GoogleFonts.manrope(
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
+              color: _color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({required this.status});
+  final ComplianceStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, color) = switch (status) {
+      ComplianceStatus.pass => ('Compliant', AppColors.income),
+      ComplianceStatus.warn => ('Needs Work', AppColors.warning),
+      ComplianceStatus.fail => ('Non-Compliant', AppColors.expense),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: AppSpacing.radiusFull,
+      ),
+      child: Text(label,
+          style: TextStyle(
+              fontSize: 11, fontWeight: FontWeight.w700, color: color)),
     );
   }
 }
