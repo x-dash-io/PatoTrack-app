@@ -18,10 +18,13 @@ import 'styles/app_colors.dart';
 import 'styles/app_shadows.dart';
 import 'styles/app_theme.dart';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 final NotificationService notificationService = NotificationService();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env").catchError((_) {});
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   tz.initializeTimeZones();
   await notificationService.init();

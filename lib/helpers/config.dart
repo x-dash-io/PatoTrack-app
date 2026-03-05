@@ -1,9 +1,9 @@
-// AppConfig holds non-secret configuration constants for external services.
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+// AppConfig holds configuration constants for external services.
 class AppConfig {
-  static const String cloudinaryCloudName = 'dn1qpjue4';
+  static String get cloudinaryCloudName => dotenv.env['CLOUDINARY_CLOUD_NAME'] ?? 'dn1qpjue4';
+
   // Use an unsigned upload preset configured in Cloudinary.
-  // Keep this as a non-secret value; never ship API secrets in the app.
-  static const String cloudinaryUploadPreset =
-      'REPLACE_WITH_UNSIGNED_UPLOAD_PRESET';
+  static String get cloudinaryUploadPreset => dotenv.env['CLOUDINARY_UPLOAD_PRESET'] ?? 'REPLACE_WITH_UNSIGNED_UPLOAD_PRESET';
 }
