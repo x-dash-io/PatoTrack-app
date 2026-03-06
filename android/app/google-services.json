@@ -14,11 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "474420702424-nv5a7iuhuqqlbtkfprfenitmr9gcj0vd.apps.googleusercontent.com",
+          "client_id": "474420702424-lqi9ndhk0gtdvlruk9ibngup0fksg2gr.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.patotrack.app",
-            "certificate_hash": "e4f4c5f78ba3dfc9a8dd072aa4d272f76593a53c"
+            "certificate_hash": "46c52dcdc11952a7d694486dd8b00c80147c8f1a"
           }
         },
         {
