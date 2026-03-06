@@ -13,6 +13,7 @@ import '../features/home/widgets/summary_cards_section.dart';
 import '../features/home/widgets/upcoming_bills_card.dart';
 import '../helpers/notification_helper.dart';
 import '../models/bill.dart';
+import '../models/category.dart';
 import '../models/transaction.dart' as model;
 import '../providers/currency_provider.dart';
 import '../styles/app_colors.dart';

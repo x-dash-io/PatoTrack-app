@@ -6,11 +6,10 @@ import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import '../helpers/database_helper.dart';
-import '../helpers/mpesa_transaction_helper.dart';
 import '../models/category.dart';
 import '../models/transaction.dart' as model;
 import '../providers/currency_provider.dart';
-import '../styles/app_colors.dart';
+import '../styles/app_spacing.dart';
 import '../widgets/loading_widgets.dart';
 import '../widgets/modern_date_picker.dart';
 import '../widgets/input_fields.dart';
@@ -332,7 +331,6 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
   Widget build(BuildContext context) {
     final currency = context.watch<CurrencyProvider>();
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
