@@ -35,13 +35,13 @@ class CurrencyProvider extends ChangeNotifier {
     ),
     CurrencyOption(
       code: 'EUR',
-      symbol: 'EUR',
+      symbol: '€',
       label: 'Euro',
       locale: 'en_IE',
     ),
     CurrencyOption(
       code: 'GBP',
-      symbol: 'GBP',
+      symbol: '£',
       label: 'British Pound',
       locale: 'en_GB',
     ),
