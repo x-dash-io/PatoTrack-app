@@ -605,7 +605,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
+      appBar: AppBar(
+        title: const Text('Profile'),
+        actions: [
+          if (_isLoggingOut)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else
+            IconButton(
+              onPressed: _logout,
+              icon: Icon(AppIcons.logout_rounded, color: colorScheme.error),
+              tooltip: 'Sign out',
+            ),
+        ],
+      ),
       body: ListView(
         padding: EdgeInsets.zero,
         children: [
@@ -932,12 +951,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           onPressed: _cloudSyncStatus == CloudSyncStatus.syncing
                               ? null
                               : _handleRestore,
-                          icon: const Icon(AppIcons.sync_rounded, size: 16),
-                          label: Text(_cloudSyncStatus == CloudSyncStatus.error
-                              ? 'Retry'
-                              : 'Sync now'),
+                          icon: _cloudSyncStatus == CloudSyncStatus.syncing
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                )
+                              : const Icon(AppIcons.sync_rounded, size: 16),
+                          label: Text(_cloudSyncStatus == CloudSyncStatus.syncing
+                              ? 'Syncing...'
+                              : (_cloudSyncStatus == CloudSyncStatus.error
+                                  ? 'Retry'
+                                  : 'Sync now')),
                           style: FilledButton.styleFrom(
-                              minimumSize: const Size(0, 38)),
+                              minimumSize: const Size(0, 42)), // Slightly taller for better touch target
                         ),
                       ),
                       if (_cloudSyncStatus == CloudSyncStatus.syncing) ...[
@@ -1001,28 +1031,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           const SizedBox(height: 24),
 
-          // ── Logout ────────────────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: OutlinedButton.icon(
-                onPressed: _isLoggingOut ? null : _logout,
-                icon: _isLoggingOut
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(AppIcons.logout_rounded),
-                label: const Text('Sign out'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: colorScheme.error,
-                  side: BorderSide(color: colorScheme.error, width: 1.5),
-                ),
-              ),
-            ),
-          ),
+
           const SizedBox(height: 32),
         ],
       ),

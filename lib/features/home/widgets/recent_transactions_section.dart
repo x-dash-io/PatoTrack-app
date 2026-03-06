@@ -3,16 +3,19 @@ import 'package:pato_track/app_icons.dart';
 import 'package:intl/intl.dart';
 
 import '../../../helpers/mpesa_transaction_helper.dart';
+import '../../../models/category.dart';
 import '../../../models/transaction.dart' as model;
 import '../../../providers/currency_provider.dart';
 import '../../../styles/app_colors.dart';
 import '../../../styles/app_shadows.dart';
 import '../../../styles/app_spacing.dart';
+import '../../../widgets/transaction_card.dart';
 
 class RecentTransactionsSection extends StatelessWidget {
   const RecentTransactionsSection({
     super.key,
     required this.transactions,
+    required this.categories,
     required this.currency,
     required this.onViewAll,
     required this.onOpenTransaction,
@@ -20,6 +23,7 @@ class RecentTransactionsSection extends StatelessWidget {
   });
 
   final List<model.Transaction> transactions;
+  final List<Category> categories;
   final CurrencyProvider currency;
   final VoidCallback onViewAll;
   final Future<void> Function(model.Transaction) onOpenTransaction;
@@ -74,11 +78,20 @@ class RecentTransactionsSection extends StatelessWidget {
                 : Column(
                     key: ValueKey<int>(recent.length),
                     children: recent
-                        .map((tx) => _TransactionRow(
-                              transaction: tx,
-                              currency: currency,
-                              onTap: () => onOpenTransaction(tx),
-                            ))
+                        .map((tx) {
+                          final cat = categories.isEmpty 
+                              ? null 
+                              : categories.cast<Category?>().firstWhere(
+                                  (c) => c?.id == tx.categoryId, 
+                                  orElse: () => null
+                                );
+                          return TransactionCard(
+                            transaction: tx,
+                            category: cat,
+                            currency: currency,
+                            onTap: () => onOpenTransaction(tx),
+                          );
+                        })
                         .toList(),
                   ),
           ),
@@ -88,135 +101,6 @@ class RecentTransactionsSection extends StatelessWidget {
   }
 }
 
-class _TransactionRow extends StatelessWidget {
-  const _TransactionRow({
-    required this.transaction,
-    required this.currency,
-    required this.onTap,
-  });
-
-  final model.Transaction transaction;
-  final CurrencyProvider currency;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final isIncome = transaction.type == 'income';
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final amountColor = isIncome ? AppColors.income : AppColors.expense;
-    final bgColor = isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
-    final borderColor =
-        isDark ? AppColors.surfaceBorderDark : AppColors.surfaceBorderLight;
-
-    final date = DateTime.tryParse(transaction.date) ?? DateTime.now();
-    final dateLabel = DateFormat('MMM d').format(date);
-    final desc = transaction.description.isEmpty
-        ? transaction.type
-        : transaction.description;
-    final isMpesa = isMpesaTransaction(description: desc);
-    final isReceipt = transaction.source == 'receipt';
-
-    return Semantics(
-      button: true,
-      label:
-          '$desc, ${currency.format(transaction.amount, decimalDigits: 0)}, $dateLabel',
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          margin: const EdgeInsets.only(bottom: AppSpacing.xs),
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: 14,
-          ),
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: AppSpacing.radiusLg,
-            border: Border.all(color: borderColor, width: 1),
-            boxShadow: AppShadows.subtle(),
-          ),
-          child: Row(
-            children: [
-              // Icon pill
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: (isMpesa || isReceipt)
-                      ? (isDark ? AppColors.brandSoftDark : AppColors.brandSoft)
-                      : (isDark
-                          ? amountColor.withValues(alpha: 0.18)
-                          : (isIncome
-                              ? AppColors.incomeSoft
-                              : AppColors.expenseSoft)),
-                  borderRadius: AppSpacing.radiusMd,
-                ),
-                child: isMpesa
-                    ? Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Image.asset(
-                          'assets/mpesa_logo.png',
-                          fit: BoxFit.contain,
-                        ),
-                      )
-                    : (isReceipt
-                        ? Icon(
-                            AppIcons.receipt_long_rounded,
-                            color: isDark
-                                ? AppColors.brandDark
-                                : AppColors.brand,
-                            size: 18,
-                          )
-                        : Icon(
-                            isIncome
-                                ? AppIcons.arrow_downward_rounded
-                                : AppIcons.arrow_upward_rounded,
-                            color: amountColor,
-                            size: 18,
-                          )),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-
-              // Description + date
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      desc,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      dateLabel,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-              ),
-
-              // Amount
-              Text(
-                currency.format(
-                  transaction.amount,
-                  decimalDigits: 0,
-                  includePositiveSign: isIncome,
-                ),
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: amountColor,
-                  letterSpacing: -0.3,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState({required this.onAddTransaction});

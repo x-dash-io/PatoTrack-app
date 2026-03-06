@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../helpers/database_helper.dart';
 import '../../../helpers/sms_service.dart';
 import '../../../models/bill.dart';
+import '../../../models/category.dart';
 import '../../../models/transaction.dart' as model;
 
 enum SyncStatus {
@@ -34,6 +35,7 @@ class HomeController extends ChangeNotifier {
   List<model.Transaction> _transactions = <model.Transaction>[];
   List<model.Transaction> _unreviewedTransactions = <model.Transaction>[];
   List<Bill> _bills = <Bill>[];
+  List<Category> _categories = <Category>[];
 
   PermissionStatus _smsPermissionStatus = PermissionStatus.denied;
   DateTime? _lastSmsSyncAt;
@@ -50,6 +52,8 @@ class HomeController extends ChangeNotifier {
       List<model.Transaction>.unmodifiable(_transactions);
 
   List<Bill> get bills => List<Bill>.unmodifiable(_bills);
+
+  List<Category> get categories => List<Category>.unmodifiable(_categories);
 
   List<model.Transaction> get unreviewedTransactions =>
       List<model.Transaction>.unmodifiable(_unreviewedTransactions);
@@ -94,6 +98,7 @@ class HomeController extends ChangeNotifier {
         _loadTransactions(userId),
         _loadUnreviewedTransactions(userId),
         _loadBills(userId),
+        _loadCategories(userId),
       ]);
     } catch (_) {
       _errorMessage =
@@ -171,6 +176,7 @@ class HomeController extends ChangeNotifier {
       await Future.wait(<Future<void>>[
         _loadTransactions(userId),
         _loadBills(userId),
+        _loadCategories(userId),
       ]);
 
       _syncStatus = SyncStatus.success;
@@ -320,5 +326,9 @@ class HomeController extends ChangeNotifier {
 
   Future<void> _loadUnreviewedTransactions(String userId) async {
     _unreviewedTransactions = await _dbHelper.getUnreviewedTransactions(userId);
+  }
+
+  Future<void> _loadCategories(String userId) async {
+    _categories = await _dbHelper.getCategories(userId);
   }
 }

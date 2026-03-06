@@ -327,6 +327,7 @@ class _HomeScreenState extends State<HomeScreen>
                         const SizedBox(height: AppSpacing.sm),
                         RecentTransactionsSection(
                           transactions: home.transactions,
+                          categories: home.categories,
                           currency: currency,
                           onViewAll: _openAllTransactions,
                           onOpenTransaction: _openTransactionDetails,

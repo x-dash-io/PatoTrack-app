@@ -14,6 +14,7 @@ import '../styles/app_colors.dart';
 import '../widgets/loading_widgets.dart';
 import '../widgets/modern_date_picker.dart';
 import '../widgets/input_fields.dart';
+import '../widgets/transaction_card.dart';
 import 'transaction_detail_screen.dart';
 
 class AllTransactionsScreen extends StatefulWidget {
@@ -483,134 +484,25 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                             }
 
                             final tx = _paginatedTransactions[index];
-                            final isIncome = tx.type == 'income';
-                            final amountColor =
-                                isIncome ? AppColors.income : AppColors.expense;
-                            final categoryName = _allCategories
-                                .firstWhere(
-                                  (category) => category.id == tx.categoryId,
-                                  orElse: () => Category(
-                                    id: 0,
-                                    name: '',
-                                    type: '',
-                                  ),
-                                )
-                                .name;
-                            final isMpesa = isMpesaTransaction(
-                              description: tx.description,
-                              categoryName: categoryName,
-                            );
-                            final isReceipt = tx.source == 'receipt';
+                            final cat = _allCategories.isEmpty 
+                                ? null 
+                                : _allCategories.cast<Category?>().firstWhere(
+                                    (c) => c?.id == tx.categoryId, 
+                                    orElse: () => null
+                                  );
 
-                            return GestureDetector(
+                            return TransactionCard(
+                              transaction: tx,
+                              category: cat,
+                              currency: currency,
                               onTap: () async {
-                                final result =
-                                    await Navigator.of(context).push<bool>(
+                                final result = await Navigator.of(context).push<bool>(
                                   MaterialPageRoute(
-                                    builder: (_) => TransactionDetailScreen(
-                                        transaction: tx),
+                                    builder: (_) => TransactionDetailScreen(transaction: tx),
                                   ),
                                 );
                                 if (result == true) _loadInitialData();
                               },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 14, vertical: 12),
-                                decoration: BoxDecoration(
-                                  color: isDark
-                                      ? AppColors.surfaceDark
-                                      : AppColors.surfaceLight,
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(
-                                    color: isDark
-                                        ? AppColors.surfaceBorderDark
-                                        : AppColors.surfaceBorderLight,
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 40,
-                                      height: 40,
-                                      decoration: BoxDecoration(
-                                        color: (isMpesa || isReceipt)
-                                            ? (isDark
-                                                ? AppColors.brandSoftDark
-                                                : AppColors.brandSoft)
-                                            : amountColor.withValues(
-                                                alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(11),
-                                      ),
-                                      child: isMpesa
-                                          ? Padding(
-                                              padding: const EdgeInsets.all(8),
-                                              child: Image.asset(
-                                                'assets/mpesa_logo.png',
-                                                fit: BoxFit.contain,
-                                              ),
-                                            )
-                                          : (isReceipt
-                                              ? Icon(
-                                                  AppIcons.receipt_long_rounded,
-                                                  color: isDark
-                                                      ? AppColors.brandDark
-                                                      : AppColors.brand,
-                                                  size: 18,
-                                                )
-                                              : Icon(
-                                                  isIncome
-                                                      ? AppIcons
-                                                          .arrow_downward_rounded
-                                                      : AppIcons
-                                                          .arrow_upward_rounded,
-                                                  color: amountColor,
-                                                  size: 18,
-                                                )),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            tx.description.isEmpty
-                                                ? (isIncome
-                                                    ? 'Income'
-                                                    : 'Expense')
-                                                : tx.description,
-                                            style: theme.textTheme.bodyMedium
-                                                ?.copyWith(
-                                                    fontWeight:
-                                                        FontWeight.w600),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            DateFormat('MMM d, yyyy').format(
-                                                DateTime.tryParse(tx.date) ??
-                                                    DateTime.now()),
-                                            style: theme.textTheme.bodySmall
-                                                ?.copyWith(fontSize: 11),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Text(
-                                      currency.format(tx.amount,
-                                          decimalDigits: 0,
-                                          includePositiveSign: isIncome),
-                                      style:
-                                          theme.textTheme.titleSmall?.copyWith(
-                                        color: amountColor,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
                             );
                           },
                         ),

@@ -617,7 +617,23 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
               // Tier 2 – Category suggestion chips
               if (_suggestions.isNotEmpty) ...[
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(AppIcons.info_outline_rounded,
+                        size: 14, color: colorScheme.primary),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Tap a suggestion to auto-create category',
+                      style: GoogleFonts.manrope(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
                 FutureBuilder<List<Category>>(
                   future: _categoriesFuture,
                   builder: (context, snapshot) {
