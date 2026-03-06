@@ -26,3 +26,14 @@
 -dontwarn com.google.android.play.core.tasks.OnFailureListener
 -dontwarn com.google.android.play.core.tasks.OnSuccessListener
 -dontwarn com.google.android.play.core.tasks.Task
+
+# ML Kit text-recognition optional scripts (app uses latin only).
+# Keep R8 from failing on optional classes not bundled in this build.
+-dontwarn com.google.mlkit.vision.text.chinese.ChineseTextRecognizerOptions$Builder
+-dontwarn com.google.mlkit.vision.text.chinese.ChineseTextRecognizerOptions
+-dontwarn com.google.mlkit.vision.text.devanagari.DevanagariTextRecognizerOptions$Builder
+-dontwarn com.google.mlkit.vision.text.devanagari.DevanagariTextRecognizerOptions
+-dontwarn com.google.mlkit.vision.text.japanese.JapaneseTextRecognizerOptions$Builder
+-dontwarn com.google.mlkit.vision.text.japanese.JapaneseTextRecognizerOptions
+-dontwarn com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions$Builder
+-dontwarn com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions

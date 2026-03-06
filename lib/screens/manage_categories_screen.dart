@@ -60,6 +60,14 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
     AppIcons.local_gas_station_rounded,
   ];
 
+  IconData _iconFromCodePoint(int? codePoint, {required IconData fallback}) {
+    if (codePoint == null) return fallback;
+    for (final icon in _selectableIcons) {
+      if (icon.codePoint == codePoint) return icon;
+    }
+    return fallback;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -91,19 +99,21 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
   }
 
   IconData _getIconForCategory(Category category) {
-    if (category.iconCodePoint != null) {
-      return IconData(category.iconCodePoint!, fontFamily: 'MaterialIcons');
-    }
-    return AppIcons.label_rounded;
+    return _iconFromCodePoint(
+      category.iconCodePoint,
+      fallback: AppIcons.label_rounded,
+    );
   }
 
   void _showCategoryDialog({Category? category, required String type}) {
     _nameController.text = category?.name ?? '';
-    IconData? selectedIcon = category?.iconCodePoint != null
-        ? IconData(category!.iconCodePoint!, fontFamily: 'MaterialIcons')
-        : (type == 'expense'
-            ? AppIcons.category_rounded
-            : AppIcons.account_balance_wallet_rounded);
+    final IconData dialogFallbackIcon = type == 'expense'
+        ? AppIcons.category_rounded
+        : AppIcons.account_balance_wallet_rounded;
+    IconData? selectedIcon = _iconFromCodePoint(
+      category?.iconCodePoint,
+      fallback: dialogFallbackIcon,
+    );
 
     showModalBottomSheet(
       context: context,
