@@ -29,7 +29,7 @@ class CurrencyProvider extends ChangeNotifier {
     ),
     CurrencyOption(
       code: 'USD',
-      symbol: '4',
+      symbol: '\$',
       label: 'US Dollar',
       locale: 'en_US',
     ),
