@@ -41,12 +41,12 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDhfO0t9sJ78XsMZV_vN3u4DSkUjw6TuKs',
-    appId: '1:142893563437:web:f673c697460c648e1cc2a4',
-    messagingSenderId: '142893563437',
-    projectId: 'ledgerlite-app',
-    authDomain: 'ledgerlite-app.firebaseapp.com',
-    storageBucket: 'ledgerlite-app.firebasestorage.app',
+    apiKey: 'AIzaSyAyTw1WzZgJ9rxHYjtsJAbKcnT0zofgRaY',
+    appId: '1:474420702424:web:f673c697460c648e1cc2a4',
+    messagingSenderId: '474420702424',
+    projectId: 'patotrack',
+    authDomain: 'patotrack.firebaseapp.com',
+    storageBucket: 'patotrack.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
@@ -76,11 +76,11 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyDhfO0t9sJ78XsMZV_vN3u4DSkUjw6TuKs',
-    appId: '1:142893563437:web:3938766407cc881c1cc2a4',
-    messagingSenderId: '142893563437',
-    projectId: 'ledgerlite-app',
-    authDomain: 'ledgerlite-app.firebaseapp.com',
-    storageBucket: 'ledgerlite-app.firebasestorage.app',
+    apiKey: 'AIzaSyAyTw1WzZgJ9rxHYjtsJAbKcnT0zofgRaY',
+    appId: '1:474420702424:web:3938766407cc881c1cc2a4',
+    messagingSenderId: '474420702424',
+    projectId: 'patotrack',
+    authDomain: 'patotrack.firebaseapp.com',
+    storageBucket: 'patotrack.firebasestorage.app',
   );
 }

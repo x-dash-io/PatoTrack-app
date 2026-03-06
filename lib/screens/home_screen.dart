@@ -473,6 +473,7 @@ class _QuickAction extends StatelessWidget {
     );
   }
 }
+
 class _ReviewQueueBanner extends StatelessWidget {
   final int count;
   final VoidCallback onTap;

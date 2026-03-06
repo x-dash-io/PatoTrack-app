@@ -36,11 +36,11 @@ class ComplianceService {
         .where((t) => t.receiptImageUrl?.isNotEmpty == true)
         .length;
     final receiptPct =
-        expenses.isEmpty ? 0.0 : withReceipt / expenses.length;
+        expenses.isEmpty ? 1.0 : withReceipt / expenses.length;
     final receiptItem = _makeItem(
       title: 'Receipts Attached (80%+ target)',
       detail: expenses.isEmpty
-          ? 'No expenses found'
+          ? 'No expenses to document (100%)'
           : '$withReceipt of ${expenses.length} expenses have receipts attached (${(receiptPct * 100).toInt()}%)',
       pct: receiptPct,
       weight: 0.25,

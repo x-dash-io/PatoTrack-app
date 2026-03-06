@@ -57,24 +57,28 @@ class _SmsCaptureScreenState extends State<SmsCaptureScreen> {
 
   Future<void> _importMessages() async {
     final query = SmsQuery();
-    final allMessages = await query.getAllSms;
-
-    // Filter: MPESA sender, last 30 days
     final cutoff = DateTime.now().subtract(const Duration(days: 30));
-    final mpesaMessages = allMessages.where((msg) {
-      final sender = (msg.sender ?? '').toUpperCase();
+
+    // Query only M-Pesa messages (matches SmsService approach) — avoids
+    // reading the entire inbox.
+    final mpesaMessages = await query.querySms(
+      kinds: [SmsQueryKind.inbox],
+      address: 'MPESA',
+    );
+
+    // Filter to last 30 days client-side (querySms doesn't support date filter)
+    final recentMessages = mpesaMessages.where((msg) {
       final date = msg.dateSent ?? msg.date;
-      if (date == null) return false;
-      return (sender.contains('MPESA') || sender.contains('M-PESA')) &&
-          date.isAfter(cutoff);
+      return date != null && date.isAfter(cutoff);
     }).toList();
+
 
     int imported = 0;
     int skipped = 0;
     int duplicates = 0;
     final List<int> batchIds = [];
 
-    for (final msg in mpesaMessages) {
+    for (final msg in recentMessages) {
       final body = msg.body;
       if (body == null || body.isEmpty) {
         skipped++;

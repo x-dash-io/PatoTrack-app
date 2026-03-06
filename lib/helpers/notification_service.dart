@@ -71,7 +71,7 @@ class NotificationService {
           'Your bill "${bill.name}" for $currencySymbol ${bill.amount.toStringAsFixed(0)} is due tomorrow.',
       scheduledDate: scheduleTime,
       notificationDetails: notificationDetails,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
     );
   }
 

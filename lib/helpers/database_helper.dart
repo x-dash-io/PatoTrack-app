@@ -278,8 +278,8 @@ class DatabaseHelper {
     final db = await database;
     final maps = await db.query(
       'transactions',
-      where: 'userId = ? AND source = ?',
-      whereArgs: [userId, 'sms'],
+      where: 'userId = ? AND source = ? AND date >= ?',
+      whereArgs: [userId, 'sms', since.toIso8601String()],
       orderBy: 'date DESC',
     );
     return List.generate(

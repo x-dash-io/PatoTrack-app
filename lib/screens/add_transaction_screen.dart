@@ -221,12 +221,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 children: [
-                  const Icon(AppIcons.lock_rounded, size: 16, color: Colors.green),
+                  const Icon(AppIcons.lock_rounded,
+                      size: 16, color: Colors.green),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       '100% Private. Scans are processed offline on this device. Images are never uploaded to the cloud.',
-                      style: GoogleFonts.manrope(fontSize: 12, color: Colors.grey[600]),
+                      style: GoogleFonts.manrope(
+                          fontSize: 12, color: Colors.grey[600]),
                     ),
                   ),
                 ],
@@ -237,7 +239,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         ),
       ),
     );
-
   }
 
   Future<String> _saveReceiptLocally(File imageFile) async {
@@ -261,7 +262,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Camera permission disabled. Please enable in Settings.'),
+              content: const Text(
+                  'Camera permission disabled. Please enable in Settings.'),
               action: SnackBarAction(
                 label: 'SETTINGS',
                 onPressed: () => openAppSettings(),
@@ -280,14 +282,18 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         return;
       }
     } else {
-      if (Platform.isAndroid) {
+      if (Platform.isIOS) {
         var status = await Permission.photos.status;
         if (status.isDenied) {
-          await Permission.photos.request();
-          await Permission.storage.request();
+          status = await Permission.photos.request();
         }
-      } else {
-        await Permission.photos.request();
+        if (!status.isGranted) {
+          if (mounted) {
+            NotificationHelper.showError(context,
+                message: 'Photos permission is required');
+          }
+          return;
+        }
       }
     }
 
@@ -308,7 +314,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       if (!result.isReceipt) {
         setState(() => _isScanning = false);
         NotificationHelper.showWarning(context,
-            message: result.error ?? 'This image doesn\'t look like a valid receipt.');
+            message: result.error ??
+                'This image doesn\'t look like a valid receipt.');
         return;
       }
 
@@ -329,7 +336,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           _selectedDate = result.date!;
         }
         _currentSource = 'receipt';
-        _receiptImageUrl = localPath; // Saving local file path instead of public URL
+        _receiptImageUrl =
+            localPath; // Saving local file path instead of public URL
         _isScanning = false;
       });
 
@@ -425,7 +433,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     children: [
                       Icon(AppIcons.receipt_long_rounded,
                           size: 16,
-                          color: isDark ? AppColors.brandDark : AppColors.brand),
+                          color:
+                              isDark ? AppColors.brandDark : AppColors.brand),
                       const SizedBox(width: 6),
                       Text(
                         'Receipt image attached',
@@ -472,8 +481,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                     : Colors.white)
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(10),
-                            boxShadow:
-                                isSelected ? AppShadows.subtle() : null,
+                            boxShadow: isSelected ? AppShadows.subtle() : null,
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -522,8 +530,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     const TextInputType.numberWithOptions(decimal: true),
                 prefixIcon: AppIcons.attach_money_rounded,
                 inputFormatters: [
-                  FilteringTextInputFormatter.allow(
-                      RegExp(r'^\d+\.?\d{0,2}')),
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
                 ],
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -628,9 +635,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           avatar: Icon(
                             AppIcons.auto_awesome_rounded,
                             size: 14,
-                            color: isDark
-                                ? AppColors.brandDark
-                                : AppColors.brand,
+                            color:
+                                isDark ? AppColors.brandDark : AppColors.brand,
                           ),
                           label: Text(
                             '${s.categoryName} (${(s.confidence * 100).toInt()}%)',
@@ -647,14 +653,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               : AppColors.brandSoft,
                           onPressed: () async {
                             if (match != null) {
-                              setState(() =>
-                                  _selectedCategoryId = match.id);
+                              setState(() => _selectedCategoryId = match.id);
                               // Record correction for learning
                               if (_currentUser != null) {
                                 _dbHelper.addUserCategoryCorrection(
                                   userId: _currentUser.uid,
-                                  description:
-                                      _descriptionController.text,
+                                  description: _descriptionController.text,
                                   categoryId: match.id!,
                                   categoryName: match.name,
                                 );
@@ -664,13 +668,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               if (_currentUser != null) {
                                 final newCat = Category(
                                   name: s.categoryName,
-                                  type: _transactionType, // Assign to current tab type
+                                  type:
+                                      _transactionType, // Assign to current tab type
                                 );
                                 final newId = await _dbHelper.addCategory(
                                     newCat, _currentUser.uid);
                                 _loadCategories(); // Reload dropdown
                                 setState(() => _selectedCategoryId = newId);
-                                
+
                                 // Record correction for learning
                                 _dbHelper.addUserCategoryCorrection(
                                   userId: _currentUser.uid,
@@ -678,11 +683,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                   categoryId: newId,
                                   categoryName: s.categoryName,
                                 );
-                                
+
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text('Auto-created category "${s.categoryName}"'),
+                                      content: Text(
+                                          'Auto-created category "${s.categoryName}"'),
                                       duration: const Duration(seconds: 2),
                                     ),
                                   );
@@ -702,8 +708,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               // Date Field
               StandardDateSelectorTile(
                 label: 'Date',
-                valueText:
-                    DateFormat('MMMM dd, yyyy').format(_selectedDate),
+                valueText: DateFormat('MMMM dd, yyyy').format(_selectedDate),
                 helperText: 'Tap to change',
                 onTap: _pickDate,
               ),

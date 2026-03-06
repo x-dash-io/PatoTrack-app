@@ -79,17 +79,23 @@ class OcrService {
         if (amount != null) confidence += 0.2;
       }
 
-      // Date extraction
+      // Date extraction — try DD/MM/YYYY first (Kenya standard locale)
+      // then fall back to MM/DD/YYYY for ambiguous formats.
       final dateMatch = dateRegex.firstMatch(line);
       if (dateMatch != null && date == null) {
         try {
-          final d = int.parse(dateMatch.group(1)!);
-          final m = int.parse(dateMatch.group(2)!);
+          final part1 = int.parse(dateMatch.group(1)!);
+          final part2 = int.parse(dateMatch.group(2)!);
           final yStr = dateMatch.group(3)!;
           final y = yStr.length == 2 ? 2000 + int.parse(yStr) : int.parse(yStr);
-          
-          if (m >= 1 && m <= 12 && d >= 1 && d <= 31) {
-            date = DateTime(y, m, d);
+
+          // Prefer DD/MM (part1=day, part2=month) if month is valid
+          if (part2 >= 1 && part2 <= 12 && part1 >= 1 && part1 <= 31) {
+            date = DateTime(y, part2, part1); // DD/MM/YYYY
+            confidence += 0.1;
+          } else if (part1 >= 1 && part1 <= 12 && part2 >= 1 && part2 <= 31) {
+            // Fallback: MM/DD/YYYY
+            date = DateTime(y, part1, part2);
             confidence += 0.1;
           }
         } catch (_) {}

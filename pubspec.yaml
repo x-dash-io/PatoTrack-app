@@ -45,7 +45,6 @@ dependencies:
   # Tier 1 Dependencies
   google_mlkit_text_recognition: ^0.13.0
   decimal: ^2.3.3
-  flutter_background_service: ^5.0.10
   image: ^4.3.0
   flutter_dotenv: ^6.0.0
 

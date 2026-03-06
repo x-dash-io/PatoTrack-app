@@ -41,6 +41,12 @@ class SmsService {
       if (shouldCancel?.call() == true) {
         throw const SmsSyncCancelledException();
       }
+      final sender = (message.address ?? '').trim().toUpperCase();
+      // Defense-in-depth: process only M-Pesa sender traffic.
+      if (sender != 'MPESA') {
+        continue;
+      }
+
       if (message.body == null || message.date == null) {
         continue;
       }
@@ -48,13 +54,15 @@ class SmsService {
       final transaction = parser.parseMpesa(message.body!, message.date!);
       if (transaction == null) continue;
 
-      final transactionCode = _getTransactionCodeFromDescription(transaction.description);
+      final transactionCode =
+          _getTransactionCodeFromDescription(transaction.description);
       if (transactionCode == null || existingCodes.contains(transactionCode)) {
         continue;
       }
 
       final mpesaCategoryId = await _getOrCreateMpesaCategory(userId);
-      final transactionToSave = transaction.copyWith(categoryId: mpesaCategoryId);
+      final transactionToSave =
+          transaction.copyWith(categoryId: mpesaCategoryId);
 
       await dbHelper.addTransaction(transactionToSave, userId);
       importedCount++;
