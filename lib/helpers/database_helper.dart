@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer' as developer;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -22,6 +23,7 @@ class DatabaseHelper {
 
   static Database? _database;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  static const Duration _firestoreSyncTimeout = Duration(seconds: 8);
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -150,7 +152,8 @@ class DatabaseHelper {
           "ALTER TABLE transactions ADD COLUMN confidence REAL DEFAULT 1.0");
       await db.execute(
           "ALTER TABLE transactions ADD COLUMN is_reviewed INTEGER NOT NULL DEFAULT 1");
-      await db.execute("ALTER TABLE transactions ADD COLUMN balance_after REAL");
+      await db
+          .execute("ALTER TABLE transactions ADD COLUMN balance_after REAL");
     }
     if (oldVersion < 10) {
       await db.execute(
@@ -220,19 +223,17 @@ class DatabaseHelper {
     final map = transaction.toMap()..['userId'] = userId;
     map.remove('id'); // Let autoincrement handle it
     final newId = await db.insert('transactions', map);
-    try {
-      final docData = transaction.toMap()
-        ..['id'] = newId
-        ..['userId'] = userId;
+    final docData = transaction.toMap()
+      ..['id'] = newId
+      ..['userId'] = userId;
+    _enqueueFirestoreSync('addTransaction', () async {
       await _firestore
           .collection('users')
           .doc(userId)
           .collection('transactions')
           .doc(newId.toString())
           .set(docData);
-    } catch (e) {
-      developer.log('Firestore sync failed for addTransaction: $e');
-    }
+    });
     return newId;
   }
 
@@ -244,7 +245,8 @@ class DatabaseHelper {
         maps.length, (i) => model.Transaction.fromMap(maps[i]));
   }
 
-  Future<List<model.Transaction>> getUnreviewedTransactions(String userId) async {
+  Future<List<model.Transaction>> getUnreviewedTransactions(
+      String userId) async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('transactions',
         where: 'userId = ? AND is_reviewed = 0',
@@ -259,9 +261,8 @@ class DatabaseHelper {
       String userId, double amount, String type,
       {int windowHours = 24}) async {
     final db = await database;
-    final since = DateTime.now()
-        .subtract(Duration(hours: windowHours))
-        .toIso8601String();
+    final since =
+        DateTime.now().subtract(Duration(hours: windowHours)).toIso8601String();
     final maps = await db.query(
       'transactions',
       where:
@@ -294,16 +295,17 @@ class DatabaseHelper {
       where: 'id = ? AND userId = ?',
       whereArgs: [transactionId, userId],
     );
-    try {
+    if (result == 0) {
+      return result;
+    }
+    _enqueueFirestoreSync('markAsReviewed', () async {
       await _firestore
           .collection('users')
           .doc(userId)
           .collection('transactions')
           .doc(transactionId.toString())
           .update({'is_reviewed': 1});
-    } catch (e) {
-      developer.log('Firestore sync failed for markAsReviewed: $e');
-    }
+    });
     return result;
   }
 
@@ -317,16 +319,17 @@ class DatabaseHelper {
       where: 'id = ? AND userId = ?',
       whereArgs: [transaction.id, userId],
     );
-    try {
+    if (result == 0) {
+      return result;
+    }
+    _enqueueFirestoreSync('updateTransaction', () async {
       await _firestore
           .collection('users')
           .doc(userId)
           .collection('transactions')
           .doc(transaction.id.toString())
           .update(transaction.toMap());
-    } catch (e) {
-      developer.log('Firestore sync failed for updateTransaction: $e');
-    }
+    });
     return result;
   }
 
@@ -334,16 +337,17 @@ class DatabaseHelper {
     final db = await database;
     final result = await db.delete('transactions',
         where: 'id = ? AND userId = ?', whereArgs: [id, userId]);
-    try {
+    if (result == 0) {
+      return result;
+    }
+    _enqueueFirestoreSync('deleteTransaction', () async {
       await _firestore
           .collection('users')
           .doc(userId)
           .collection('transactions')
           .doc(id.toString())
           .delete();
-    } catch (e) {
-      developer.log('Firestore sync failed for deleteTransaction: $e');
-    }
+    });
     return result;
   }
 
@@ -797,5 +801,27 @@ class DatabaseHelper {
       whereArgs: [userId],
       orderBy: 'timestamp DESC',
     );
+  }
+
+  void _enqueueFirestoreSync(
+    String operation,
+    Future<void> Function() task,
+  ) {
+    unawaited(_runFirestoreSync(operation, task));
+  }
+
+  Future<void> _runFirestoreSync(
+    String operation,
+    Future<void> Function() task,
+  ) async {
+    try {
+      await task().timeout(_firestoreSyncTimeout);
+    } catch (e, stackTrace) {
+      developer.log(
+        'Firestore sync failed for $operation',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
   }
 }

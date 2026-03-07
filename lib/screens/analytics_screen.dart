@@ -81,11 +81,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
             value: _complianceCtrl),
         ChangeNotifierProvider<AdviceController>.value(value: _adviceCtrl),
       ],
-      child: Consumer<AnalyticsController>(builder: (context, analytics, _) {
-        final trust = context.watch<TrustScoreController>();
-        final compliance = context.watch<ComplianceController>();
-        final advice = context.watch<AdviceController>();
-        final currency = context.watch<CurrencyProvider>();
+      child: Consumer<AnalyticsController>(
+        builder: (context, analytics, _) {
+          final trust = context.watch<TrustScoreController>();
+          final compliance = context.watch<ComplianceController>();
+          final advice = context.watch<AdviceController>();
+          final currency = context.watch<CurrencyProvider>();
           return Scaffold(
             appBar: AppBar(
               title: Text(
@@ -195,7 +196,8 @@ class _AnalyticsBody extends StatelessWidget {
 
         // Forecast chart
         if (summary.forecast.hasEnoughData) ...[
-          const _SectionHeader(title: '3-Month Forecast', icon: AppIcons.trending_up_rounded),
+          const _SectionHeader(
+              title: '3-Month Forecast', icon: AppIcons.trending_up_rounded),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             child: _ForecastChartCard(
@@ -207,7 +209,8 @@ class _AnalyticsBody extends StatelessWidget {
         ],
 
         // Profitability ratios
-        const _SectionHeader(title: 'Profitability', icon: AppIcons.bar_chart_rounded),
+        const _SectionHeader(
+            title: 'Profitability', icon: AppIcons.bar_chart_rounded),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: _RatioGrid(ratios: summary.ratios, currency: currency),
@@ -215,10 +218,12 @@ class _AnalyticsBody extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
 
         // Scenario modeling
-        const _SectionHeader(title: 'Scenario Outlook', icon: AppIcons.savings_rounded),
+        const _SectionHeader(
+            title: 'Scenario Outlook', icon: AppIcons.savings_rounded),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-          child: _ScenarioCard(scenarios: summary.scenarios, currency: currency),
+          child:
+              _ScenarioCard(scenarios: summary.scenarios, currency: currency),
         ),
         const SizedBox(height: AppSpacing.md),
 
@@ -257,7 +262,8 @@ class _AnalyticsBody extends StatelessWidget {
         ],
 
         // Trust Score card
-        const _SectionHeader(title: 'Business Trust Score', icon: AppIcons.shield_check_rounded),
+        const _SectionHeader(
+            title: 'Business Trust Score', icon: AppIcons.shield_check_rounded),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: _TrustCard(trust: trust),
@@ -265,7 +271,8 @@ class _AnalyticsBody extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
 
         // Compliance card
-        const _SectionHeader(title: 'Compliance Check', icon: AppIcons.verified_rounded),
+        const _SectionHeader(
+            title: 'Compliance Check', icon: AppIcons.verified_rounded),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: _ComplianceCard(compliance: compliance),
@@ -273,7 +280,8 @@ class _AnalyticsBody extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
 
         // Financial Advice card
-        const _SectionHeader(title: 'Financial Advice', icon: AppIcons.lightbulb_rounded),
+        const _SectionHeader(
+            title: 'Financial Advice', icon: AppIcons.lightbulb_rounded),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: _AdviceCard(advice: advice),
@@ -287,8 +295,7 @@ class _AnalyticsBody extends StatelessWidget {
 // ─── Period Selector ──────────────────────────────────────────────────────────
 
 class _PeriodSelector extends StatelessWidget {
-  const _PeriodSelector(
-      {required this.selected, required this.onChanged});
+  const _PeriodSelector({required this.selected, required this.onChanged});
   final AnalyticsPeriod selected;
   final ValueChanged<AnalyticsPeriod> onChanged;
 
@@ -325,8 +332,7 @@ class _PeriodSelector extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 13,
-                    fontWeight:
-                        isSelected ? FontWeight.w700 : FontWeight.w500,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     color: isSelected
                         ? AppColors.brand
                         : (isDark
@@ -481,9 +487,7 @@ class _StatPill extends StatelessWidget {
           Text(
             value,
             style: const TextStyle(
-                fontSize: 11,
-                color: Colors.white,
-                fontWeight: FontWeight.w700),
+                fontSize: 11, color: Colors.white, fontWeight: FontWeight.w700),
           ),
         ],
       ),
@@ -553,8 +557,7 @@ class _KpiTile extends StatelessWidget {
 // ─── Forecast Chart ───────────────────────────────────────────────────────────
 
 class _ForecastChartCard extends StatelessWidget {
-  const _ForecastChartCard(
-      {required this.forecast, required this.currency});
+  const _ForecastChartCard({required this.forecast, required this.currency});
   final ForecastResult forecast;
   final CurrencyProvider currency;
 
@@ -575,8 +578,7 @@ class _ForecastChartCard extends StatelessWidget {
     final forecastSpots = forecast.forecast
         .asMap()
         .entries
-        .map((e) => FlSpot(
-            (histLen + e.key).toDouble(), e.value.net))
+        .map((e) => FlSpot((histLen + e.key).toDouble(), e.value.net))
         .toList();
 
     final allNets = allPoints.map((p) => p.net).toList();
@@ -603,8 +605,7 @@ class _ForecastChartCard extends StatelessWidget {
           // Legend
           Row(
             children: [
-              const _LegendDot(
-                  color: AppColors.brand, label: 'Historical'),
+              const _LegendDot(color: AppColors.brand, label: 'Historical'),
               const SizedBox(width: 12),
               _LegendDot(
                   color: AppColors.brand.withValues(alpha: 0.4),
@@ -632,10 +633,10 @@ class _ForecastChartCard extends StatelessWidget {
                 ),
                 borderData: FlBorderData(show: false),
                 titlesData: FlTitlesData(
-                  topTitles:
-                      const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles:
-                      const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
@@ -698,8 +699,7 @@ class _ForecastChartCard extends StatelessWidget {
                       dashArray: const [6, 4],
                       dotData: FlDotData(
                         show: true,
-                        getDotPainter: (_, __, ___, i) =>
-                            FlDotCirclePainter(
+                        getDotPainter: (_, __, ___, i) => FlDotCirclePainter(
                           radius: 3,
                           color: AppColors.brand.withValues(alpha: 0.5),
                           strokeColor: Colors.transparent,
@@ -719,9 +719,8 @@ class _ForecastChartCard extends StatelessWidget {
             '± ${currency.format(forecast.confidenceBand, decimalDigits: 0)} confidence band (90%)',
             style: GoogleFonts.manrope(
               fontSize: 10,
-              color: isDark
-                  ? AppColors.textTertiaryDark
-                  : AppColors.textTertiary,
+              color:
+                  isDark ? AppColors.textTertiaryDark : AppColors.textTertiary,
             ),
           ),
         ],
@@ -770,19 +769,20 @@ class _RatioGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = [
-      _RatioItem('Gross Margin',
+      _RatioItem(
+          'Gross Margin',
           '${(ratios.grossMargin * 100).toStringAsFixed(1)}%',
           ratios.grossMargin > 0.35 ? AppColors.income : AppColors.warning),
       _RatioItem(
           'Operating Margin',
           '${(ratios.operatingMargin * 100).toStringAsFixed(1)}%',
-          ratios.operatingMargin > 0.1
-              ? AppColors.income
-              : AppColors.expense),
-      _RatioItem('Cash Velocity',
+          ratios.operatingMargin > 0.1 ? AppColors.income : AppColors.expense),
+      _RatioItem(
+          'Cash Velocity',
           '${currency.format(ratios.cashVelocity, decimalDigits: 0)}/d',
           AppColors.brand),
-      _RatioItem('Burn Rate',
+      _RatioItem(
+          'Burn Rate',
           '${currency.format(ratios.burnRate, decimalDigits: 0)}/d',
           AppColors.expense),
     ];
@@ -814,8 +814,8 @@ class _RatioTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md, vertical: 12),
+      padding:
+          const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 12),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: AppSpacing.radiusXl,
@@ -830,8 +830,7 @@ class _RatioTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(item.label,
-              style: Theme.of(context).textTheme.labelSmall),
+          Text(item.label, style: Theme.of(context).textTheme.labelSmall),
           const SizedBox(height: 4),
           Text(
             item.value,
@@ -850,8 +849,7 @@ class _RatioTile extends StatelessWidget {
 // ─── Scenario Card ────────────────────────────────────────────────────────────
 
 class _ScenarioCard extends StatelessWidget {
-  const _ScenarioCard(
-      {required this.scenarios, required this.currency});
+  const _ScenarioCard({required this.scenarios, required this.currency});
   final ScenarioResult scenarios;
   final CurrencyProvider currency;
 
@@ -953,9 +951,8 @@ class _ScenarioCard extends StatelessWidget {
                     child: LinearProgressIndicator(
                       value: (e.value.abs() /
                               (scenarios.sensitivityNet.values
-                                      .reduce((a, b) => a.abs() > b.abs()
-                                          ? a
-                                          : b)
+                                      .reduce(
+                                          (a, b) => a.abs() > b.abs() ? a : b)
                                       .abs() +
                                   1))
                           .clamp(0, 1),
@@ -1079,8 +1076,8 @@ class _AnomalyTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md, vertical: 12),
+      padding:
+          const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 12),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: AppSpacing.radiusXl,
@@ -1167,8 +1164,7 @@ class _TrustCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: () => Navigator.of(context).push(
-        MaterialPageRoute<void>(
-            builder: (_) => const TrustScoreScreen()),
+        MaterialPageRoute<void>(builder: (_) => const TrustScoreScreen()),
       ),
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -1206,8 +1202,7 @@ class _TrustCard extends StatelessWidget {
                           children: [
                             Text('Business Trust Score',
                                 style: GoogleFonts.manrope(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 14)),
+                                    fontWeight: FontWeight.w700, fontSize: 14)),
                             const SizedBox(height: 4),
                             Text(
                               'Tap to see full breakdown and improvement tips',
@@ -1260,7 +1255,11 @@ class _ScoreMini extends StatelessWidget {
         SizedBox(
           width: 54,
           child: Text(label,
-              style: TextStyle(fontSize: 10, color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary)),
+              style: TextStyle(
+                  fontSize: 10,
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondary)),
         ),
         Expanded(
           child: ClipRRect(
@@ -1278,9 +1277,7 @@ class _ScoreMini extends StatelessWidget {
         const SizedBox(width: 6),
         Text('${score.toInt()}',
             style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: color)),
+                fontSize: 10, fontWeight: FontWeight.w700, color: color)),
       ],
     );
   }
@@ -1289,8 +1286,7 @@ class _ScoreMini extends StatelessWidget {
 // ─── Section Header ───────────────────────────────────────────────────────────
 
 class _SectionHeader extends StatelessWidget {
-  const _SectionHeader(
-      {required this.title, required this.icon, this.badge});
+  const _SectionHeader({required this.title, required this.icon, this.badge});
   final String title;
   final IconData icon;
   final String? badge;
@@ -1319,8 +1315,7 @@ class _SectionHeader extends StatelessWidget {
           if (badge != null) ...[
             const SizedBox(width: 6),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
               decoration: BoxDecoration(
                 color: AppColors.brand.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
@@ -1396,8 +1391,8 @@ class _AdviceCard extends StatelessWidget {
                       const SizedBox(height: AppSpacing.sm),
                       ...summary.insights.take(2).map(
                             (ins) => Padding(
-                              padding: const EdgeInsets.only(
-                                  bottom: AppSpacing.xs),
+                              padding:
+                                  const EdgeInsets.only(bottom: AppSpacing.xs),
                               child: Row(
                                 children: [
                                   Container(
@@ -1500,8 +1495,8 @@ class _ComplianceCard extends StatelessWidget {
                         style: Theme.of(context).textTheme.bodySmall))
                 : Row(
                     children: [
-                      _ComplianceDonutMini(score: result.score,
-                          status: result.overallStatus),
+                      _ComplianceDonutMini(
+                          score: result.score, status: result.overallStatus),
                       const SizedBox(width: AppSpacing.md),
                       Expanded(
                         child: Column(
@@ -1534,8 +1529,7 @@ class _ComplianceCard extends StatelessWidget {
 }
 
 class _ComplianceDonutMini extends StatelessWidget {
-  const _ComplianceDonutMini(
-      {required this.score, required this.status});
+  const _ComplianceDonutMini({required this.score, required this.status});
   final double score;
   final ComplianceStatus status;
 
@@ -1619,8 +1613,7 @@ class _ErrorState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(AppIcons.error_outline_rounded,
-                size: 48,
-                color: AppColors.expense.withValues(alpha: 0.6)),
+                size: 48, color: AppColors.expense.withValues(alpha: 0.6)),
             const SizedBox(height: 16),
             Text(message,
                 textAlign: TextAlign.center,

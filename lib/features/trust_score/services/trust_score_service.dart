@@ -10,43 +10,30 @@ class TrustScoreService {
   TrustScoreResult compute(List<model.Transaction> transactions) {
     if (transactions.isEmpty) return TrustScoreResult.empty();
 
-    final income =
-        transactions.where((t) => t.type == 'income').toList();
-    final expenses =
-        transactions.where((t) => t.type == 'expense').toList();
+    final income = transactions.where((t) => t.type == 'income').toList();
+    final expenses = transactions.where((t) => t.type == 'expense').toList();
 
-    final totalIncome =
-        income.fold(0.0, (s, t) => s + t.amount);
-    final totalExpenses =
-        expenses.fold(0.0, (s, t) => s + t.amount);
+    final totalIncome = income.fold(0.0, (s, t) => s + t.amount);
+    final totalExpenses = expenses.fold(0.0, (s, t) => s + t.amount);
 
     // ── Financial Health (max 40) ──────────────────────────────────────
-    final cashFlowPts =
-        _computeCashFlowPoints(totalIncome, totalExpenses);
-    final expenseStabilityPts =
-        _computeExpenseStabilityPoints(expenses);
-    final growthTrendPts =
-        _computeGrowthTrendPoints(income);
-    final healthScore =
-        cashFlowPts + expenseStabilityPts + growthTrendPts;
+    final cashFlowPts = _computeCashFlowPoints(totalIncome, totalExpenses);
+    final expenseStabilityPts = _computeExpenseStabilityPoints(expenses);
+    final growthTrendPts = _computeGrowthTrendPoints(income);
+    final healthScore = cashFlowPts + expenseStabilityPts + growthTrendPts;
 
     // ── Transaction Integrity (max 30) ────────────────────────────────
-    final dataAccuracyPts =
-        _computeDataAccuracyPoints(transactions);
-    final sourceDiversityPts =
-        _computeSourceDiversityPoints(transactions);
-    final consistencyPts =
-        _computeConsistencyPoints(transactions);
+    final dataAccuracyPts = _computeDataAccuracyPoints(transactions);
+    final sourceDiversityPts = _computeSourceDiversityPoints(transactions);
+    final consistencyPts = _computeConsistencyPoints(transactions);
     final integrityScore =
         dataAccuracyPts + sourceDiversityPts + consistencyPts;
 
     // ── Compliance Readiness (max 20) ─────────────────────────────────
-    final documentationPts =
-        _computeDocumentationPoints(expenses);
+    final documentationPts = _computeDocumentationPoints(expenses);
     final recordCompletenessPts =
         _computeRecordCompletenessPoints(transactions);
-    final categorizationPts =
-        _computeCategorizationPoints(transactions);
+    final categorizationPts = _computeCategorizationPoints(transactions);
     final complianceScore =
         documentationPts + recordCompletenessPts + categorizationPts;
 
@@ -55,8 +42,7 @@ class TrustScoreService {
     final budgetAdherencePts =
         _computeBudgetAdherencePoints(totalIncome, totalExpenses);
     final anomalyPts = _computeAnomalyPoints(transactions);
-    final behaviorScore =
-        timelinessPts + budgetAdherencePts + anomalyPts;
+    final behaviorScore = timelinessPts + budgetAdherencePts + anomalyPts;
 
     // Weighted sum per spec:
     // Trust Score = (40×Health + 30×Integrity + 20×Compliance + 10×Behavior) / 100
@@ -70,10 +56,8 @@ class TrustScoreService {
       100,
     );
 
-    final riskBand =
-        TrustRiskBandExtension.fromScore(trustScore);
-    final insights =
-        _generateInsights(
+    final riskBand = TrustRiskBandExtension.fromScore(trustScore);
+    final insights = _generateInsights(
       cashFlowPts: cashFlowPts,
       expenseStabilityPts: expenseStabilityPts,
       growthTrendPts: growthTrendPts,
@@ -124,8 +108,7 @@ class TrustScoreService {
     return 3;
   }
 
-  double _computeExpenseStabilityPoints(
-      List<model.Transaction> expenses) {
+  double _computeExpenseStabilityPoints(List<model.Transaction> expenses) {
     if (expenses.length < 2) return 3; // not enough data
     // Group by calendar month, sum per month
     final Map<String, double> monthlyTotals = {};
@@ -138,10 +121,9 @@ class TrustScoreService {
     final values = monthlyTotals.values.toList();
     final avg = values.reduce((a, b) => a + b) / values.length;
     if (avg == 0) return 3;
-    final variance = values
-        .map((v) => (v - avg) * (v - avg))
-        .reduce((a, b) => a + b) /
-        values.length;
+    final variance =
+        values.map((v) => (v - avg) * (v - avg)).reduce((a, b) => a + b) /
+            values.length;
     final stddev = math.sqrt(variance);
     final cv = stddev / avg; // coefficient of variation
     if (cv < 0.2) return 7;
@@ -176,11 +158,13 @@ class TrustScoreService {
 
   double _computeDataAccuracyPoints(List<model.Transaction> txns) {
     if (txns.isEmpty) return 0;
-    final complete = txns.where((t) =>
-        t.amount > 0 &&
-        t.date.isNotEmpty &&
-        t.categoryId != null &&
-        t.description.isNotEmpty).length;
+    final complete = txns
+        .where((t) =>
+            t.amount > 0 &&
+            t.date.isNotEmpty &&
+            t.categoryId != null &&
+            t.description.isNotEmpty)
+        .length;
     final pct = complete / txns.length;
     if (pct >= 0.95) return 15;
     if (pct >= 0.85) return 11;
@@ -188,9 +172,9 @@ class TrustScoreService {
     return 3;
   }
 
-  double _computeSourceDiversityPoints(
-      List<model.Transaction> txns) {
-    final sources = txns.map((t) => t.source.isEmpty ? 'manual' : t.source).toSet();
+  double _computeSourceDiversityPoints(List<model.Transaction> txns) {
+    final sources =
+        txns.map((t) => t.source.isEmpty ? 'manual' : t.source).toSet();
     if (sources.length >= 3) return 10;
     if (sources.length == 2) return 7;
     return 3;
@@ -198,10 +182,7 @@ class TrustScoreService {
 
   double _computeConsistencyPoints(List<model.Transaction> txns) {
     if (txns.length < 2) return 1;
-    final dates = txns
-        .map((t) => _parseDate(t.date))
-        .toList()
-      ..sort();
+    final dates = txns.map((t) => _parseDate(t.date)).toList()..sort();
     double maxGap = 0;
     for (int i = 1; i < dates.length; i++) {
       final gap = dates[i].difference(dates[i - 1]).inDays.toDouble();
@@ -215,8 +196,7 @@ class TrustScoreService {
 
   // ── Compliance Readiness ──────────────────────────────────────────────
 
-  double _computeDocumentationPoints(
-      List<model.Transaction> expenses) {
+  double _computeDocumentationPoints(List<model.Transaction> expenses) {
     if (expenses.isEmpty) return 1;
     final withReceipt =
         expenses.where((t) => t.receiptImageUrl?.isNotEmpty == true).length;
@@ -227,22 +207,18 @@ class TrustScoreService {
     return 1;
   }
 
-  double _computeRecordCompletenessPoints(
-      List<model.Transaction> txns) {
+  double _computeRecordCompletenessPoints(List<model.Transaction> txns) {
     if (txns.isEmpty) return 0;
-    final withDesc =
-        txns.where((t) => t.description.trim().isNotEmpty).length;
+    final withDesc = txns.where((t) => t.description.trim().isNotEmpty).length;
     final pct = withDesc / txns.length;
     if (pct >= 0.90) return 5;
     if (pct >= 0.70) return 3;
     return 1;
   }
 
-  double _computeCategorizationPoints(
-      List<model.Transaction> txns) {
+  double _computeCategorizationPoints(List<model.Transaction> txns) {
     if (txns.isEmpty) return 0;
-    final withCat =
-        txns.where((t) => t.categoryId != null).length;
+    final withCat = txns.where((t) => t.categoryId != null).length;
     final pct = withCat / txns.length;
     if (pct >= 0.95) return 5;
     if (pct >= 0.80) return 3;
@@ -255,8 +231,7 @@ class TrustScoreService {
   // No bill data available here — default to 4 (good-faith)
   double _computeTimelinessPoints() => 4;
 
-  double _computeBudgetAdherencePoints(
-      double income, double expenses) {
+  double _computeBudgetAdherencePoints(double income, double expenses) {
     if (income == 0) return 0;
     final spendRate = expenses / income;
     if (spendRate <= 0.70) return 3;

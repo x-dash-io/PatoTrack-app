@@ -71,9 +71,8 @@ class _TrustScoreGaugeState extends State<TrustScoreGauge>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final trackColor = isDark
-        ? AppColors.surfaceElevatedDark
-        : AppColors.surfaceElevatedLight;
+    final trackColor =
+        isDark ? AppColors.surfaceElevatedDark : AppColors.surfaceElevatedLight;
     final arcColor = _bandColor();
     final textColor =
         isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
@@ -172,8 +171,8 @@ class _ArcPainter extends CustomPainter {
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round
       ..color = trackColor;
-    canvas.drawArc(rect, _deg(_startAngle), _deg(_sweepAngle), false,
-        trackPaint);
+    canvas.drawArc(
+        rect, _deg(_startAngle), _deg(_sweepAngle), false, trackPaint);
 
     if (progress <= 0) return;
 
@@ -183,9 +182,8 @@ class _ArcPainter extends CustomPainter {
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round
       ..color = arcColor;
-    canvas.drawArc(
-        rect, _deg(_startAngle), _deg(_sweepAngle * progress.clamp(0, 1)),
-        false, arcPaint);
+    canvas.drawArc(rect, _deg(_startAngle),
+        _deg(_sweepAngle * progress.clamp(0, 1)), false, arcPaint);
   }
 
   double _deg(double deg) => deg * math.pi / 180;

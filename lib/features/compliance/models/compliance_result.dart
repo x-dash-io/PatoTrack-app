@@ -1,4 +1,3 @@
-
 // ── Checklist Item ────────────────────────────────────────────────────────────
 
 enum ComplianceStatus { pass, warn, fail }

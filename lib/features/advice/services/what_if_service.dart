@@ -13,26 +13,25 @@ class WhatIfService {
     required double paramValue,
     required double monthlyIncome,
     required double monthlyExpense,
-    required double burnRate,        // per day
-    required double currentBalance,  // income - expense YTD
+    required double burnRate, // per day
+    required double currentBalance, // income - expense YTD
   }) {
-    final baseRunway = burnRate > 0
-        ? (currentBalance / burnRate).clamp(0.0, 9999.0)
-        : 999.0;
+    final baseRunway =
+        burnRate > 0 ? (currentBalance / burnRate).clamp(0.0, 9999.0) : 999.0;
 
     switch (type) {
       case WhatIfType.hireStaff:
-        return _hireStaff(paramValue, monthlyIncome, monthlyExpense,
-            burnRate, currentBalance, baseRunway);
+        return _hireStaff(paramValue, monthlyIncome, monthlyExpense, burnRate,
+            currentBalance, baseRunway);
       case WhatIfType.priceChange:
-        return _priceChange(paramValue, monthlyIncome, monthlyExpense,
-            burnRate, currentBalance, baseRunway);
+        return _priceChange(paramValue, monthlyIncome, monthlyExpense, burnRate,
+            currentBalance, baseRunway);
       case WhatIfType.loanProceeds:
         return _loanProceeds(paramValue, monthlyIncome, monthlyExpense,
             burnRate, currentBalance, baseRunway);
       case WhatIfType.majorClient:
-        return _majorClient(paramValue, monthlyIncome, monthlyExpense,
-            burnRate, currentBalance, baseRunway);
+        return _majorClient(paramValue, monthlyIncome, monthlyExpense, burnRate,
+            currentBalance, baseRunway);
     }
   }
 
@@ -83,7 +82,7 @@ class WhatIfService {
   // ── Price Change ────────────────────────────────────────────────────────
 
   WhatIfResult _priceChange(
-    double pctChange,   // e.g. 10 means +10%
+    double pctChange, // e.g. 10 means +10%
     double income,
     double expense,
     double burnRate,
@@ -95,9 +94,8 @@ class WhatIfService {
     final deltaIncome3m = (newMonthlyIncome - income) * 3;
 
     final newBalance = balance + deltaIncome3m;
-    final newRunway = burnRate > 0
-        ? (newBalance / burnRate).clamp(0.0, 9999.0)
-        : baseRunway;
+    final newRunway =
+        burnRate > 0 ? (newBalance / burnRate).clamp(0.0, 9999.0) : baseRunway;
 
     final direction = pctChange >= 0 ? 'raise' : 'cut';
     final sign = pctChange >= 0 ? '+' : '';
@@ -173,9 +171,8 @@ class WhatIfService {
   ) {
     final deltaIncome3m = monthlyRevenue * 3;
     final newBalance = balance + deltaIncome3m;
-    final newRunway = burnRate > 0
-        ? (newBalance / burnRate).clamp(0.0, 9999.0)
-        : baseRunway;
+    final newRunway =
+        burnRate > 0 ? (newBalance / burnRate).clamp(0.0, 9999.0) : baseRunway;
 
     // Revenue concentration: what % of income does this client represent?
     final concentrationPct = income > 0

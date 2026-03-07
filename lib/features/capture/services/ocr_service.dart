@@ -26,10 +26,12 @@ class OcrService {
   Future<OcrResult> processReceipt(File imagePath) async {
     _textRecognizer ??= TextRecognizer(script: TextRecognitionScript.latin);
     final inputImage = InputImage.fromFile(imagePath);
-    final RecognizedText recognizedText = await _textRecognizer!.processImage(inputImage);
+    final RecognizedText recognizedText =
+        await _textRecognizer!.processImage(inputImage);
 
     if (recognizedText.text.isEmpty) {
-      return OcrResult(isReceipt: false, confidence: 0.0, error: 'No text found in image');
+      return OcrResult(
+          isReceipt: false, confidence: 0.0, error: 'No text found in image');
     }
 
     // Move heavy processing to another thread (isolate) to prevent ANR
@@ -43,18 +45,23 @@ class OcrService {
     double confidence = 0.5;
 
     final List<String> lines = text.split('\n');
-    
+
     // Simple receipt check: presence of specific keywords
-    final receiptKeywords = RegExp(r"(?:TOTAL|CASH|TAX|VAT|VAT|RECEIPT|INVOICE|KSH|KES|AMOUNT|SUM|CHANGE|SUBTOTAL|QTY|PRICE)", caseSensitive: false);
+    final receiptKeywords = RegExp(
+        r"(?:TOTAL|CASH|TAX|VAT|VAT|RECEIPT|INVOICE|KSH|KES|AMOUNT|SUM|CHANGE|SUBTOTAL|QTY|PRICE)",
+        caseSensitive: false);
     final hasKeywords = receiptKeywords.hasMatch(text);
-    
+
     int keywordCount = 0;
     for (final line in lines) {
-       if (receiptKeywords.hasMatch(line)) keywordCount++;
+      if (receiptKeywords.hasMatch(line)) keywordCount++;
     }
 
     if (!hasKeywords && keywordCount < 1) {
-      return OcrResult(isReceipt: false, confidence: 0.1, error: 'Does not look like a receipt');
+      return OcrResult(
+          isReceipt: false,
+          confidence: 0.1,
+          error: 'Does not look like a receipt');
     }
 
     if (keywordCount >= 3) confidence += 0.2;
@@ -68,7 +75,9 @@ class OcrService {
     }
 
     // Extraction patterns
-    final amountRegex = RegExp(r"(?:Total|Amount|Sum|Ksh|KES|USD)[:\s]*([\d,]+\.\d{2})", caseSensitive: false);
+    final amountRegex = RegExp(
+        r"(?:Total|Amount|Sum|Ksh|KES|USD)[:\s]*([\d,]+\.\d{2})",
+        caseSensitive: false);
     final dateRegex = RegExp(r"(\d{1,2})[/\-](\d{1,2})[/\-](\d{2,4})");
 
     for (String line in lines) {

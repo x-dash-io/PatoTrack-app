@@ -27,9 +27,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       color: AppColors.brand,
     ),
     _OnboardSlide(
-      title: 'Auto-import from M-Pesa',
+      title: 'Import from M-Pesa',
       description:
-          'Connect your M-Pesa SMS and transactions sync automatically. No manual entry needed.',
+          'Connect your M-Pesa SMS and sync recent confirmations directly from the inbox.',
       icon: AppIcons.phone_android_rounded,
       color: AppColors.income,
     ),

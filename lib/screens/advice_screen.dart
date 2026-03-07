@@ -101,17 +101,16 @@ class _Body extends StatelessWidget {
           const _SectionTitle(
               title: 'AI Recommendations', icon: AppIcons.auto_awesome_rounded),
           const SizedBox(height: AppSpacing.sm),
-          ...summary.insights
-              .map((i) => Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                    child: _InsightCard(insight: i),
-                  ))
-              ,
+          ...summary.insights.map((i) => Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: _InsightCard(insight: i),
+              )),
           const SizedBox(height: AppSpacing.md),
         ],
 
         // What-If modeler
-        const _SectionTitle(title: 'What-If Modeler', icon: AppIcons.lightbulb_rounded),
+        const _SectionTitle(
+            title: 'What-If Modeler', icon: AppIcons.lightbulb_rounded),
         const SizedBox(height: AppSpacing.sm),
         _WhatIfPanel(ctrl: ctrl),
       ],
@@ -262,8 +261,8 @@ class _WhatIfPanel extends StatelessWidget {
                 onTap: () => ctrl.setWhatIfType(t),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 7),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                   decoration: BoxDecoration(
                     color: selected
                         ? AppColors.brand
@@ -311,7 +310,8 @@ class _WhatIfPanel extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
 
           // Result card
-          if (ctrl.whatIfResult != null) _WhatIfResult(result: ctrl.whatIfResult!),
+          if (ctrl.whatIfResult != null)
+            _WhatIfResult(result: ctrl.whatIfResult!),
         ],
       ),
     );
@@ -391,8 +391,7 @@ class _WhatIfResult extends StatelessWidget {
     final netDelta = result.deltaNet3m;
     final runwayDelta = result.newRunway - result.baseRunway;
     final netColor = netDelta >= 0 ? AppColors.income : AppColors.expense;
-    final runwayColor =
-        runwayDelta >= 0 ? AppColors.income : AppColors.expense;
+    final runwayColor = runwayDelta >= 0 ? AppColors.income : AppColors.expense;
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -435,8 +434,9 @@ class _WhatIfResult extends StatelessWidget {
             style: GoogleFonts.manrope(
               fontSize: 12,
               height: 1.45,
-              color:
-                  isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+              color: isDark
+                  ? AppColors.textSecondaryDark
+                  : AppColors.textSecondary,
             ),
           ),
           if (result.breakEvenNote != null) ...[
@@ -526,8 +526,8 @@ class _SectionTitle extends StatelessWidget {
                 isDark ? AppColors.textSecondaryDark : AppColors.textSecondary),
         const SizedBox(width: 6),
         Text(title,
-            style: GoogleFonts.manrope(
-                fontWeight: FontWeight.w700, fontSize: 16)),
+            style:
+                GoogleFonts.manrope(fontWeight: FontWeight.w700, fontSize: 16)),
       ],
     );
   }
@@ -549,8 +549,7 @@ class _ErrorView extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(AppIcons.error_outline_rounded,
-                size: 48,
-                color: AppColors.expense.withValues(alpha: 0.6)),
+                size: 48, color: AppColors.expense.withValues(alpha: 0.6)),
             const SizedBox(height: 16),
             Text(message,
                 textAlign: TextAlign.center,

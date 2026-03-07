@@ -9,7 +9,7 @@ class ForecastingService {
   const ForecastingService();
 
   static const double _alpha = 0.3; // level smoothing
-  static const double _beta = 0.2;  // trend smoothing
+  static const double _beta = 0.2; // trend smoothing
 
   ForecastResult compute(List<model.Transaction> transactions) {
     final history = _buildMonthlyHistory(transactions);
@@ -76,7 +76,8 @@ class ForecastingService {
     final sorted = acc.values.toList()
       ..sort((a, b) => a.month.compareTo(b.month));
     return sorted
-        .map((m) => ForecastPoint(month: m.month, income: m.income, expense: m.expense))
+        .map((m) =>
+            ForecastPoint(month: m.month, income: m.income, expense: m.expense))
         .toList();
   }
 
@@ -107,10 +108,9 @@ class ForecastingService {
     if (series.length < 3) return series.isEmpty ? 0 : series.last * 0.1;
     final recent = series.sublist(series.length - 3);
     final mean = recent.reduce((a, b) => a + b) / recent.length;
-    final mse = recent
-            .map((v) => (v - mean) * (v - mean))
-            .reduce((a, b) => a + b) /
-        recent.length;
+    final mse =
+        recent.map((v) => (v - mean) * (v - mean)).reduce((a, b) => a + b) /
+            recent.length;
     return math.sqrt(mse);
   }
 

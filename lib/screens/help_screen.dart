@@ -174,7 +174,7 @@ class HelpScreen extends StatelessWidget {
           'Tap the "+" button on the home screen to open the Add Transaction screen.',
           'Select whether this is an "Income" or "Expense" using the toggle at the top.',
           'Enter the amount in the Amount field. You can use decimal numbers (e.g., 15000.50).',
-          'Choose a category from the dropdown. If you don\'t see the category you need, tap the settings icon to create a new one.',
+          'Choose a category from the dropdown, or tap a suggestion below the description to auto-create one. Tap the settings icon to otherwise manage categories.',
           'Optionally, add a description or note to provide more context about this transaction.',
           'Select the date using the date picker. You can choose any past or current date.',
           'Tap "Save Transaction" to complete. Your transaction will appear on the home screen immediately.',
@@ -182,7 +182,7 @@ class HelpScreen extends StatelessWidget {
         tips: [
           'Use clear descriptions to make it easier to find transactions later when searching.',
           'Create specific categories for different types of expenses (e.g., "Office Supplies", "Marketing", "Utilities").',
-          'You can edit or delete transactions later by swiping on them in the transaction list.',
+          'You can edit or delete transactions later by tapping on them in the transaction list to open their details.',
           'All transactions are automatically tagged as "business" for reporting purposes.',
         ],
       ),
@@ -218,13 +218,13 @@ class HelpScreen extends StatelessWidget {
         content:
             'Categories help you organize and analyze your business transactions. Create custom categories that match your business needs, and use them consistently for better reporting.',
         steps: [
-          'Navigate to the "Manage Categories" screen from Settings or when adding a transaction.',
+          'Navigate to the "Manage Categories" screen by tapping the settings (gear) icon when adding a transaction.',
           'Tap the "+" button in the top right corner to add a new category.',
           'Enter a descriptive category name (e.g., "Office Rent", "Marketing Expenses", "Sales Revenue").',
-          'Tap the icon container to choose from a variety of icons that represent your category.',
+          'Choose an icon and a color that best represent your new category.',
           'Select whether this category is for "Expense" or "Income" transactions.',
           'Tap "Add" to save the category. It will immediately be available in transaction forms.',
-          'To edit a category, tap the settings icon in the category card and modify the name or icon.',
+          'To edit a category, tap the settings icon in the category card and modify the name, icon, or color.',
           'To delete a category, tap the delete icon. Note: Transactions using this category will remain, but you won\'t be able to use this category for new transactions.',
         ],
         tips: [
@@ -385,7 +385,7 @@ class HelpScreen extends StatelessWidget {
                       number: 2,
                       title: 'Add Your First Transaction',
                       description:
-                          'Tap the "+" button on the home screen to add an income or expense. Choose a category or create a new one.',
+                          'Tap the "+" button on the home screen to add an income or expense. Choose a category, or tap a suggestion to auto-create a new one.',
                     ),
                     _GuideStep(
                       number: 3,
@@ -403,7 +403,7 @@ class HelpScreen extends StatelessWidget {
                       number: 5,
                       title: 'Enable M-Pesa Sync',
                       description:
-                          'Grant SMS permission to automatically import M-Pesa transactions from your messages.',
+                          'Grant SMS permission, then sync your recent M-Pesa confirmations straight from the inbox.',
                     ),
                   ],
                 ),

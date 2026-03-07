@@ -135,9 +135,8 @@ class _TrustScoreBody extends StatelessWidget {
             'Updated ${DateFormat('d MMM, h:mm a').format(result.computedAt)}',
             style: GoogleFonts.manrope(
               fontSize: 11,
-              color: isDark
-                  ? AppColors.textTertiaryDark
-                  : AppColors.textTertiary,
+              color:
+                  isDark ? AppColors.textTertiaryDark : AppColors.textTertiary,
             ),
           ),
         ),
@@ -145,8 +144,7 @@ class _TrustScoreBody extends StatelessWidget {
 
         // ── 4 Pillar cards ─────────────────────────────────────────────
         Padding(
-          padding:
-              const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: Text(
             'Score Breakdown',
             style: GoogleFonts.manrope(
@@ -164,8 +162,7 @@ class _TrustScoreBody extends StatelessWidget {
 
         // ── Factor detail ──────────────────────────────────────────────
         Padding(
-          padding:
-              const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: Text(
             'Factor Details',
             style: GoogleFonts.manrope(
@@ -181,8 +178,7 @@ class _TrustScoreBody extends StatelessWidget {
         // ── Improvement tips ───────────────────────────────────────────
         if (result.insights.isNotEmpty) ...[
           Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             child: Text(
               'How to Improve',
               style: GoogleFonts.manrope(
@@ -403,12 +399,11 @@ class _ExpandablePillarState extends State<_ExpandablePillar> {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: widget.color
-                            .withValues(alpha: isDark ? 0.18 : 0.1),
+                        color:
+                            widget.color.withValues(alpha: isDark ? 0.18 : 0.1),
                         borderRadius: AppSpacing.radiusSm,
                       ),
-                      child: Icon(widget.icon,
-                          color: widget.color, size: 17),
+                      child: Icon(widget.icon, color: widget.color, size: 17),
                     ),
                     const SizedBox(width: AppSpacing.sm),
                     Expanded(
@@ -483,8 +478,9 @@ class _FactorRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final progress =
-        factor.maxPoints > 0 ? (factor.points / factor.maxPoints).clamp(0, 1) : 0.0;
+    final progress = factor.maxPoints > 0
+        ? (factor.points / factor.maxPoints).clamp(0, 1)
+        : 0.0;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -650,8 +646,7 @@ class _ErrorState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(AppIcons.error_outline_rounded,
-                size: 48,
-                color: AppColors.expense.withValues(alpha: 0.6)),
+                size: 48, color: AppColors.expense.withValues(alpha: 0.6)),
             const SizedBox(height: 16),
             Text(message,
                 textAlign: TextAlign.center,

@@ -58,10 +58,12 @@ class AdviceController extends ChangeNotifier {
         }
       }).toList();
 
-      final income =
-          txns.where((t) => t.type == 'income').fold(0.0, (s, t) => s + t.amount);
-      final expenses =
-          txns.where((t) => t.type == 'expense').fold(0.0, (s, t) => s + t.amount);
+      final income = txns
+          .where((t) => t.type == 'income')
+          .fold(0.0, (s, t) => s + t.amount);
+      final expenses = txns
+          .where((t) => t.type == 'expense')
+          .fold(0.0, (s, t) => s + t.amount);
       final expenseTxns = txns.where((t) => t.type == 'expense').toList();
 
       // Monthly averages (90-day window → 3 months)
@@ -81,8 +83,7 @@ class AdviceController extends ChangeNotifier {
           expenseTxns.isEmpty ? 0.0 : withReceipt / expenseTxns.length;
 
       final withCat = txns.where((t) => t.categoryId != null).length;
-      final categorizationRate =
-          txns.isEmpty ? 1.0 : withCat / txns.length;
+      final categorizationRate = txns.isEmpty ? 1.0 : withCat / txns.length;
 
       // Income concentration
       final incomeTxns = txns.where((t) => t.type == 'income').toList();
@@ -102,7 +103,8 @@ class AdviceController extends ChangeNotifier {
       final prevMonth = txns.where((t) {
         try {
           final d = DateTime.parse(t.date);
-          return d.month == (now.month - 1) || (now.month == 1 && d.month == 12);
+          return d.month == (now.month - 1) ||
+              (now.month == 1 && d.month == 12);
         } catch (_) {
           return false;
         }
@@ -183,10 +185,13 @@ class AdviceController extends ChangeNotifier {
     _selectedType = type;
     // Reset param to sensible default
     _whatIfParam = switch (type) {
-      WhatIfType.hireStaff => _monthlyExpense * 0.3 > 0 ? _monthlyExpense * 0.3 : 50000,
+      WhatIfType.hireStaff =>
+        _monthlyExpense * 0.3 > 0 ? _monthlyExpense * 0.3 : 50000,
       WhatIfType.priceChange => 10.0,
-      WhatIfType.loanProceeds => _monthlyIncome * 2 > 0 ? _monthlyIncome * 2 : 100000,
-      WhatIfType.majorClient => _monthlyIncome * 0.5 > 0 ? _monthlyIncome * 0.5 : 50000,
+      WhatIfType.loanProceeds =>
+        _monthlyIncome * 2 > 0 ? _monthlyIncome * 2 : 100000,
+      WhatIfType.majorClient =>
+        _monthlyIncome * 0.5 > 0 ? _monthlyIncome * 0.5 : 50000,
     };
     _whatIfResult = _computeWhatIf();
     notifyListeners();

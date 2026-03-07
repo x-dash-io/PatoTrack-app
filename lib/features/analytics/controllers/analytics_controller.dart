@@ -84,15 +84,13 @@ class AnalyticsController extends ChangeNotifier {
           ? DateTime.now().subtract(Duration(days: _period.days!))
           : null;
       final filtered = cutoff != null
-          ? all
-              .where((t) {
-                try {
-                  return DateTime.parse(t.date).isAfter(cutoff);
-                } catch (_) {
-                  return true;
-                }
-              })
-              .toList()
+          ? all.where((t) {
+              try {
+                return DateTime.parse(t.date).isAfter(cutoff);
+              } catch (_) {
+                return true;
+              }
+            }).toList()
           : all;
 
       final periodDays = _period.days ?? _effectiveDays(filtered);
@@ -101,8 +99,7 @@ class AnalyticsController extends ChangeNotifier {
       final forecast = _forecasting.compute(filtered);
       final anomalies = _anomaly.detect(filtered);
       final ratioResult = _ratios.compute(filtered, periodDays);
-      final scenarioResult =
-          _scenario.compute(forecast, ratioResult.burnRate);
+      final scenarioResult = _scenario.compute(forecast, ratioResult.burnRate);
 
       final income = filtered
           .where((t) => t.type == 'income')
@@ -110,10 +107,8 @@ class AnalyticsController extends ChangeNotifier {
       final expenses = filtered
           .where((t) => t.type == 'expense')
           .fold(0.0, (s, t) => s + t.amount);
-      final expenseTxns =
-          filtered.where((t) => t.type == 'expense').toList();
-      final uncategorized =
-          filtered.where((t) => t.categoryId == null).length;
+      final expenseTxns = filtered.where((t) => t.type == 'expense').toList();
+      final uncategorized = filtered.where((t) => t.categoryId == null).length;
       final withReceipt = expenseTxns
           .where((t) => t.receiptImageUrl?.isNotEmpty == true)
           .length;
@@ -148,8 +143,7 @@ class AnalyticsController extends ChangeNotifier {
         periodDays: periodDays,
       );
     } catch (e) {
-      _errorMessage =
-          'Could not compute analytics. Pull down to retry.';
+      _errorMessage = 'Could not compute analytics. Pull down to retry.';
       debugPrint('AnalyticsController error: $e');
     } finally {
       _isLoading = false;
@@ -166,5 +160,4 @@ class AnalyticsController extends ChangeNotifier {
       return 30;
     }
   }
-
 }

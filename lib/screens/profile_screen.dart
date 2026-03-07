@@ -507,20 +507,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _clearReceiptCache() async {
     final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Clear Receipt Images?'),
-        content: const Text('This will permanently delete all locally saved receipt photos to free up storage space. Your actual transaction data (amounts, dates, categories) will NOT be deleted.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
-            onPressed: () => Navigator.pop(context, true), 
-            child: const Text('Delete Images')
-          ),
-        ],
-      )
-    );
+        context: context,
+        builder: (context) => AlertDialog(
+              title: const Text('Clear Receipt Images?'),
+              content: const Text(
+                  'This will permanently delete all locally saved receipt photos to free up storage space. Your actual transaction data (amounts, dates, categories) will NOT be deleted.'),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Cancel')),
+                FilledButton(
+                    style: FilledButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.error),
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text('Delete Images')),
+              ],
+            ));
 
     if (confirmed != true) return;
 
@@ -530,20 +532,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (await receiptsDir.exists()) {
         await receiptsDir.delete(recursive: true);
       }
-      
+
       if (currentUser != null) {
         final db = await DatabaseHelper().database;
         await db.update(
-          'transactions', 
+          'transactions',
           {'receipt_image_url': null},
           where: 'userId = ? AND receipt_image_url IS NOT NULL',
           whereArgs: [currentUser!.uid],
         );
       }
-      
-      if (mounted) NotificationHelper.showSuccess(context, message: 'Receipt image cache cleared safely');
+
+      if (mounted) {
+        NotificationHelper.showSuccess(context,
+            message: 'Receipt image cache cleared safely');
+      }
     } catch (e) {
-      if (mounted) NotificationHelper.showError(context, message: 'Error clearing cache: $e');
+      if (mounted) {
+        NotificationHelper.showError(context,
+            message: 'Error clearing cache: $e');
+      }
     }
   }
 
@@ -957,17 +965,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   height: 16,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white),
                                   ),
                                 )
                               : const Icon(AppIcons.sync_rounded, size: 16),
-                          label: Text(_cloudSyncStatus == CloudSyncStatus.syncing
-                              ? 'Syncing...'
-                              : (_cloudSyncStatus == CloudSyncStatus.error
-                                  ? 'Retry'
-                                  : 'Sync now')),
+                          label: Text(
+                              _cloudSyncStatus == CloudSyncStatus.syncing
+                                  ? 'Syncing...'
+                                  : (_cloudSyncStatus == CloudSyncStatus.error
+                                      ? 'Retry'
+                                      : 'Sync now')),
                           style: FilledButton.styleFrom(
-                              minimumSize: const Size(0, 42)), // Slightly taller for better touch target
+                              minimumSize: const Size(0,
+                                  42)), // Slightly taller for better touch target
                         ),
                       ),
                       if (_cloudSyncStatus == CloudSyncStatus.syncing) ...[
@@ -988,11 +999,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
 
           const SizedBox(height: 8),
-          
+
           _SettingsCard(
             children: [
               SettingListTile(
-                icon: Icons.cleaning_services_rounded, // Use standard material icon
+                icon: Icons
+                    .cleaning_services_rounded, // Use standard material icon
                 title: 'Clear Local Receipts',
                 titleColor: colorScheme.error,
                 iconColor: colorScheme.error,
@@ -1030,7 +1042,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
 
           const SizedBox(height: 24),
-
 
           const SizedBox(height: 32),
         ],

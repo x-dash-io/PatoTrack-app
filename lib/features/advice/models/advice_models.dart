@@ -55,13 +55,13 @@ class WhatIfResult {
   final double paramValue;
 
   // ── 3-month projected deltas ──
-  final double deltaIncome3m;   // change in income vs base
-  final double deltaExpense3m;  // change in expense vs base
+  final double deltaIncome3m; // change in income vs base
+  final double deltaExpense3m; // change in expense vs base
   double get deltaNet3m => deltaIncome3m - deltaExpense3m;
 
   // ── Runway impact ──
-  final double baseRunway;      // days (before)
-  final double newRunway;       // days (after)
+  final double baseRunway; // days (before)
+  final double newRunway; // days (after)
 
   // ── Summary narrative ──
   final String summary;

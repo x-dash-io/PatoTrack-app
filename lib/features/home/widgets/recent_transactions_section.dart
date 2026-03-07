@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:pato_track/app_icons.dart';
-import 'package:intl/intl.dart';
 
-import '../../../helpers/mpesa_transaction_helper.dart';
 import '../../../models/category.dart';
 import '../../../models/transaction.dart' as model;
 import '../../../providers/currency_provider.dart';
 import '../../../styles/app_colors.dart';
-import '../../../styles/app_shadows.dart';
 import '../../../styles/app_spacing.dart';
 import '../../../widgets/transaction_card.dart';
 
@@ -77,22 +74,20 @@ class RecentTransactionsSection extends StatelessWidget {
                 ? _EmptyState(onAddTransaction: onAddTransaction)
                 : Column(
                     key: ValueKey<int>(recent.length),
-                    children: recent
-                        .map((tx) {
-                          final cat = categories.isEmpty 
-                              ? null 
-                              : categories.cast<Category?>().firstWhere(
-                                  (c) => c?.id == tx.categoryId, 
-                                  orElse: () => null
-                                );
-                          return TransactionCard(
-                            transaction: tx,
-                            category: cat,
-                            currency: currency,
-                            onTap: () => onOpenTransaction(tx),
-                          );
-                        })
-                        .toList(),
+                    children: recent.map((tx) {
+                      final cat = categories.isEmpty
+                          ? null
+                          : categories.cast<Category?>().firstWhere(
+                              (c) => c?.id == tx.categoryId,
+                              orElse: () => null);
+                      return TransactionCard(
+                        transaction: tx,
+                        category: cat,
+                        allCategories: categories,
+                        currency: currency,
+                        onTap: () => onOpenTransaction(tx),
+                      );
+                    }).toList(),
                   ),
           ),
         ],
@@ -100,7 +95,6 @@ class RecentTransactionsSection extends StatelessWidget {
     );
   }
 }
-
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState({required this.onAddTransaction});

@@ -51,16 +51,24 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
         TextEditingController(text: widget.transaction.description);
     _selectedDate = DateTime.parse(widget.transaction.date);
     _selectedCategoryId = widget.transaction.categoryId;
-    _loadCategories();
+    _categoriesFuture = _buildCategoriesFuture();
+  }
+
+  Future<List<Category>> _buildCategoriesFuture() {
+    if (_currentUser == null) {
+      return Future<List<Category>>.value(const <Category>[]);
+    }
+    return dbHelper.getCategories(_currentUser.uid, type: _transactionType);
   }
 
   void _loadCategories() {
-    if (_currentUser != null) {
-      setState(() {
-        _categoriesFuture =
-            dbHelper.getCategories(_currentUser.uid, type: _transactionType);
-      });
+    if (!mounted) {
+      _categoriesFuture = _buildCategoriesFuture();
+      return;
     }
+    setState(() {
+      _categoriesFuture = _buildCategoriesFuture();
+    });
   }
 
   @override
@@ -91,7 +99,11 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
         tag: 'business', // Always business
       );
 
-      await dbHelper.updateTransaction(updatedTransaction, _currentUser.uid);
+      final updatedRows = await dbHelper.updateTransaction(
+          updatedTransaction, _currentUser.uid);
+      if (updatedRows == 0) {
+        throw StateError('Transaction no longer exists.');
+      }
 
       if (mounted) {
         NotificationHelper.showSuccess(context, message: 'Transaction Updated');
@@ -124,8 +136,11 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
       setState(() => _isDeleting = true);
 
       try {
-        await dbHelper.deleteTransaction(
+        final deletedRows = await dbHelper.deleteTransaction(
             widget.transaction.id!, _currentUser.uid);
+        if (deletedRows == 0) {
+          throw StateError('Transaction no longer exists.');
+        }
         if (mounted) {
           NotificationHelper.showSuccess(context,
               message: 'Transaction Deleted');
@@ -208,7 +223,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
               if (widget.transaction.source != 'manual')
                 Container(
                   margin: const EdgeInsets.only(bottom: 20),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: (Theme.of(context).brightness == Brightness.dark
                             ? AppColors.brandSoftDark
@@ -238,22 +254,25 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Captured via \${widget.transaction.source.toUpperCase()}',
+                              'Captured via ${widget.transaction.source.toUpperCase()}',
                               style: GoogleFonts.manrope(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
-                                color: Theme.of(context).brightness == Brightness.dark
+                                color: Theme.of(context).brightness ==
+                                        Brightness.dark
                                     ? AppColors.brandDark
                                     : AppColors.brand,
                               ),
                             ),
                             if (widget.transaction.confidence < 1.0)
                               Text(
-                                'Confidence: \${(widget.transaction.confidence * 100).toInt()}%',
+                                'Confidence: ${(widget.transaction.confidence * 100).toInt()}%',
                                 style: GoogleFonts.manrope(
                                   fontSize: 11,
-                                  color: Theme.of(context).brightness == Brightness.dark
-                                      ? AppColors.brandDark.withValues(alpha: 0.7)
+                                  color: Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? AppColors.brandDark
+                                          .withValues(alpha: 0.7)
                                       : AppColors.brand.withValues(alpha: 0.7),
                                 ),
                               ),
@@ -296,7 +315,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                     setState(() {
                       _transactionType = newSelection.first;
                       _selectedCategoryId = null;
-                      _loadCategories();
+                      _categoriesFuture = _buildCategoriesFuture();
                     });
                   },
                 ),

@@ -52,5 +52,4 @@ class ComplianceController extends ChangeNotifier {
       notifyListeners();
     }
   }
-
 }

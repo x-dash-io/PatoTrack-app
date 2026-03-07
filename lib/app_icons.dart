@@ -122,4 +122,48 @@ class AppIcons {
   static const IconData shield_check_rounded = LucideIcons.shieldCheck;
   static const IconData wifi_rounded = LucideIcons.wifi;
   static const IconData work_rounded = LucideIcons.briefcase;
+
+  static const List<IconData> selectableCategoryIcons = <IconData>[
+    shopping_cart_rounded,
+    restaurant_rounded,
+    home_rounded,
+    flight_rounded,
+    receipt_long_rounded,
+    local_hospital_rounded,
+    school_rounded,
+    pets_rounded,
+    phone_android_rounded,
+    wifi_rounded,
+    movie_rounded,
+    spa_rounded,
+    build_rounded,
+    book_rounded,
+    music_note_rounded,
+    directions_car_rounded,
+    attach_money_rounded,
+    work_rounded,
+    card_giftcard_rounded,
+    savings_rounded,
+    sports_esports_rounded,
+    fitness_center_rounded,
+    shopping_bag_rounded,
+    local_gas_station_rounded,
+  ];
+
+  static IconData fromCodePoint(
+    int? codePoint, {
+    required IconData fallback,
+  }) {
+    if (codePoint == null) {
+      return fallback;
+    }
+
+    for (final icon in selectableCategoryIcons) {
+      if (icon.codePoint == codePoint) {
+        return icon;
+      }
+    }
+
+    return fallback;
+  }
 }

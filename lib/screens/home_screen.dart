@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:pato_track/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:pato_track/app_icons.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
@@ -13,7 +13,6 @@ import '../features/home/widgets/summary_cards_section.dart';
 import '../features/home/widgets/upcoming_bills_card.dart';
 import '../helpers/notification_helper.dart';
 import '../models/bill.dart';
-import '../models/category.dart';
 import '../models/transaction.dart' as model;
 import '../providers/currency_provider.dart';
 import '../styles/app_colors.dart';
@@ -22,8 +21,8 @@ import '../widgets/loading_widgets.dart';
 import 'add_bill_screen.dart';
 import 'add_transaction_screen.dart';
 import 'all_transactions_screen.dart';
-import 'transaction_detail_screen.dart';
 import 'review_queue_screen.dart';
+import 'transaction_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -142,7 +141,9 @@ class _HomeScreenState extends State<HomeScreen>
 
     if (_homeController.smsPermissionPermanentlyDenied) {
       final opened = await openAppSettings();
-      if (opened) await _homeController.refreshPermissionState();
+      if (opened) {
+        await _homeController.refreshPermissionState();
+      }
       return;
     }
 
@@ -157,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen>
         context,
         message: status.isPermanentlyDenied
             ? 'SMS permission blocked. Open settings to enable it.'
-            : 'No problem — add transactions manually.',
+            : 'SMS permission is required to read your M-Pesa messages.',
       );
       return;
     }
@@ -174,16 +175,22 @@ class _HomeScreenState extends State<HomeScreen>
       builder: (ctx) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.lg),
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.lg,
+            AppSpacing.lg,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Enable M-Pesa import?',
-                  style: Theme.of(ctx).textTheme.titleLarge),
+              Text(
+                'Enable M-Pesa import?',
+                style: Theme.of(ctx).textTheme.titleLarge,
+              ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'PatoTrack only reads M-Pesa messages when you tap Sync. Personal chats are never accessed.',
+                'PatoTrack reads recent M-Pesa confirmations from your SMS inbox only when you tap Sync.',
                 style: Theme.of(ctx).textTheme.bodyMedium,
               ),
               const SizedBox(height: AppSpacing.md),
@@ -315,7 +322,6 @@ class _HomeScreenState extends State<HomeScreen>
                               await home.refreshPermissionState();
                             }
                           },
-                          onFallbackManual: _openAddTransaction,
                         ),
                         const SizedBox(height: AppSpacing.sm),
                         UpcomingBillsCard(

@@ -19,10 +19,9 @@ class AnomalyService {
 
     // ── Z-score pass ──────────────────────────────────────────────────────
     final mean = amounts.reduce((a, b) => a + b) / amounts.length;
-    final variance = amounts
-            .map((a) => (a - mean) * (a - mean))
-            .reduce((a, b) => a + b) /
-        amounts.length;
+    final variance =
+        amounts.map((a) => (a - mean) * (a - mean)).reduce((a, b) => a + b) /
+            amounts.length;
     final stddev = math.sqrt(variance);
 
     final Set<String> flaggedIds = {};
@@ -37,9 +36,8 @@ class AnomalyService {
             flags.add(AnomalyFlag(
               transaction: t,
               zScore: z,
-              reason: z > 0
-                  ? AnomalyReason.highAmount
-                  : AnomalyReason.lowAmount,
+              reason:
+                  z > 0 ? AnomalyReason.highAmount : AnomalyReason.lowAmount,
             ));
           }
         }
@@ -79,7 +77,8 @@ class AnomalyService {
     }
     final dailyCounts = byDay.values.map((list) => list.length).toList();
     if (dailyCounts.length >= 3) {
-      final medianCount = _median(dailyCounts.map((c) => c.toDouble()).toList());
+      final medianCount =
+          _median(dailyCounts.map((c) => c.toDouble()).toList());
       for (final entry in byDay.entries) {
         if (entry.value.length > medianCount * 3) {
           for (final t in entry.value) {

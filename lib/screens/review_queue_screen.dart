@@ -170,8 +170,7 @@ class _ReviewQueueScreenState extends State<ReviewQueueScreen> {
                             Text(
                               'Confidence: ${(tx.confidence * 100).toInt()}% • ${tx.source.toUpperCase()}',
                               style: GoogleFonts.manrope(
-                                  fontSize: 11,
-                                  color: AppColors.textSecondary),
+                                  fontSize: 11, color: AppColors.textSecondary),
                             ),
                             Text(
                               'Ksh ${tx.amount.toStringAsFixed(0)}',
@@ -184,8 +183,7 @@ class _ReviewQueueScreenState extends State<ReviewQueueScreen> {
                             ),
                           ],
                         ),
-                        trailing:
-                            const Icon(AppIcons.chevron_right_rounded),
+                        trailing: const Icon(AppIcons.chevron_right_rounded),
                         onTap: () async {
                           await Navigator.of(context).push(
                             MaterialPageRoute(
@@ -224,11 +222,10 @@ class _ReviewQueueScreenState extends State<ReviewQueueScreen> {
                                     avatar: Icon(
                                       AppIcons.auto_awesome_rounded,
                                       size: 12,
-                                      color:
-                                          Theme.of(context).brightness ==
-                                                  Brightness.dark
-                                              ? AppColors.brandDark
-                                              : AppColors.brand,
+                                      color: Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? AppColors.brandDark
+                                          : AppColors.brand,
                                     ),
                                     label: Text(
                                       '${s.categoryName} ${(s.confidence * 100).toInt()}%',
@@ -242,7 +239,8 @@ class _ReviewQueueScreenState extends State<ReviewQueueScreen> {
                                     onPressed: () async {
                                       if (_currentUser == null) return;
                                       final uid = _currentUser.uid;
-                                      final messenger = ScaffoldMessenger.of(context);
+                                      final messenger =
+                                          ScaffoldMessenger.of(context);
                                       if (match != null) {
                                         // Apply category and mark reviewed
                                         final updated = tx.copyWith(

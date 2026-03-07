@@ -18,8 +18,7 @@ class ComplianceService {
     final completeIncome = income
         .where((t) => t.amount > 0 && t.description.trim().isNotEmpty)
         .length;
-    final incomePct =
-        income.isEmpty ? 1.0 : completeIncome / income.length;
+    final incomePct = income.isEmpty ? 1.0 : completeIncome / income.length;
     final incomeItem = _makeItem(
       title: 'All Income Recorded',
       detail: income.isEmpty
@@ -32,11 +31,9 @@ class ComplianceService {
     );
 
     // ── 2. Receipts for 80%+ of expenses (weight 25%) ─────────────────────
-    final withReceipt = expenses
-        .where((t) => t.receiptImageUrl?.isNotEmpty == true)
-        .length;
-    final receiptPct =
-        expenses.isEmpty ? 1.0 : withReceipt / expenses.length;
+    final withReceipt =
+        expenses.where((t) => t.receiptImageUrl?.isNotEmpty == true).length;
+    final receiptPct = expenses.isEmpty ? 1.0 : withReceipt / expenses.length;
     final receiptItem = _makeItem(
       title: 'Receipts Attached (80%+ target)',
       detail: expenses.isEmpty
@@ -50,16 +47,12 @@ class ComplianceService {
 
     // ── 3. No unexplained transactions (weight 20%) ────────────────────────
     // Proxy: % with a non-empty description
-    final withDesc = transactions
-        .where((t) => t.description.trim().isNotEmpty)
-        .length;
-    final descPct = transactions.isEmpty
-        ? 1.0
-        : withDesc / transactions.length;
+    final withDesc =
+        transactions.where((t) => t.description.trim().isNotEmpty).length;
+    final descPct = transactions.isEmpty ? 1.0 : withDesc / transactions.length;
     final descItem = _makeItem(
       title: 'No Unexplained Transactions',
-      detail:
-          '${(descPct * 100).toInt()}% of transactions have descriptions',
+      detail: '${(descPct * 100).toInt()}% of transactions have descriptions',
       pct: descPct,
       weight: 0.20,
       passThreshold: 0.95,
@@ -68,8 +61,7 @@ class ComplianceService {
 
     // ── 4. Documentation complete (weight 15%) ─────────────────────────────
     // Proxy: % with category assigned
-    final withCat =
-        transactions.where((t) => t.categoryId != null).length;
+    final withCat = transactions.where((t) => t.categoryId != null).length;
     final catPct = transactions.isEmpty ? 1.0 : withCat / transactions.length;
     final catItem = _makeItem(
       title: 'Documentation Complete',
@@ -85,15 +77,13 @@ class ComplianceService {
     // No large gaps (>21 days) between records
     double consistencyPct = 1.0;
     if (transactions.length >= 2) {
-      final dates = transactions
-          .map((t) {
-            try {
-              return DateTime.parse(t.date);
-            } catch (_) {
-              return DateTime.now();
-            }
-          })
-          .toList()
+      final dates = transactions.map((t) {
+        try {
+          return DateTime.parse(t.date);
+        } catch (_) {
+          return DateTime.now();
+        }
+      }).toList()
         ..sort();
       int maxGap = 0;
       for (int i = 1; i < dates.length; i++) {

@@ -27,13 +27,13 @@ class _FaqScreenState extends State<FaqScreen> {
       category: 'Getting Started',
       question: 'How do I add a transaction?',
       answer:
-          'Tap the "+" button on the home screen, select whether it\'s an income or expense, enter the amount, choose a category, and save. You can also swipe right on a transaction in the list to edit it.',
+          'Tap the "+" button on the home screen, select whether it\'s an income or expense, enter the amount, choose a category, and save. You can also edit a transaction by tapping it to open the details screen.',
     ),
     FAQItem(
       category: 'Getting Started',
       question: 'How do I create categories?',
       answer:
-          'Go to Settings → Manage Categories. Tap the "+" button, enter a category name, select an icon, and choose whether it\'s for income or expenses. You can edit or delete categories by tapping the icons next to each category.',
+          'When adding a transaction, tap the settings (gear) icon next to the category dropdown to manage categories. You can also tap a suggested category name to auto-create it. When creating a category, choose a name, an icon, and a color.',
     ),
     FAQItem(
       category: 'Getting Started',
@@ -57,7 +57,7 @@ class _FaqScreenState extends State<FaqScreen> {
       category: 'Transactions',
       question: 'How do I edit or delete a transaction?',
       answer:
-          'On the home screen, swipe right on a transaction to edit it, or swipe left to delete it. You can also tap on a transaction in the "All Transactions" screen to view and edit details.',
+          'On the Home screen or All Transactions screen, tap on any transaction to open its details. From there, you can edit the necessary fields and click "Update", or tap the trash icon at the top right to delete it.',
     ),
     FAQItem(
       category: 'Transactions',
@@ -69,19 +69,19 @@ class _FaqScreenState extends State<FaqScreen> {
       category: 'Transactions',
       question: 'Does the app sync with M-Pesa?',
       answer:
-          'Yes. On the Home screen, use the "M-Pesa SMS Import" card to enable SMS access and run sync on demand. The app will only import when you tap sync, and shows your last sync time.',
+          'Yes. On the Home screen, use the "M-Pesa SMS Import" card to grant SMS access and sync recent M-Pesa messages on demand.',
     ),
     FAQItem(
       category: 'Security',
       question: 'How do I set up a passcode?',
       answer:
-          'Go to Settings → Passcode Lock and toggle it on. You\'ll be prompted to enter a 4-digit passcode. You can change or disable it later in the same settings.',
+          'Go to Profile → Passcode Lock and toggle it on. You\'ll be prompted to enter a 4-digit passcode. You can change or disable it later in the same section.',
     ),
     FAQItem(
       category: 'Security',
       question: 'Is my data backed up?',
       answer:
-          'Your data is backed up to Firebase. To restore on a new device, go to Settings → Data & Sync and use Cloud Sync. The app shows live sync status plus the last sync timestamp.',
+          'Your data is backed up to Firebase. To restore on a new device, click "Sync now" under Cloud Sync in your Profile. The button shows a syncing state while it works.',
     ),
     FAQItem(
       category: 'Reports',
@@ -90,22 +90,22 @@ class _FaqScreenState extends State<FaqScreen> {
           'Go to the Reports tab and choose Week, Month, or Year. Reports use business transactions only, with inclusive date ranges shown in the scope banner.',
     ),
     FAQItem(
-      category: 'Settings',
+      category: 'Profile',
       question: 'Can I change the currency?',
       answer:
-          'Yes. Go to Settings → Currency and pick your preferred option. All supported screens update automatically to the selected currency format.',
+          'Yes. Go to Profile → Currency and pick your preferred option. All supported screens update automatically to the selected currency format.',
     ),
     FAQItem(
-      category: 'Settings',
+      category: 'Profile',
       question: 'How do I change my profile picture?',
       answer:
-          'On the Settings screen, tap on your profile picture. You\'ll be able to select a photo from your gallery. The image will be uploaded and saved to your account.',
+          'On the Profile screen, tap on your profile picture. You\'ll be able to select a photo from your gallery. The image will be uploaded and saved to your account.',
     ),
     FAQItem(
       category: 'Troubleshooting',
       question: 'The app is not syncing M-Pesa transactions',
       answer:
-          'Make sure you\'ve granted SMS permission. Go to your device settings → Apps → PatoTrack → Permissions, and enable SMS access. Also ensure you have M-Pesa SMS messages in your inbox.',
+          'Make sure SMS permission is enabled for PatoTrack, then tap Sync again from the Home screen. If the issue continues, confirm that your phone still has recent M-Pesa confirmations in the SMS inbox.',
     ),
     FAQItem(
       category: 'Troubleshooting',

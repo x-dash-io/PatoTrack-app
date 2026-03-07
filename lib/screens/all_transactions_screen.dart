@@ -9,7 +9,6 @@ import '../helpers/database_helper.dart';
 import '../models/category.dart';
 import '../models/transaction.dart' as model;
 import '../providers/currency_provider.dart';
-import '../styles/app_spacing.dart';
 import '../widgets/loading_widgets.dart';
 import '../widgets/modern_date_picker.dart';
 import '../widgets/input_fields.dart';
@@ -413,8 +412,8 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                           ),
                         if (_filterDateRange != null)
                           Chip(
-                            label: const Text(
-                              '\${DateFormat.MMMd().format(_filterDateRange!.start)} – \${DateFormat.MMMd().format(_filterDateRange!.end)}',
+                            label: Text(
+                              '${DateFormat.MMMd().format(_filterDateRange!.start)} – ${DateFormat.MMMd().format(_filterDateRange!.end)}',
                             ),
                             onDeleted: () {
                               setState(() => _filterDateRange = null);
@@ -482,21 +481,23 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                             }
 
                             final tx = _paginatedTransactions[index];
-                            final cat = _allCategories.isEmpty 
-                                ? null 
+                            final cat = _allCategories.isEmpty
+                                ? null
                                 : _allCategories.cast<Category?>().firstWhere(
-                                    (c) => c?.id == tx.categoryId, 
-                                    orElse: () => null
-                                  );
+                                    (c) => c?.id == tx.categoryId,
+                                    orElse: () => null);
 
                             return TransactionCard(
                               transaction: tx,
                               category: cat,
+                              allCategories: _allCategories,
                               currency: currency,
                               onTap: () async {
-                                final result = await Navigator.of(context).push<bool>(
+                                final result =
+                                    await Navigator.of(context).push<bool>(
                                   MaterialPageRoute(
-                                    builder: (_) => TransactionDetailScreen(transaction: tx),
+                                    builder: (_) => TransactionDetailScreen(
+                                        transaction: tx),
                                   ),
                                 );
                                 if (result == true) _loadInitialData();
@@ -514,6 +515,6 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
 extension on String {
   String capitalize() {
     if (isEmpty) return this;
-    return "\${this[0].toUpperCase()}\${substring(1).toLowerCase()}";
+    return '${this[0].toUpperCase()}${substring(1).toLowerCase()}';
   }
 }

@@ -93,7 +93,7 @@ class CategorizationService {
     'campaign': {'Marketing': 1.5},
     'social media': {'Marketing': 2.0},
     'sponsor': {'Marketing': 1.5},
-    
+
     // Expenses - Transport & Travel
     'uber': {'Travel': 2.0},
     'bolt': {'Travel': 2.0},
@@ -113,7 +113,7 @@ class CategorizationService {
     'taxi': {'Travel': 2.0},
     'parking': {'Travel': 2.0},
     'toll': {'Travel': 2.0},
-    
+
     // Expenses - Communications & Tech
     'airtime': {'Airtime & Data': 2.0},
     'data': {'Airtime & Data': 1.5},
@@ -146,7 +146,7 @@ class CategorizationService {
     'permit': {'Taxes & Compliance': 2.0},
     'county': {'Taxes & Compliance': 1.5},
     'kanjo': {'Taxes & Compliance': 2.0},
-    
+
     // Expenses - HR & Professional
     'paid to': {'Staff Salaries': 1.0},
     'wage': {'Staff Salaries': 2.0},
@@ -158,7 +158,7 @@ class CategorizationService {
     'lawyer': {'Professional Fees': 2.0},
     'audit': {'Professional Fees': 2.0},
     'accountant': {'Professional Fees': 2.0},
-    
+
     // Expenses - Financial
     'bank transfer': {'Bank Charges': 1.0},
     'mpesa charges': {'Bank Charges': 2.0},
@@ -168,7 +168,7 @@ class CategorizationService {
     'till number': {'Bank Charges': 1.0},
     'late fee': {'Interest Payments': 1.8},
     'loan repayment': {'Loan Repayment': 2.0},
-    
+
     // Expenses - Miscellaneous
     'food': {'Food & Dining': 2.0},
     'lunch': {'Food & Dining': 2.0},
@@ -221,7 +221,8 @@ class CategorizationService {
 
     // 2. User correction boost (×3 weight = strong signal)
     for (final correction in corrections) {
-      final corrDesc = (correction['description'] as String? ?? '').toLowerCase();
+      final corrDesc =
+          (correction['description'] as String? ?? '').toLowerCase();
       final corrCat = correction['category_name'] as String? ?? '';
       final corrCatId = correction['category_id'];
       if (corrDesc.isNotEmpty && corrCat.isNotEmpty) {

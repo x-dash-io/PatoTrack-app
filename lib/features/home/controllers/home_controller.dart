@@ -143,7 +143,11 @@ class HomeController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final status = await Permission.sms.status;
+      var status = await Permission.sms.status;
+      if (status.isDenied) {
+        status = await Permission.sms.request();
+      }
+
       _smsPermissionStatus = status;
       if (!status.isGranted) {
         _syncStatus = SyncStatus.error;
@@ -198,7 +202,10 @@ class HomeController extends ChangeNotifier {
 
   Future<String?> deleteTransaction(int id, String userId) async {
     try {
-      await _dbHelper.deleteTransaction(id, userId);
+      final deletedRows = await _dbHelper.deleteTransaction(id, userId);
+      if (deletedRows == 0) {
+        return 'That transaction was already removed.';
+      }
       await _loadTransactions(userId);
       return null;
     } catch (error) {

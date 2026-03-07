@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:pato_track/app_icons.dart';
 import 'package:intl/intl.dart';
+import 'package:pato_track/app_icons.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../../styles/app_colors.dart';
@@ -19,7 +19,6 @@ class SmsSyncCard extends StatelessWidget {
     required this.onRetry,
     required this.onCancel,
     required this.onOpenSettings,
-    required this.onFallbackManual,
   });
 
   final PermissionStatus permissionStatus;
@@ -30,7 +29,6 @@ class SmsSyncCard extends StatelessWidget {
   final VoidCallback onRetry;
   final VoidCallback onCancel;
   final VoidCallback onOpenSettings;
-  final VoidCallback onFallbackManual;
 
   @override
   Widget build(BuildContext context) {
@@ -108,7 +106,7 @@ class SmsSyncCard extends StatelessWidget {
                       color: syncStatus == SyncStatus.error
                           ? AppColors.expense
                           : null,
-                    ),
+                ),
               ),
             ],
             if (isSyncing) ...[
@@ -145,26 +143,6 @@ class SmsSyncCard extends StatelessWidget {
                         ),
                       ),
                       child: Text(primaryLabel),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.xs),
-                Expanded(
-                  child: SizedBox(
-                    height: 38,
-                    child: OutlinedButton(
-                      onPressed: isSyncing ? null : onFallbackManual,
-                      style: OutlinedButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        textStyle: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      child: const Text('Add manually'),
                     ),
                   ),
                 ),

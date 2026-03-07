@@ -30,18 +30,23 @@ class RatiosService {
         .fold(0.0, (s, t) => s + t.amount);
 
     // COGS: expenses in cogs-like categories (raw materials, inventory, delivery)
-    final cogsKeywords = ['cogs', 'cost of goods', 'raw material', 'inventory', 'stock'];
+    final cogsKeywords = [
+      'cogs',
+      'cost of goods',
+      'raw material',
+      'inventory',
+      'stock'
+    ];
     final cogs = transactions
         .where((t) =>
             t.type == 'expense' &&
-            cogsKeywords.any((kw) =>
-                (t.description.toLowerCase()).contains(kw)))
+            cogsKeywords
+                .any((kw) => (t.description.toLowerCase()).contains(kw)))
         .fold(0.0, (s, t) => s + t.amount);
 
     final grossProfit = income - cogs;
     final grossMargin = income > 0 ? grossProfit / income : 0.0;
-    final operatingMargin =
-        income > 0 ? (income - allExpenses) / income : 0.0;
+    final operatingMargin = income > 0 ? (income - allExpenses) / income : 0.0;
     final netMargin = operatingMargin; // simplified (no tax/interest data)
 
     final cashVelocity = income / safedays;
@@ -61,8 +66,7 @@ class RatiosService {
         final key = t.categoryId?.toString() ?? 'Uncategorized';
         byCat[key] = (byCat[key] ?? 0) + t.amount;
       }
-      final maxVal =
-          byCat.values.reduce((a, b) => a > b ? a : b);
+      final maxVal = byCat.values.reduce((a, b) => a > b ? a : b);
       concentration = income > 0 ? maxVal / income : 0;
     }
 

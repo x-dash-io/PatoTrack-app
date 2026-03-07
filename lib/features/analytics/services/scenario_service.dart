@@ -10,10 +10,8 @@ class ScenarioService {
     ForecastResult forecast,
     double dailyBurnRate,
   ) {
-    final baseIncome =
-        forecast.forecast.fold(0.0, (s, p) => s + p.income);
-    final baseExpense =
-        forecast.forecast.fold(0.0, (s, p) => s + p.expense);
+    final baseIncome = forecast.forecast.fold(0.0, (s, p) => s + p.income);
+    final baseExpense = forecast.forecast.fold(0.0, (s, p) => s + p.expense);
 
     final safeIncome = baseIncome <= 0 ? 1.0 : baseIncome;
     final safeExpense = baseExpense <= 0 ? 1.0 : baseExpense;
@@ -24,8 +22,7 @@ class ScenarioService {
       final inc = safeIncome * incFactor;
       final exp = safeExpense * expFactor;
       final net = inc - exp;
-      final runway =
-          net >= 0 ? (net / (burnRate * 30)).clamp(0.0, 999.0) : 0.0;
+      final runway = net >= 0 ? (net / (burnRate * 30)).clamp(0.0, 999.0) : 0.0;
       return ScenarioCase(
         name: name,
         income3m: inc,

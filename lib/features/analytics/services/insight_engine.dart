@@ -141,8 +141,7 @@ class InsightEngine {
 
     // 8. Positive income trend
     if (forecastPoints.length == 3) {
-      final trend =
-          forecastPoints.last.income - forecastPoints.first.income;
+      final trend = forecastPoints.last.income - forecastPoints.first.income;
       if (trend > 0 && totalIncome > 0) {
         insights.add(_RawInsight(
           title: 'Income Trend is Positive',

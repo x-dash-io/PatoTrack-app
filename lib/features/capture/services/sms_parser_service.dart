@@ -1,10 +1,19 @@
+import 'package:intl/intl.dart';
+
 import '../../../models/transaction.dart' as model;
 
 class SmsParserService {
+  static final List<DateFormat> _mpesaDateFormats = <DateFormat>[
+    DateFormat('d/M/yy h:mm a'),
+    DateFormat('d/M/yyyy h:mm a'),
+    DateFormat('d/M/yy H:mm'),
+    DateFormat('d/M/yyyy H:mm'),
+  ];
+
   /// Parses an M-Pesa SMS body into a partial Transaction model.
   /// Returns null if the message is not a valid M-Pesa confirmation.
   model.Transaction? parseMpesa(String body, DateTime date) {
-    final transactionCode = _getTransactionCode(body);
+    final transactionCode = extractTransactionCode(body);
     if (transactionCode == null) return null;
 
     double? amount;
@@ -28,9 +37,11 @@ class SmsParserService {
     }
 
     final paidToRegex = RegExp(r"paid to (.+?)\.");
-    final receivedFromRegex = RegExp(r"received Ksh[\d,]+\.\d{2} from (.+?) on");
+    final receivedFromRegex =
+        RegExp(r"received Ksh[\d,]+\.\d{2} from (.+?) on");
     final sentToRegex = RegExp(r"sent to (.+?) on");
-    final boughtAirtimeRegex = RegExp(r"You bought Ksh[\d,]+\.\d{2} of airtime for number (\d+)");
+    final boughtAirtimeRegex =
+        RegExp(r"You bought Ksh[\d,]+\.\d{2} of airtime for number (\d+)");
     final payBillRegex = RegExp(r"sent to (.+?) for account");
 
     if (payBillRegex.hasMatch(body)) {
@@ -42,11 +53,13 @@ class SmsParserService {
       description = 'Paid to $recipient';
       type = 'expense';
     } else if (receivedFromRegex.hasMatch(body)) {
-      final sender = receivedFromRegex.firstMatch(body)!.group(1)!.trim().split(' ').first;
+      final sender =
+          receivedFromRegex.firstMatch(body)!.group(1)!.trim().split(' ').first;
       description = 'Received from $sender';
       type = 'income';
     } else if (sentToRegex.hasMatch(body)) {
-      final recipient = sentToRegex.firstMatch(body)!.group(1)!.trim().split(' ').first;
+      final recipient =
+          sentToRegex.firstMatch(body)!.group(1)!.trim().split(' ').first;
       description = 'Sent to $recipient';
       type = 'expense';
     } else if (boughtAirtimeRegex.hasMatch(body)) {
@@ -65,15 +78,52 @@ class SmsParserService {
       description: description,
       date: date.toIso8601String(),
       source: 'sms',
-      confidence: 1.0, // M-Pesa SMS is high confidence if it matches the code pattern
+      confidence:
+          1.0, // M-Pesa SMS is high confidence if it matches the code pattern
       isReviewed: true, // Auto-approve clear M-Pesa patterns
       balanceAfter: balanceAfter,
     );
   }
 
-  String? _getTransactionCode(String body) {
+  String? extractTransactionCode(String body) {
     final codeRegex = RegExp(r'^([A-Z0-9]+)\sConfirmed\.');
     final match = codeRegex.firstMatch(body);
     return match?.group(1);
+  }
+
+  DateTime resolveMpesaDate(
+    String body, {
+    DateTime? fallback,
+  }) {
+    final parsedDate = _parseEmbeddedDate(body);
+    return parsedDate ?? fallback ?? DateTime.now();
+  }
+
+  DateTime? _parseEmbeddedDate(String body) {
+    final dateMatch = RegExp(
+      r'on\s+(\d{1,2}/\d{1,2}/\d{2,4})\s+at\s+(\d{1,2}:\d{2}(?:\s?[AP]M)?)',
+      caseSensitive: false,
+    ).firstMatch(body);
+
+    if (dateMatch == null) {
+      return null;
+    }
+
+    final datePart = dateMatch.group(1);
+    final timePart = dateMatch.group(2)?.toUpperCase().replaceAll('  ', ' ');
+    if (datePart == null || timePart == null) {
+      return null;
+    }
+
+    final rawValue = '$datePart $timePart';
+    for (final format in _mpesaDateFormats) {
+      try {
+        return format.parseStrict(rawValue);
+      } catch (_) {
+        continue;
+      }
+    }
+
+    return null;
   }
 }

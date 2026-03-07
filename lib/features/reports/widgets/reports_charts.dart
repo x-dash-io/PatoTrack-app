@@ -203,12 +203,10 @@ class SpendingTrendChartCard extends StatelessWidget {
     final range = maxValue - minValue;
     final interval = _niceInterval(range / 4);
 
-    final scaledMin = minValue < 0
-        ? (minValue / interval).floorToDouble() * interval
-        : 0.0;
-    final scaledMax = maxValue > 0
-        ? (maxValue / interval).ceilToDouble() * interval
-        : 0.0;
+    final scaledMin =
+        minValue < 0 ? (minValue / interval).floorToDouble() * interval : 0.0;
+    final scaledMax =
+        maxValue > 0 ? (maxValue / interval).ceilToDouble() * interval : 0.0;
 
     return _YAxisScale(
       min: scaledMin,

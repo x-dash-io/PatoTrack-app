@@ -97,8 +97,7 @@ class _Body extends StatelessWidget {
         const SizedBox(height: AppSpacing.lg),
         Text(
           'Bookkeeping Checklist (Last 90 Days)',
-          style: GoogleFonts.manrope(
-              fontWeight: FontWeight.w700, fontSize: 16),
+          style: GoogleFonts.manrope(fontWeight: FontWeight.w700, fontSize: 16),
         ),
         const SizedBox(height: AppSpacing.sm),
         ...result.items.map((item) => Padding(
@@ -330,9 +329,8 @@ class _DisclaimerBox extends StatelessWidget {
         children: [
           Icon(AppIcons.info_outline_rounded,
               size: 16,
-              color: isDark
-                  ? AppColors.textTertiaryDark
-                  : AppColors.textTertiary),
+              color:
+                  isDark ? AppColors.textTertiaryDark : AppColors.textTertiary),
           const SizedBox(width: 8),
           Expanded(
             child: Text(

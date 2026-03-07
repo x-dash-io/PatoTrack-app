@@ -1,7 +1,8 @@
 import 'package:flutter_sms_inbox/flutter_sms_inbox.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'database_helper.dart';
+
 import '../features/capture/services/sms_parser_service.dart';
+import 'database_helper.dart';
 
 class SmsSyncCancelledException implements Exception {
   const SmsSyncCancelledException();
@@ -12,8 +13,8 @@ class SmsSyncCancelledException implements Exception {
 
 class SmsService {
   final SmsQuery _query = SmsQuery();
-  final dbHelper = DatabaseHelper();
-  final parser = SmsParserService();
+  final DatabaseHelper dbHelper = DatabaseHelper();
+  final SmsParserService parser = SmsParserService();
 
   Future<int> syncMpesaMessages(
     String userId, {
@@ -26,13 +27,12 @@ class SmsService {
 
     final messages = await _query.querySms(
       kinds: [SmsQueryKind.inbox],
-      address: 'MPESA',
-      count: 100, // Fetches more messages to catch missed ones
+      count: 400,
     );
 
     final existingTransactions = await dbHelper.getTransactions(userId);
     final existingCodes = existingTransactions
-        .map((t) => _getTransactionCodeFromDescription(t.description))
+        .map((transaction) => _getTransactionCodeFromDescription(transaction.description))
         .whereType<String>()
         .toSet();
 
@@ -41,18 +41,21 @@ class SmsService {
       if (shouldCancel?.call() == true) {
         throw const SmsSyncCancelledException();
       }
-      final sender = (message.address ?? '').trim().toUpperCase();
-      // Defense-in-depth: process only M-Pesa sender traffic.
-      if (sender != 'MPESA') {
+
+      final body = message.body?.trim();
+      final date = message.dateSent ?? message.date;
+      if (body == null || body.isEmpty || date == null) {
         continue;
       }
 
-      if (message.body == null || message.date == null) {
+      if (!_looksLikeMpesaMessage(message)) {
         continue;
       }
 
-      final transaction = parser.parseMpesa(message.body!, message.date!);
-      if (transaction == null) continue;
+      final transaction = parser.parseMpesa(body, date);
+      if (transaction == null) {
+        continue;
+      }
 
       final transactionCode =
           _getTransactionCodeFromDescription(transaction.description);
@@ -60,7 +63,10 @@ class SmsService {
         continue;
       }
 
-      final mpesaCategoryId = await _getOrCreateMpesaCategory(userId);
+      final mpesaCategoryId = await _getOrCreateMpesaCategory(
+        userId,
+        transaction.type,
+      );
       final transactionToSave =
           transaction.copyWith(categoryId: mpesaCategoryId);
 
@@ -78,8 +84,19 @@ class SmsService {
     return match?.group(1);
   }
 
-  Future<int> _getOrCreateMpesaCategory(String userId) async {
+  bool _looksLikeMpesaMessage(SmsMessage message) {
+    final sender = (message.address ?? '').trim().toUpperCase();
+    final body = (message.body ?? '').trim().toUpperCase();
+
+    if (sender.contains('MPESA') || sender.contains('M-PESA')) {
+      return true;
+    }
+
+    return body.contains('M-PESA') || body.contains('MPESA');
+  }
+
+  Future<int> _getOrCreateMpesaCategory(String userId, String type) async {
     const categoryName = 'M-Pesa';
-    return dbHelper.getOrCreateCategory(categoryName, userId, type: 'expense');
+    return dbHelper.getOrCreateCategory(categoryName, userId, type: type);
   }
 }

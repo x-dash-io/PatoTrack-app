@@ -43,5 +43,4 @@ class TrustScoreController extends ChangeNotifier {
       notifyListeners();
     }
   }
-
 }

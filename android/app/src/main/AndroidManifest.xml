@@ -3,14 +3,9 @@
     <!-- ADDED: Permissions required for Internet & Biometrics -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
+    <uses-permission android:name="android.permission.READ_SMS"/>
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-    <!-- READ_SMS: Used to import M-Pesa transaction messages from device inbox.
-         Scoped to SDK ≤ 32 — on Android 13+ the user must explicitly grant
-         per-query access via the system Message picker instead. -->
-    <uses-permission
-        android:name="android.permission.READ_SMS"
-        android:maxSdkVersion="32"/>
     <!-- Telephony hardware is optional: app works on Wi-Fi-only tablets -->
     <uses-feature
         android:name="android.hardware.telephony"
@@ -51,10 +46,6 @@
             android:value="2" />
     </application>
     <queries>
-        <intent>
-            <action android:name="android.intent.action.PROCESS_TEXT"/>
-            <data android:mimeType="text/plain"/>
-        </intent>
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="https" />

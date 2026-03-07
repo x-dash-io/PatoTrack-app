@@ -33,40 +33,6 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
   bool _isSavingCategory = false;
 
   final _nameController = TextEditingController();
-  static const List<IconData> _selectableIcons = [
-    AppIcons.shopping_cart_rounded,
-    AppIcons.restaurant_rounded,
-    AppIcons.home_rounded,
-    AppIcons.flight_rounded,
-    AppIcons.receipt_long_rounded,
-    AppIcons.local_hospital_rounded,
-    AppIcons.school_rounded,
-    AppIcons.pets_rounded,
-    AppIcons.phone_android_rounded,
-    AppIcons.wifi_rounded,
-    AppIcons.movie_rounded,
-    AppIcons.spa_rounded,
-    AppIcons.build_rounded,
-    AppIcons.book_rounded,
-    AppIcons.music_note_rounded,
-    AppIcons.directions_car_rounded,
-    AppIcons.attach_money_rounded,
-    AppIcons.work_rounded,
-    AppIcons.card_giftcard_rounded,
-    AppIcons.savings_rounded,
-    AppIcons.sports_esports_rounded,
-    AppIcons.fitness_center_rounded,
-    AppIcons.shopping_bag_rounded,
-    AppIcons.local_gas_station_rounded,
-  ];
-
-  IconData _iconFromCodePoint(int? codePoint, {required IconData fallback}) {
-    if (codePoint == null) return fallback;
-    for (final icon in _selectableIcons) {
-      if (icon.codePoint == codePoint) return icon;
-    }
-    return fallback;
-  }
 
   @override
   void initState() {
@@ -99,7 +65,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
   }
 
   IconData _getIconForCategory(Category category) {
-    return _iconFromCodePoint(
+    return AppIcons.fromCodePoint(
       category.iconCodePoint,
       fallback: AppIcons.label_rounded,
     );
@@ -110,7 +76,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
     final IconData dialogFallbackIcon = type == 'expense'
         ? AppIcons.category_rounded
         : AppIcons.account_balance_wallet_rounded;
-    IconData? selectedIcon = _iconFromCodePoint(
+    IconData? selectedIcon = AppIcons.fromCodePoint(
       category?.iconCodePoint,
       fallback: dialogFallbackIcon,
     );
@@ -384,9 +350,9 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen>
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
               ),
-              itemCount: _selectableIcons.length,
+              itemCount: AppIcons.selectableCategoryIcons.length,
               itemBuilder: (context, index) {
-                final icon = _selectableIcons[index];
+                final icon = AppIcons.selectableCategoryIcons[index];
                 return InkWell(
                   onTap: () => Navigator.of(context).pop(icon),
                   borderRadius: BorderRadius.circular(16),
